@@ -11,13 +11,30 @@
 // CORS involved.
 const WORKER_BASE_URL = '';
 
-let map, userMarker, fireLayer, quakeLayer, firmsTileLayer, incidentLayer;
+let map, userMarker, fireLayer, fireHeatLayer, globalFireHeatLayer, incidentLayer;
 let userLat, userLon;
 let aqiSource = 'openmeteo'; // 'openmeteo' | 'openweathermap' — both proxied server-side now
 let globalIncidents = [];
 let incidentsShownOnMap = false;
 let searchDebounceTimer = null;
 let lastSearchResults = [];
+let lastFires = [];
+let profile = 'general';
+let pickMarker = null;
+let pickedLat = null, pickedLon = null, pickedName = null;
+let globalFiresCache = null; // fetched once, reused across location changes/map rebuilds
+
+// Levels are 0=green(good) 1=yellow(moderate) 2=orange(unhealthy) 3=red(severe),
+// shared across the hero verdict and each risk card so the "worst of three" logic is one source of truth.
+const LEVEL_COLORS = ['#2ecc71', '#f1c40f', '#e67e22', '#e74c3c'];
+const LEVEL_NAMES = ['GREEN', 'YELLOW', 'ORANGE', 'RED'];
+
+const current = {
+  nearestFireMiles: null, nearestFireDir: null, fireCount: 0, fwiDangerLevel: null, fwiDangerHex: null,
+  fireLevel: null,
+  aqiLevel: null, aqiValue: null, aqiScale: null,
+  heatLevel: null, heatFeelsC: null, actualTempC: null, humidity: null, windKmh: null,
+};
 
 const state = {
   loading: document.getElementById('state-loading'),
@@ -76,12 +93,27 @@ async function loadLocation(lat, lon, knownDisplayName){
   closeLocSearchResults();
   document.getElementById('loc-search-input').value = '';
 
+  // Reflect location in the URL so a refresh or a shared link lands back
+  // on the same spot instead of forcing a re-geolocate/re-search.
+  const params = new URLSearchParams();
+  params.set('lat', lat.toFixed(4));
+  params.set('lon', lon.toFixed(4));
+  history.replaceState(null, '', `?${params.toString()}`);
+
   if(map){ map.remove(); map = null; }
-  firmsTileLayer = null;
+  fireHeatLayer = null;
+  globalFireHeatLayer = null;
   incidentLayer = null;
   incidentsShownOnMap = false;
+  pickMarker = null;
+  pickedLat = pickedLon = pickedName = null;
   const incidentsBtn = document.getElementById('incidents-map-btn');
   if(incidentsBtn) incidentsBtn.classList.remove('active');
+
+  Object.keys(current).forEach(k => current[k] = null);
+  current.fireCount = 0;
+  lastFires = [];
+  updateHero();
 
   initMap();
   if(knownDisplayName){
@@ -92,10 +124,7 @@ async function loadLocation(lat, lon, knownDisplayName){
   loadWeatherAndRisk();
   loadAirQuality();
   loadFires();
-  loadEarthquakes();
-  loadFloodRisk();
   loadGlobalIncidents();
-  addFirmsTileLayer();
 }
 
 /* ---------------- Location search (manual location picker) ---------------- */
@@ -148,7 +177,8 @@ document.addEventListener('click', (e) => {
   if(wrap && !wrap.contains(e.target)) closeLocSearchResults();
 });
 
-function setAqiSource(source){
+function setAqiSource(source, evt){
+  if(evt) evt.stopPropagation();
   aqiSource = source;
   document.querySelectorAll('.aqi-source-toggle button').forEach(b=>{
     b.classList.toggle('active', b.dataset.source === source);
@@ -156,13 +186,31 @@ function setAqiSource(source){
   loadAirQuality();
 }
 
+/** Toggles the collapsed detail panel inside a risk card (FWI breakdown, AQI source picker). */
+function toggleDetail(which){
+  const panel = document.getElementById(`${which}-detail`);
+  if(panel) panel.classList.toggle('hidden');
+}
+
+function setProfile(p){
+  profile = p;
+  document.querySelectorAll('.profile-tab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.profile === p);
+  });
+  renderAdvice();
+}
+
 /* ---------------- Map ---------------- */
 
 function initMap(){
-  map = L.map('map', { zoomControl:true, attributionControl:true }).setView([userLat, userLon], 10);
+  map = L.map('map', {
+    zoomControl:true, attributionControl:true,
+    minZoom:1, maxBoundsViscosity:1.0,
+  }).setView([userLat, userLon], 10);
+  map.setMaxBounds([[-90,-180],[90,180]]);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
-    maxZoom: 18
+    maxZoom: 18, noWrap: true,
   }).addTo(map);
 
   const userIcon = L.divIcon({
@@ -172,28 +220,111 @@ function initMap(){
   });
   userMarker = L.marker([userLat, userLon], {icon:userIcon}).addTo(map);
   fireLayer = L.layerGroup().addTo(map);
-  quakeLayer = L.layerGroup().addTo(map);
-}
 
-/** FIRMS thermal tile overlay, proxied through the Worker so the key
- * never appears in a tile URL the browser makes directly. */
-function addFirmsTileLayer(){
-  if(!map || firmsTileLayer) return;
-  firmsTileLayer = L.tileLayer(`${WORKER_BASE_URL}/api/fires/tiles/{z}/{x}/{y}`, {
-    opacity: 0.85,
-    attribution: 'NASA FIRMS',
-  });
-  firmsTileLayer.addTo(map);
+  map.on('click', onMapClick);
   document.getElementById('firms-tile-toggle-wrap').classList.remove('hidden');
+  loadGlobalFireHeat();
 }
 
-let firmsTilesOn = true;
-function toggleFirmsTileBtn(){
-  firmsTilesOn = !firmsTilesOn;
+/** Ambient worldwide fire activity, visible even before the local ~65km
+ * detection layer has anything nearby — otherwise zooming out just shows
+ * an empty map, which reads as "broken" even when it's working correctly.
+ * Fetched once and cached in memory; rebuilt onto each new map instance. */
+async function loadGlobalFireHeat(){
+  if(!globalFiresCache){
+    try{
+      const data = await api('/api/fires/global');
+      globalFiresCache = data.fires || [];
+    }catch(e){
+      console.error('Global fire data load failed', e);
+      globalFiresCache = [];
+    }
+  }
+  if(!map || !globalFiresCache.length) return;
+
+  const maxFrp = globalFiresCache.reduce((m, f) => (f.frp != null && f.frp > m) ? f.frp : m, 1);
+  const points = globalFiresCache.map(f => {
+    const weight = f.frp != null ? Math.min(1, 0.25 + 0.75 * (f.frp / maxFrp)) : 0.4;
+    return [f.lat, f.lon, weight];
+  });
+
+  globalFireHeatLayer = L.heatLayer(points, {
+    radius: 14, blur: 18, maxZoom: 18, minOpacity: 0.25,
+    gradient: { 0.2:'#f1c40f', 0.5:'#e67e22', 0.8:'#e74c3c', 1:'#ff2d55' },
+  });
+  if(heatLayerOn) globalFireHeatLayer.addTo(map);
+}
+
+/* ---------------- Click-to-pick a location on the map ---------------- */
+
+const pickIcon = L.divIcon({
+  className:'',
+  html:'<div style="width:14px;height:14px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#ff5e2a;border:2px solid #fff;"></div>',
+  iconSize:[14,14], iconAnchor:[7,14]
+});
+
+function renderPickPopup(){
+  const label = pickedName || `${pickedLat.toFixed(3)}, ${pickedLon.toFixed(3)}`;
+  return `<div class="pick-popup">
+    <div class="pick-popup-name">${label}</div>
+    <button onclick="selectPickedLocation()">📍 Select this location</button>
+  </div>`;
+}
+
+async function onMapClick(e){
+  pickedLat = e.latlng.lat;
+  pickedLon = e.latlng.lng;
+  pickedName = null;
+
+  if(pickMarker) map.removeLayer(pickMarker);
+  pickMarker = L.marker([pickedLat, pickedLon], {icon:pickIcon}).addTo(map);
+  pickMarker.bindPopup(renderPickPopup()).openPopup();
+
+  try{
+    const data = await api(`/api/geocode?lat=${pickedLat}&lon=${pickedLon}`);
+    pickedName = data.displayName;
+    if(pickMarker.isPopupOpen()) pickMarker.setPopupContent(renderPickPopup());
+  }catch(err){
+    // leave the coordinate label in place — selecting still works fine
+  }
+}
+
+function selectPickedLocation(){
+  if(pickedLat == null || pickedLon == null) return;
+  loadLocation(pickedLat, pickedLon, pickedName || undefined);
+}
+
+/** Density heatmap built from actual FIRMS detection points (not NASA's
+ * pre-rendered tile image, which we can't recolor). Each point is weighted
+ * by its fire radiative power (FRP, in MW) so clusters of intense fires
+ * genuinely render darker/more opaque than a single small detection —
+ * real density shading instead of a flat dot-per-pixel raster. */
+function buildFireHeatLayer(fires){
+  if(fireHeatLayer){ map.removeLayer(fireHeatLayer); fireHeatLayer = null; }
+  if(!fires.length) return;
+
+  const maxFrp = fires.reduce((m, f) => (f.frp != null && f.frp > m) ? f.frp : m, 1);
+  const points = fires.map(f => {
+    const weight = f.frp != null ? Math.min(1, 0.3 + 0.7 * (f.frp / maxFrp)) : 0.5;
+    return [f.lat, f.lon, weight];
+  });
+
+  fireHeatLayer = L.heatLayer(points, {
+    radius: 32, blur: 26, maxZoom: 14, minOpacity: 0.35,
+    gradient: { 0.2:'#f1c40f', 0.5:'#e67e22', 0.8:'#e74c3c', 1:'#ff2d55' },
+  });
+  if(heatLayerOn) fireHeatLayer.addTo(map);
+}
+
+let heatLayerOn = true;
+function toggleFireHeatLayer(){
+  heatLayerOn = !heatLayerOn;
   const btn = document.getElementById('firms-tile-btn');
-  btn.classList.toggle('active', firmsTilesOn);
-  if(!firmsTileLayer) return;
-  if(firmsTilesOn){ firmsTileLayer.addTo(map); } else { map.removeLayer(firmsTileLayer); }
+  btn.classList.toggle('active', heatLayerOn);
+  [fireHeatLayer, globalFireHeatLayer].forEach(layer => {
+    if(!layer) return;
+    if(heatLayerOn){ layer.addTo(map); } else { map.removeLayer(layer); }
+  });
 }
 
 /* ---------------- Location name ---------------- */
@@ -219,12 +350,69 @@ async function loadWeatherAndRisk(){
     document.getElementById('w-humidity').textContent = `${Math.round(weather.humidity)}%`;
     document.getElementById('w-rain').textContent = `${weather.rain7d.toFixed(0)}mm`;
 
+    current.actualTempC = weather.temp;
+    current.humidity = weather.humidity;
+    current.windKmh = weather.wind;
+
     renderRisk(fwi, weather);
+    renderHeat(weather);
     checkSevereWeather(weather);
   }catch(e){
     console.error(e);
     document.getElementById('place-name').textContent += ' (weather unavailable)';
+
+    // Without this, a failed fetch for a NEW location leaves the Heat card,
+    // weather grid, and hero verdict silently showing the PREVIOUS location's
+    // numbers with nothing but a small text note that anything went wrong —
+    // easy to miss, and misleading for a safety tool. Make "unknown" visible.
+    ['w-temp','w-wind','w-humidity','w-rain'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+    document.getElementById('heat-big').textContent = '—';
+    document.getElementById('heat-desc').textContent = 'Weather data unavailable right now.';
+    document.getElementById('heat-foot').textContent = 'Source: Open-Meteo';
+    const heatLevelEl = document.getElementById('heat-level');
+    heatLevelEl.querySelector('.dot').style.background = 'var(--muted)';
+    document.getElementById('heat-level-word').textContent = '—';
+    document.getElementById('card-heat').style.borderTopColor = 'var(--border)';
+
+    recomputeFireLevel();
+    updateHero();
+    renderAdvice();
   }
+}
+
+/* ---------------- Heat card ---------------- */
+
+/** NWS-style heat caution thresholds, converted from °F to °C, applied to
+ * feels-like (apparent) temperature. */
+function heatCategory(feelsC){
+  if(feelsC >= 51.7) return { level:3, label:'Extreme Danger', desc:'Heat stroke is likely — avoid outdoor exposure entirely.' };
+  if(feelsC >= 39.4) return { level:3, label:'Danger', desc:'High risk of heat-related illness — avoid strenuous outdoor activity.' };
+  if(feelsC >= 32.2) return { level:2, label:'Extreme Caution', desc:'Caution — hydrate and take breaks in the shade.' };
+  if(feelsC >= 26.7) return { level:1, label:'Caution', desc:'Fatigue is possible with prolonged exposure or activity.' };
+  return { level:0, label:'Comfortable', desc:'Heat is not a significant concern right now.' };
+}
+
+function renderHeat(weather){
+  const cat = heatCategory(weather.feelsLike);
+  current.heatLevel = cat.level;
+  current.heatFeelsC = weather.feelsLike;
+
+  document.getElementById('heat-big').textContent = Math.round(weather.feelsLike);
+  document.getElementById('heat-desc').textContent = cat.desc;
+  document.getElementById('heat-foot').textContent =
+    `Actual ${Math.round(weather.temp)}°C · humidity ${Math.round(weather.humidity)}% · source: Open-Meteo`;
+
+  const levelEl = document.getElementById('heat-level');
+  levelEl.querySelector('.dot').style.background = LEVEL_COLORS[cat.level];
+  const heatWordEl = document.getElementById('heat-level-word');
+  heatWordEl.textContent = cat.label;
+  heatWordEl.style.color = LEVEL_COLORS[cat.level];
+  document.getElementById('card-heat').style.borderTopColor = LEVEL_COLORS[cat.level];
+
+  updateHero();
+  renderAdvice();
 }
 
 function checkSevereWeather({temp, wind}){
@@ -248,7 +436,6 @@ function updateHazards(source, newAlerts){
     newAlerts.map(a => ({...a, source}))
   );
   drawHazardAlerts();
-  drawSummaryChip();
 }
 
 function drawHazardAlerts(){
@@ -262,29 +449,100 @@ function drawHazardAlerts(){
   });
 }
 
-function drawSummaryChip(){
-  const chip = document.getElementById('summary-chip');
-  const severeCount = hazardAlertsState.filter(a=>a.level==='severe').length;
-  const warnCount = hazardAlertsState.filter(a=>a.level==='warn').length;
-  const dot = chip.querySelector('.dot');
-  const text = chip.querySelector('.text');
+/* ---------------- Hero verdict (worst of the three risk cards) ---------------- */
 
-  if(severeCount > 0){
-    dot.style.background = 'var(--vhigh)';
-    text.textContent = `${severeCount} active severe alert${severeCount>1?'s':''} in your area`;
-  } else if(warnCount > 0){
-    dot.style.background = 'var(--mod)';
-    text.textContent = `${warnCount} advisory in effect — see details below`;
-  } else {
-    dot.style.background = 'var(--vlow)';
-    text.textContent = 'No active hazard alerts for your area right now';
+function updateHero(){
+  const levels = [
+    { key:'fire', level:current.fireLevel, label:'Wildfire risk' },
+    { key:'air', level:current.aqiLevel, label:'Air quality' },
+    { key:'heat', level:current.heatLevel, label:'Heat' },
+  ].filter(x => x.level != null);
+
+  const hero = document.getElementById('hero');
+  if(!levels.length){
+    document.getElementById('hero-headline').textContent = 'Checking current conditions…';
+    document.getElementById('hero-sub').textContent = 'Overall level is the worst of your three risks below.';
+    document.getElementById('hero-badge').textContent = '—';
+    return;
   }
+
+  const worst = levels.reduce((a, b) => b.level > a.level ? b : a);
+  const level = worst.level;
+  const hex = LEVEL_COLORS[level];
+
+  hero.style.borderColor = hex;
+  document.getElementById('hero-icon').style.background = hex;
+  document.getElementById('hero-icon').textContent = { fire:'🔥', air:'🌫️', heat:'🌡️' }[worst.key];
+
+  const statusWord = ['GOOD', 'MODERATE', 'UNHEALTHY', 'SEVERE'][level];
+  const badge = document.getElementById('hero-badge');
+  badge.textContent = `${LEVEL_NAMES[level]} · ${statusWord}`;
+  badge.style.background = hex;
+
+  const headline = document.getElementById('hero-headline');
+  if(level === 0) headline.textContent = 'Conditions look good — enjoy the outdoors.';
+  else if(level === 1) headline.textContent = `${worst.label} is elevated today — stay aware.`;
+  else if(level === 2) headline.textContent = `${worst.label} is unhealthy today — limit time outdoors.`;
+  else headline.textContent = `${worst.label} is at dangerous levels — avoid outdoor exposure.`;
+
+  document.getElementById('hero-sub').textContent = 'Overall level is the worst of your three risks below.';
+
+  const place = document.getElementById('place-name').textContent;
+  document.getElementById('hero-place').textContent = place;
+  const now = new Date();
+  document.getElementById('hero-updated').textContent =
+    `Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} · local`;
+}
+
+/* ---------------- "What should I do?" advice engine ---------------- */
+
+function renderAdvice(){
+  const items = [];
+  const { fireLevel, aqiLevel, heatLevel, windKmh } = current;
+
+  if(aqiLevel != null){
+    const aqiThreshold = profile === 'asthma' ? 1 : 2;
+    if(aqiLevel >= aqiThreshold) items.push('Keep windows and doors closed today.');
+    if(aqiLevel >= 1 && (profile === 'outdoor')) items.push('Wear an N95 mask if working outdoors for long periods.');
+    if(aqiLevel >= 1 && profile === 'asthma') items.push('Keep a rescue inhaler accessible.');
+  }
+
+  if(heatLevel != null){
+    if(heatLevel >= 2) items.push('Move exercise indoors — skip strenuous outdoor activity.');
+    else if(heatLevel >= 1) items.push('Stay hydrated and take breaks in the shade.');
+    if(heatLevel >= 1 && profile === 'elderly') items.push('Avoid outdoor activity during peak heat hours (12–4pm).');
+    if(heatLevel >= 1 && profile === 'outdoor') items.push('Take shade breaks every 20 minutes and drink water regularly.');
+  }
+
+  if(fireLevel != null){
+    if(fireLevel >= 2) items.push('Have an evacuation bag ready and monitor CAL FIRE alerts.');
+    else if(fireLevel >= 1) items.push('Stay aware of nearby fire activity and air quality shifts.');
+  }
+
+  if(windKmh != null && windKmh >= 35) items.push('Secure loose outdoor items — winds are strong enough to cause damage.');
+
+  if((profile === 'elderly') && [fireLevel, aqiLevel, heatLevel].some(l => l >= 2)) {
+    items.push('Check on elderly neighbors and anyone with limited mobility.');
+  }
+
+  const list = document.getElementById('advice-list');
+  if(!items.length){
+    const anyData = fireLevel != null || aqiLevel != null || heatLevel != null;
+    list.innerHTML = `<div class="advice-item"><span class="chk">✓</span>${
+      anyData ? 'Conditions are good — no special precautions needed today.' : 'Waiting for current conditions…'
+    }</div>`;
+    return;
+  }
+  list.innerHTML = items.map(t => `<div class="advice-item"><span class="chk">✓</span>${t}</div>`).join('');
 }
 
 /* ---------------- Risk rendering (FWI-driven) ---------------- */
 
 function renderRisk(fwiResult, weather){
   const { codes, indices, danger, isColdStart } = fwiResult;
+
+  current.fwiDangerLevel = danger.level;
+  current.fwiDangerHex = danger.hex;
 
   document.getElementById('score-num').textContent = indices.fwi;
   document.getElementById('score-num').style.color = danger.hex;
@@ -336,6 +594,10 @@ function renderRisk(fwiResult, weather){
 
   const now = new Date();
   document.getElementById('updated-text').textContent = `Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+
+  recomputeFireLevel();
+  updateHero();
+  renderAdvice();
 }
 
 /* ---------------- Air Quality (dual source, both server-proxied) ---------------- */
@@ -353,38 +615,74 @@ async function loadAirQuality(){
     console.error(e);
     document.getElementById('aqi-desc').textContent = 'Air quality data unavailable right now.';
     document.getElementById('aqi-num').textContent = '—';
+    document.getElementById('aqi-foot').textContent = 'Source: unavailable';
+    const airLevelEl = document.getElementById('air-level');
+    airLevelEl.querySelector('.dot').style.background = 'var(--muted)';
+    document.getElementById('air-level-word').textContent = '—';
+    document.getElementById('card-air').style.borderTopColor = 'var(--border)';
+    document.getElementById('scale-note').textContent = 'US EPA AQI · data unavailable';
+    document.getElementById('scale-pointer').style.left = '0%';
+
+    current.aqiLevel = null;
+    current.aqiValue = null;
+    updateHero();
+    renderAdvice();
   }
 }
 
 function usAqiCategory(aqi){
-  if(aqi <= 50) return { label:'GOOD', hex:'#3B7A57', desc:'Air quality is satisfactory.' };
-  if(aqi <= 100) return { label:'MODERATE', hex:'#C9A227', desc:'Acceptable, but a concern for unusually sensitive people.' };
-  if(aqi <= 150) return { label:'UNHEALTHY (SENSITIVE)', hex:'#D2691E', desc:'Sensitive groups may experience health effects.' };
-  if(aqi <= 200) return { label:'UNHEALTHY', hex:'#B23A2E', desc:'Everyone may begin to experience health effects.' };
-  if(aqi <= 300) return { label:'VERY UNHEALTHY', hex:'#8B2942', desc:'Health alert — everyone may experience serious effects.' };
-  return { label:'HAZARDOUS', hex:'#5C1A2E', desc:'Emergency conditions — entire population at risk.' };
+  if(aqi <= 50) return { label:'GOOD', short:'Good', level:0, hex:'#2ecc71', desc:'Air quality is satisfactory.' };
+  if(aqi <= 100) return { label:'MODERATE', short:'Moderate', level:1, hex:'#f1c40f', desc:'Acceptable, but a concern for unusually sensitive people.' };
+  if(aqi <= 150) return { label:'UNHEALTHY (SENSITIVE)', short:'Sensitive', level:2, hex:'#e67e22', desc:'Sensitive groups may experience health effects.' };
+  if(aqi <= 200) return { label:'UNHEALTHY', short:'Unhealthy', level:3, hex:'#e74c3c', desc:'Everyone may begin to experience health effects.' };
+  if(aqi <= 300) return { label:'VERY UNHEALTHY', short:'Very Unhealthy', level:3, hex:'#9b59b6', desc:'Health alert — everyone may experience serious effects.' };
+  return { label:'HAZARDOUS', short:'Hazardous', level:3, hex:'#6c3483', desc:'Emergency conditions — entire population at risk.' };
 }
 
 function owmAqiCategory(level){
   const map = {
-    1: { label:'GOOD', hex:'#3B7A57', desc:'Air quality is good.' },
-    2: { label:'FAIR', hex:'#5C9C5C', desc:'Air quality is acceptable.' },
-    3: { label:'MODERATE', hex:'#C9A227', desc:'Sensitive groups may notice effects.' },
-    4: { label:'POOR', hex:'#D2691E', desc:'Health effects may be experienced by most people.' },
-    5: { label:'VERY POOR', hex:'#7A1F1F', desc:'Health warning of emergency conditions.' },
+    1: { label:'GOOD', short:'Good', level:0, hex:'#2ecc71', desc:'Air quality is good.' },
+    2: { label:'FAIR', short:'Fair', level:0, hex:'#2ecc71', desc:'Air quality is acceptable.' },
+    3: { label:'MODERATE', short:'Moderate', level:1, hex:'#f1c40f', desc:'Sensitive groups may notice effects.' },
+    4: { label:'POOR', short:'Poor', level:2, hex:'#e67e22', desc:'Health effects may be experienced by most people.' },
+    5: { label:'VERY POOR', short:'Very Poor', level:3, hex:'#e74c3c', desc:'Health warning of emergency conditions.' },
   };
   return map[level] || map[1];
 }
 
+/** Approximate 0–500 US AQI equivalent for the OpenWeatherMap 1–5 scale,
+ * used only to position the pointer on the shared AQI gradient bar. */
+function owmToApproxUsAqi(level){
+  return { 1:25, 2:75, 3:125, 4:175, 5:250 }[level] || 25;
+}
+
+function updateAqiCard(numText, cat, descText, footText, approxUsAqi){
+  document.getElementById('aqi-num').textContent = numText;
+  document.getElementById('aqi-desc').textContent = descText;
+  document.getElementById('aqi-foot').textContent = footText;
+
+  const levelEl = document.getElementById('air-level');
+  levelEl.querySelector('.dot').style.background = cat.hex;
+  const airWordEl = document.getElementById('air-level-word');
+  airWordEl.textContent = cat.short;
+  airWordEl.style.color = cat.hex;
+  document.getElementById('card-air').style.borderTopColor = cat.hex;
+
+  current.aqiLevel = cat.level;
+  current.aqiValue = approxUsAqi;
+
+  const pct = Math.max(0, Math.min(100, (approxUsAqi / 300) * 100));
+  document.getElementById('scale-pointer').style.left = `${pct}%`;
+  document.getElementById('scale-note').innerHTML = `US EPA AQI · currently <b>${approxUsAqi} (${cat.short})</b>`;
+
+  updateHero();
+  renderAdvice();
+}
+
 function renderAQI_US(aqi, pm25, sourceLabel){
   const cat = usAqiCategory(aqi);
-  document.getElementById('aqi-num').textContent = aqi;
-  document.getElementById('aqi-num').style.color = cat.hex;
-  const label = document.getElementById('aqi-label');
-  label.textContent = cat.label;
-  label.style.background = cat.hex;
   const pmText = pm25 != null ? ` PM2.5 is ${Math.round(pm25)} µg/m³.` : '';
-  document.getElementById('aqi-desc').textContent = `${cat.desc}${pmText} Source: ${sourceLabel}, US AQI scale.`;
+  updateAqiCard(aqi, cat, `${cat.desc}${pmText}`, `Dominant pollutant: PM2.5 · source: ${sourceLabel}`, aqi);
   updateHazards('aqi', aqi > 150 ? [{
     level: aqi > 200 ? 'severe' : 'warn', icon:'😷',
     title: aqi > 200 ? 'Unhealthy Air Quality' : 'Air Quality Advisory',
@@ -394,14 +692,9 @@ function renderAQI_US(aqi, pm25, sourceLabel){
 
 function renderAQI_OWM(level, components){
   const cat = owmAqiCategory(level);
-  document.getElementById('aqi-num').textContent = level;
-  document.getElementById('aqi-num').style.color = cat.hex;
-  const label = document.getElementById('aqi-label');
-  label.textContent = cat.label;
-  label.style.background = cat.hex;
   const pm25 = components?.pm2_5;
   const pmText = pm25 != null ? ` PM2.5 is ${pm25.toFixed(1)} µg/m³.` : '';
-  document.getElementById('aqi-desc').textContent = `${cat.desc}${pmText} Source: OpenWeatherMap, 1–5 scale.`;
+  updateAqiCard(level, cat, `${cat.desc}${pmText}`, `Dominant pollutant: PM2.5 · source: OpenWeatherMap (1–5 scale)`, owmToApproxUsAqi(level));
   updateHazards('aqi', level >= 4 ? [{
     level: level === 5 ? 'severe' : 'warn', icon:'😷',
     title: level === 5 ? 'Unhealthy Air Quality' : 'Air Quality Advisory',
@@ -411,117 +704,157 @@ function renderAQI_OWM(level, components){
 
 /* ---------------- Fires (NASA FIRMS, via Worker) ---------------- */
 
+function haversineKm(lat1, lon1, lat2, lon2){
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function bearingCompass(lat1, lon1, lat2, lon2){
+  const toRad = d => d * Math.PI / 180;
+  const y = Math.sin(toRad(lon2-lon1)) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(toRad(lon2-lon1));
+  const deg = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+/** FIRMS acq_date is YYYY-MM-DD and acq_time is a 4-digit HHMM, both UTC. */
+function timeAgoFromFirms(dateStr, timeStr){
+  if(!dateStr) return 'recently';
+  const t = (timeStr || '0000').padStart(4, '0');
+  const iso = `${dateStr}T${t.slice(0,2)}:${t.slice(2)}:00Z`;
+  const detected = new Date(iso);
+  const mins = Math.round((Date.now() - detected.getTime()) / 60000);
+  if(mins < 60) return `${Math.max(mins,0)} min ago`;
+  const hrs = Math.round(mins / 60);
+  if(hrs < 24) return `${hrs} hr ago`;
+  return `${Math.round(hrs/24)} day${hrs>=48?'s':''} ago`;
+}
+
+function confidenceLabel(code){
+  const map = { l:'low', n:'nominal', h:'high' };
+  return map[(code || '').toLowerCase()] || (code || 'unknown');
+}
+
+/** Combines real-time fire proximity (FIRMS) with the weather-driven FWI
+ * danger level so the wildfire card reflects both "is a fire near me" and
+ * "are conditions primed for one to spread." */
+function recomputeFireLevel(){
+  const miles = current.nearestFireMiles;
+  const fwiLvl = current.fwiDangerLevel;
+  let level = 0;
+  if(miles != null && miles <= 10) level = 3;
+  else if(miles != null && miles <= 25) level = 2;
+  else if(fwiLvl >= 5) level = Math.max(level, 3);
+  else if(fwiLvl >= 4) level = Math.max(level, 2);
+  else if(fwiLvl >= 2) level = Math.max(level, 1);
+  current.fireLevel = level;
+
+  const levelEl = document.getElementById('fire-level');
+  if(!levelEl) return;
+  levelEl.querySelector('.dot').style.background = LEVEL_COLORS[level];
+  const fireWordEl = document.getElementById('fire-level-word');
+  fireWordEl.textContent = ['Low','Elevated','High','Severe'][level];
+  fireWordEl.style.color = LEVEL_COLORS[level];
+  document.getElementById('card-fire').style.borderTopColor = LEVEL_COLORS[level];
+}
+
 async function loadFires(){
   if(!map) return;
   try{
     const data = await api(`/api/fires?lat=${userLat}&lon=${userLon}`);
     fireLayer.clearLayers();
-    data.fires.forEach(f=>{
+
+    lastFires = data.fires.map(f => ({
+      ...f,
+      distKm: haversineKm(userLat, userLon, f.lat, f.lon),
+      dir: bearingCompass(userLat, userLon, f.lat, f.lon),
+    })).sort((a, b) => a.distKm - b.distKm);
+
+    lastFires.forEach(f=>{
       L.circleMarker([f.lat, f.lon], {
-        radius:6, color:'#FF5A36', fillColor:'#FF5A36', fillOpacity:0.7, weight:1
+        radius:6, color:'#ff5e2a', fillColor:'#ff5e2a', fillOpacity:0.7, weight:1
       }).addTo(fireLayer);
     });
-    const note = document.getElementById('fires-count-note');
-    note.textContent = data.count > 0
-      ? `${data.count} fire detection${data.count>1?'s':''} within ~65km (last 24h)`
-      : 'No fire detections within ~65km in the last 24h';
-    note.classList.remove('hidden');
+    buildFireHeatLayer(lastFires);
+
+    current.fireCount = lastFires.length;
+    current.nearestFireMiles = lastFires.length ? lastFires[0].distKm * 0.621371 : null;
+    current.nearestFireDir = lastFires.length ? lastFires[0].dir : null;
+
+    renderFiresCard();
+    recomputeFireLevel();
+    updateHero();
+    renderAdvice();
   }catch(e){
     console.error('Fire data load failed', e);
-    const note = document.getElementById('fires-count-note');
-    note.textContent = 'Fire detection data temporarily unavailable';
-    note.classList.remove('hidden');
+    document.getElementById('fire-big').textContent = '—';
+    document.getElementById('fire-big-unit').textContent = '';
+    document.getElementById('fire-desc').textContent = 'Fire detection data temporarily unavailable';
+    document.getElementById('fire-foot').textContent = 'Source: unavailable';
+    document.getElementById('fires-detail-list').innerHTML =
+      '<div class="empty-note">Couldn\'t reach NASA FIRMS — try again shortly.</div>';
+    const fireLevelEl = document.getElementById('fire-level');
+    fireLevelEl.querySelector('.dot').style.background = 'var(--muted)';
+    document.getElementById('fire-level-word').textContent = '—';
+    document.getElementById('card-fire').style.borderTopColor = 'var(--border)';
+
+    current.nearestFireMiles = null;
+    current.nearestFireDir = null;
+    recomputeFireLevel();
+    updateHero();
+    renderAdvice();
   }
 }
 
-/* ---------------- Earthquakes (USGS, via Worker) ---------------- */
+function renderFiresCard(){
+  const big = document.getElementById('fire-big');
+  const unit = document.getElementById('fire-big-unit');
+  const desc = document.getElementById('fire-desc');
+  const foot = document.getElementById('fire-foot');
+  const list = document.getElementById('fires-detail-list');
 
-async function loadEarthquakes(){
-  try{
-    const data = await api(`/api/earthquakes?lat=${userLat}&lon=${userLon}`);
-    renderQuakes(data.earthquakes.slice(0, 5));
-  }catch(e){
-    console.error(e);
-    document.getElementById('quake-list').innerHTML = '<div class="empty-note">Earthquake data unavailable right now.</div>';
-  }
-}
-
-function quakeColor(mag){
-  if(mag >= 6) return '#7A1F1F';
-  if(mag >= 4.5) return '#D2691E';
-  return '#B8860B';
-}
-
-function renderQuakes(quakes){
-  const list = document.getElementById('quake-list');
-  if(!quakes.length){
-    list.innerHTML = '<div class="empty-note">No earthquakes above magnitude 2.5 within 500km in the past 7 days.</div>';
-    if(quakeLayer) quakeLayer.clearLayers();
+  if(!lastFires.length){
+    big.textContent = '—';
+    unit.textContent = '';
+    desc.textContent = 'No active fire detected nearby. Stay aware of local conditions.';
+    foot.textContent = 'Source: NASA FIRMS';
+    list.innerHTML = '<div class="empty-note">No fire detections within ~65km in the last 24h.</div>';
     return;
   }
+
+  const nearest = lastFires[0];
+  const miles = Math.round(nearest.distKm * 0.621371);
+  big.textContent = miles;
+  unit.textContent = ` mi ${nearest.dir}`;
+  desc.textContent = miles <= 10
+    ? 'An active fire is close by. Stay alert and follow local evacuation guidance.'
+    : miles <= 25
+      ? 'Nearest active fire is a moderate distance away. Stay aware.'
+      : 'Nearest active fire detection is a safe distance away.';
+
+  const brightest = lastFires.reduce((m, f) => f.brightness != null && f.brightness > m ? f.brightness : m, 0);
+  foot.textContent = `${lastFires.length} detection${lastFires.length>1?'s':''} nearby` +
+    (brightest ? ` · brightest ${Math.round(brightest)} K` : '') + ' · source: NASA FIRMS';
+
   list.innerHTML = '';
-  if(quakeLayer) quakeLayer.clearLayers();
-
-  quakes.forEach(q=>{
-    const mag = q.mag?.toFixed(1) ?? '?';
-    const place = q.place || 'Unknown location';
-    const time = new Date(q.time);
-    const timeStr = time.toLocaleDateString([], {month:'short', day:'numeric'}) + ' · ' + time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    const color = quakeColor(q.mag || 0);
-
+  lastFires.slice(0, 5).forEach((f, i) => {
+    const miles = Math.round(f.distKm * 0.621371);
+    const distColor = miles <= 10 ? '#e67e22' : miles <= 25 ? '#f1c40f' : '#2ecc71';
     const row = document.createElement('div');
     row.className = 'quake-row';
     row.innerHTML = `
-      <div class="quake-mag" style="background:${color}">${mag}</div>
+      <div class="quake-mag" style="background:#ff5e2a">🔥</div>
       <div class="quake-info">
-        <div class="quake-place">${place}</div>
-        <div class="quake-time">${timeStr} · ${q.distKm}km away</div>
-      </div>`;
+        <div class="quake-place">Detection #${i+1}</div>
+        <div class="quake-time">Detected ${timeAgoFromFirms(f.date, f.time)} · confidence ${confidenceLabel(f.confidence)}${f.frp != null ? ` · FRP ${Math.round(f.frp)} MW` : ''}</div>
+      </div>
+      <div class="quake-dist" style="color:${distColor}">${miles} mi<span class="sub">${f.dir}</span></div>`;
     list.appendChild(row);
-
-    if(map && quakeLayer){
-      L.circleMarker([q.lat, q.lon], {
-        radius: 5 + (q.mag || 2), color, fillColor: color, fillOpacity:0.5, weight:1.5
-      }).addTo(quakeLayer);
-    }
   });
-
-  const big = quakes.find(q => q.mag >= 5 && q.distKm <= 200);
-  updateHazards('quake', big ? [{
-    level:'severe', icon:'🌍',
-    title:'Recent Significant Earthquake',
-    text: `Magnitude ${big.mag.toFixed(1)} within ${big.distKm}km — check local advisories for aftershock risk.`
-  }] : []);
-}
-
-/* ---------------- River flood risk (via Worker) ---------------- */
-
-async function loadFloodRisk(){
-  try{
-    const data = await api(`/api/flood?lat=${userLat}&lon=${userLon}`);
-    if(!data.hasData){
-      document.getElementById('flood-card').innerHTML = 'No river gauge data is available for this exact location — this typically means you\'re not near a major waterway tracked by the model.';
-      return;
-    }
-    const { discharge, mean } = data;
-    const ratio = discharge / (mean || 1);
-    let status, desc;
-    if(ratio >= 2){ status = 'Elevated'; desc = 'Current river discharge is well above the historical average — a sign of possible flood risk downstream.'; }
-    else if(ratio >= 1.3){ status = 'Slightly elevated'; desc = 'River discharge is somewhat above the historical average.'; }
-    else { status = 'Normal'; desc = 'River discharge near this location is within its typical historical range.'; }
-
-    document.getElementById('flood-card').innerHTML =
-      `<b>${status}</b> — ${desc} Current discharge: ${discharge.toFixed(1)} m³/s (average: ${mean.toFixed(1)} m³/s).`;
-
-    updateHazards('flood', ratio >= 2 ? [{
-      level:'warn', icon:'🌊',
-      title:'Elevated River Discharge',
-      text:'Nearby river levels are significantly above average — monitor local flood advisories.'
-    }] : []);
-  }catch(e){
-    console.error(e);
-    document.getElementById('flood-card').textContent = 'River flood data unavailable for this location.';
-  }
 }
 
 /* ---------------- Global wildfire incidents (NASA EONET, via Worker) ---------------- */
@@ -557,7 +890,7 @@ function renderIncidentsList(){
     const row = document.createElement('div');
     row.className = 'quake-row incident-row';
     row.innerHTML = `
-      <div class="quake-mag" style="background:${inc.isClosed ? '#6B6659' : '#D2691E'}">🔥</div>
+      <div class="quake-mag" style="background:${inc.isClosed ? '#a4948a' : '#ff5e2a'}">🔥</div>
       <div class="quake-info">
         <div class="quake-place">${inc.title}<span class="incident-badge ${inc.isClosed ? 'closed' : 'open'}">${inc.isClosed ? 'Past' : 'Active'}</span></div>
         <div class="quake-time">${dateStr}</div>
@@ -586,8 +919,8 @@ function toggleGlobalIncidentsOnMap(){
     incidentLayer.clearLayers();
     globalIncidents.forEach(inc => {
       L.circleMarker([inc.lat, inc.lon], {
-        radius: 5, color: inc.isClosed ? '#9C978A' : '#FF5A36',
-        fillColor: inc.isClosed ? '#9C978A' : '#FF5A36', fillOpacity:0.75, weight:1
+        radius: 5, color: inc.isClosed ? '#a4948a' : '#ff5e2a',
+        fillColor: inc.isClosed ? '#a4948a' : '#ff5e2a', fillOpacity:0.75, weight:1
       }).bindPopup(`<b>${inc.title}</b><br>${new Date(inc.date).toLocaleDateString()}${inc.isClosed ? ' · past' : ' · active'}`)
         .addTo(incidentLayer);
     });
@@ -601,4 +934,14 @@ function toggleGlobalIncidentsOnMap(){
 }
 
 /* ---------------- Init ---------------- */
-requestLocation();
+(function initFromUrlOrGeolocate(){
+  const params = new URLSearchParams(window.location.search);
+  const lat = parseFloat(params.get('lat'));
+  const lon = parseFloat(params.get('lon'));
+  const valid = Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+  if(valid){
+    loadLocation(lat, lon);
+  } else {
+    requestLocation();
+  }
+})();
