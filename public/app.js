@@ -334,7 +334,7 @@ function toggleMapExpand(){
   const btn = document.getElementById('map-expand-btn');
   const expanded = panel.classList.toggle('expanded');
   btn.textContent = expanded ? '✕ Close' : '⤢ Expand';
-  if(map) setTimeout(() => map.invalidateSize(), 50);
+  if(map) setTimeout(() => { map.invalidateSize(); map.setMinZoom(1); }, 50);
 }
 
 function collapseMap(){
@@ -343,7 +343,7 @@ function collapseMap(){
   panel.classList.remove('expanded');
   const btn = document.getElementById('map-expand-btn');
   if(btn) btn.textContent = '⤢ Expand';
-  if(map) setTimeout(() => map.invalidateSize(), 50);
+  if(map) setTimeout(() => { map.invalidateSize(); map.setMinZoom(1); }, 50);
 }
 
 /** Ambient worldwide fire activity shown as solid red dots — fetched once
