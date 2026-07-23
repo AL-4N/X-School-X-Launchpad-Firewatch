@@ -267,24 +267,6 @@ async function fetchFirmsMulti(env, bbox, days) {
   return results.flat();
 }
 
-/** Aggregates fire points onto a coarse lat/lon grid, summing FRP per cell.
- * Used only for the global ambient view — merges the many overlapping
- * pixels a single fire complex produces into one representative point,
- * cutting payload size without dropping real detections. */
-function binFires(fires, gridDeg) {
-  const cells = new Map();
-  for (const f of fires) {
-    const lat = Math.round(f.lat / gridDeg) * gridDeg;
-    const lon = Math.round(f.lon / gridDeg) * gridDeg;
-    const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
-    const existing = cells.get(key);
-    const frp = f.frp || 0;
-    if (existing) existing.frp += frp;
-    else cells.set(key, { lat, lon, frp });
-  }
-  return Array.from(cells.values());
-}
-
 async function handleFires(url, env) {
   const coords = parseLatLon(url);
   if (!coords) return badRequest('lat and lon query params are required and must be valid');
@@ -301,18 +283,25 @@ async function handleFires(url, env) {
 
 /** Whole-world snapshot of active detections, for showing ambient fire
  * activity on the map before any location is selected / when zoomed out.
- * Cached for a few minutes since it's identical for every user. */
+ * Cached for a few minutes since it's identical for every user.
+ *
+ * Previously binned to a 0.25° grid which produced a visible grid pattern
+ * unrelated to actual fire locations. Now returns raw detection coordinates
+ * (sorted by FRP, capped at 10 000) so fires cluster organically on the
+ * map — adjacent satellite pixels in the same burn area naturally overlap
+ * instead of snapping to an artificial lattice.
+ * Only lat/lon/frp are kept to minimise payload size. */
 async function handleGlobalFires(url, env) {
   if (!env.FIRMS_MAP_KEY) return json({ error: 'FIRMS key not configured on server' }, 500);
 
-  // 48h window (vs 24h for the local endpoint) — a single satellite's "last 24h"
-  // NRT snapshot has real, non-fire-related coverage gaps by region depending on
-  // orbit/processing timing; widening the window fills them in for this ambient
-  // whole-world view. Binned afterward since the wider window pulls ~90k raw points.
   const fires = await fetchFirmsMulti(env, '-180,-90,180,90', 2);
-  const binned = binFires(fires, 0.25);
 
-  return json({ count: binned.length, fires: binned }, 200, { 'Cache-Control': 'public, max-age=300' });
+  // Prioritise the brightest fires so the most significant events always
+  // appear when we cap the payload at 10 000 points.
+  fires.sort((a, b) => (b.frp || 0) - (a.frp || 0));
+  const out = fires.slice(0, 10000).map(({ lat, lon, frp }) => ({ lat, lon, frp }));
+
+  return json({ count: out.length, fires: out }, 200, { 'Cache-Control': 'public, max-age=300' });
 }
 
 /** Passes through NASA FIRMS WMS tile images. The frontend requests

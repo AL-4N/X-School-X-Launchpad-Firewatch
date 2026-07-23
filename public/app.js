@@ -346,9 +346,10 @@ function collapseMap(){
   if(map) setTimeout(() => { map.invalidateSize(); map.setMinZoom(1); }, 50);
 }
 
-/** Ambient worldwide fire activity shown as solid red dots — fetched once
- * and cached in memory; rebuilt onto each new map instance. Dots are
- * sized by FRP so brighter fires are visually larger. */
+/** Ambient worldwide fire activity — raw FIRMS detections at actual
+ * coordinates, rendered via Leaflet's Canvas renderer so 10 000 dots
+ * draw efficiently. Adjacent satellite pixels in the same burn area
+ * naturally overlap and read as organic blobs rather than a grid. */
 async function loadGlobalFireDots(){
   if(!globalFiresCache){
     try{
@@ -361,13 +362,13 @@ async function loadGlobalFireDots(){
   }
   if(!map || !globalFiresCache.length) return;
 
-  const maxFrp = globalFiresCache.reduce((m, f) => (f.frp != null && f.frp > m) ? f.frp : m, 1);
+  const renderer = L.canvas({ padding: 0.5 });
   globalFireLayer = L.layerGroup();
   globalFiresCache.forEach(f => {
-    const r = f.frp != null ? Math.max(3, Math.min(7, 3 + 4 * (f.frp / maxFrp))) : 4;
     L.circleMarker([f.lat, f.lon], {
-      radius: r, color: '#c0392b', weight: 0,
-      fillColor: '#ff5e2a', fillOpacity: 0.75,
+      renderer,
+      radius: 3, weight: 0,
+      fillColor: '#ff5e2a', fillOpacity: 0.8,
     }).addTo(globalFireLayer);
   });
   if(globalFiresOn) globalFireLayer.addTo(map);
