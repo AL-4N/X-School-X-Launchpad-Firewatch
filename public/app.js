@@ -11,11 +11,13 @@
 // CORS involved.
 const WORKER_BASE_URL = '';
 
-let map, userMarker, fireLayer, fireHeatLayer, globalFireHeatLayer, incidentLayer;
+let map, userMarker, fireLayer, fireHeatLayer, globalFireHeatLayer, incidentLayer, perimeterLayer;
 let userLat, userLon;
 let aqiSource = 'openmeteo'; // 'openmeteo' | 'openweathermap' — both proxied server-side now
 let globalIncidents = [];
 let incidentsShownOnMap = false;
+let perimeterShown = false;
+let perimeterCache = null; // fetched once per session, lazy on first toggle
 let searchDebounceTimer = null;
 let lastSearchResults = [];
 let lastFires = [];
@@ -23,6 +25,102 @@ let profile = 'general';
 let pickMarker = null;
 let pickedLat = null, pickedLon = null, pickedName = null;
 let globalFiresCache = null; // fetched once, reused across location changes/map rebuilds
+
+/* ---------------- Share ---------------- */
+
+function shareLocation(){
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('share-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  }).catch(() => {
+    // Fallback: prompt with URL selected
+    window.prompt('Copy this link:', url);
+  });
+}
+
+/* ---------------- Saved locations (localStorage) ---------------- */
+
+const SAVED_KEY = 'firewatch_saved_locations';
+
+function getSavedLocations(){
+  try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function isCurrentLocationSaved(){
+  if(userLat == null || userLon == null) return false;
+  return getSavedLocations().some(
+    s => Math.abs(s.lat - userLat) < 0.0001 && Math.abs(s.lon - userLon) < 0.0001
+  );
+}
+
+function toggleSaveLocation(){
+  if(userLat == null || userLon == null) return;
+  let saved = getSavedLocations();
+  const idx = saved.findIndex(
+    s => Math.abs(s.lat - userLat) < 0.0001 && Math.abs(s.lon - userLon) < 0.0001
+  );
+  if(idx >= 0){
+    saved.splice(idx, 1);
+  } else {
+    const name = document.getElementById('place-name').textContent || `${userLat.toFixed(3)}, ${userLon.toFixed(3)}`;
+    saved = [{ name, lat: userLat, lon: userLon }, ...saved].slice(0, 10);
+  }
+  localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
+  updateSaveBtn();
+  renderSavedPlaces();
+}
+
+function removeSavedLocation(lat, lon){
+  const saved = getSavedLocations().filter(
+    s => !(Math.abs(s.lat - lat) < 0.0001 && Math.abs(s.lon - lon) < 0.0001)
+  );
+  localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
+  updateSaveBtn();
+  renderSavedPlaces();
+}
+
+function updateSaveBtn(){
+  const btn = document.getElementById('save-btn');
+  if(!btn) return;
+  const saved = isCurrentLocationSaved();
+  btn.textContent = saved ? '✓ Saved' : '🔖 Save';
+  btn.classList.toggle('saved', saved);
+}
+
+function renderSavedPlaces(){
+  const saved = getSavedLocations();
+  const box = document.getElementById('saved-places');
+  if(!box) return;
+  if(!saved.length){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML = '';
+  saved.forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'saved-chip';
+    chip.innerHTML = `<span class="chip-name" title="${s.name}">${s.name}</span><span class="chip-x" title="Remove">✕</span>`;
+    chip.querySelector('.chip-name').onclick = () => loadLocation(s.lat, s.lon, s.name);
+    chip.querySelector('.chip-x').onclick = (e) => { e.stopPropagation(); removeSavedLocation(s.lat, s.lon); };
+    box.appendChild(chip);
+  });
+}
+
+/* ---------------- Wind direction ---------------- */
+
+function degreesToCompass(deg){
+  if(deg == null) return '—';
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round(deg / 45) % 8];
+}
 
 // Levels are 0=green(good) 1=yellow(moderate) 2=orange(unhealthy) 3=red(severe),
 // shared across the hero verdict and each risk card so the "worst of three" logic is one source of truth.
@@ -104,11 +202,18 @@ async function loadLocation(lat, lon, knownDisplayName){
   fireHeatLayer = null;
   globalFireHeatLayer = null;
   incidentLayer = null;
+  perimeterLayer = null;
   incidentsShownOnMap = false;
+  perimeterShown = false;
   pickMarker = null;
   pickedLat = pickedLon = pickedName = null;
   const incidentsBtn = document.getElementById('incidents-map-btn');
   if(incidentsBtn) incidentsBtn.classList.remove('active');
+  const perimBtn = document.getElementById('perimeters-btn');
+  if(perimBtn) perimBtn.classList.remove('active');
+
+  updateSaveBtn();
+  renderSavedPlaces();
 
   Object.keys(current).forEach(k => current[k] = null);
   current.fireCount = 0;
@@ -327,6 +432,45 @@ function toggleFireHeatLayer(){
   });
 }
 
+/* ---------------- US fire perimeters (NIFC via Worker) ---------------- */
+
+async function toggleFirePerimeters(){
+  if(!map) return;
+  const btn = document.getElementById('perimeters-btn');
+  perimeterShown = !perimeterShown;
+  btn.classList.toggle('active', perimeterShown);
+
+  if(!perimeterShown){
+    if(perimeterLayer){ map.removeLayer(perimeterLayer); perimeterLayer = null; }
+    return;
+  }
+
+  // Lazy-load perimeter GeoJSON on first toggle; reuse on subsequent toggles
+  if(!perimeterCache){
+    btn.textContent = '⏳ Loading…';
+    try{
+      perimeterCache = await api('/api/fires/perimeters');
+    }catch(e){
+      console.error('Fire perimeters load failed', e);
+      btn.textContent = '🗺 US perimeters';
+      perimeterShown = false;
+      btn.classList.remove('active');
+      return;
+    }
+    btn.textContent = '🗺 US perimeters';
+  }
+
+  perimeterLayer = L.geoJSON(perimeterCache, {
+    style: { color: '#ff5e2a', weight: 1.5, fillColor: '#ff5e2a', fillOpacity: 0.18 },
+    onEachFeature(feature, layer){
+      const p = feature.properties || {};
+      const name = p.IncidentName || 'Unknown fire';
+      const acres = p.GISAcres ? `${Math.round(p.GISAcres).toLocaleString()} acres` : '';
+      layer.bindPopup(`<b>${name}</b>${acres ? '<br>' + acres : ''}`);
+    },
+  }).addTo(map);
+}
+
 /* ---------------- Location name ---------------- */
 
 async function loadPlaceName(){
@@ -336,6 +480,8 @@ async function loadPlaceName(){
   }catch(e){
     document.getElementById('place-name').textContent = `${userLat.toFixed(3)}, ${userLon.toFixed(3)}`;
   }
+  // Refresh save button label now that we have the place name
+  updateSaveBtn();
 }
 
 /* ---------------- Weather + FWI risk ---------------- */
@@ -347,6 +493,7 @@ async function loadWeatherAndRisk(){
 
     document.getElementById('w-temp').textContent = `${Math.round(weather.temp)}°C`;
     document.getElementById('w-wind').textContent = `${Math.round(weather.wind)}`;
+    document.getElementById('w-winddir').textContent = degreesToCompass(weather.windDir);
     document.getElementById('w-humidity').textContent = `${Math.round(weather.humidity)}%`;
     document.getElementById('w-rain').textContent = `${weather.rain7d.toFixed(0)}mm`;
 
@@ -935,6 +1082,7 @@ function toggleGlobalIncidentsOnMap(){
 
 /* ---------------- Init ---------------- */
 (function initFromUrlOrGeolocate(){
+  renderSavedPlaces();
   const params = new URLSearchParams(window.location.search);
   const lat = parseFloat(params.get('lat'));
   const lon = parseFloat(params.get('lon'));

@@ -9,12 +9,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
 <header>
-  <div class="brand"><span class="dot"></span>Firewatch</div>
+  <div class="brand"><span class="fire">Fire</span><span class="watch">Watch</span></div>
   <div class="tag">Risk Intelligence</div>
 </header>
 
@@ -38,8 +39,14 @@
 
     <div class="locstrip">
       <div class="place">📍 <span id="place-name">Locating…</span></div>
-      <button onclick="requestLocation()" title="Use my current location">📡 My location</button>
+      <div class="locstrip-actions">
+        <button id="save-btn" onclick="toggleSaveLocation()" title="Save this location">🔖 Save</button>
+        <button id="share-btn" onclick="shareLocation()" title="Copy link to this location">↗ Share</button>
+        <button onclick="requestLocation()" title="Use my current location">📡 My location</button>
+      </div>
     </div>
+
+    <div id="saved-places" class="saved-places hidden"></div>
 
     <div class="locsearch">
       <input id="loc-search-input" type="text" placeholder="Search a city or place…" autocomplete="off"
@@ -47,96 +54,154 @@
       <div id="loc-search-results" class="loc-search-results hidden"></div>
     </div>
 
-    <!-- SUMMARY CHIP -->
-    <div id="summary-chip" class="summary-chip">
-      <span class="dot"></span>
-      <span class="text">Checking current conditions…</span>
-    </div>
-
-    <!-- RISK CARD -->
-    <div class="card">
-      <div class="card-top">
-        <div>
-          <div class="eyebrow">Wildfire Risk</div>
-          <div id="cat-badge" class="cat-badge">—</div>
-        </div>
-        <div class="method-tag">Canadian FWI System</div>
-      </div>
-      <div class="gauge-wrap">
-        <div class="gauge-num"><span id="score-num">--</span><span class="unit">FWI</span></div>
-        <div>
-          <div class="gauge-sub">Fire Weather Index — open-ended scale, no fixed max</div>
-          <div class="gauge-updated" id="updated-text">—</div>
+    <!-- HERO VERDICT -->
+    <div id="hero" class="hero">
+      <div class="hero-left">
+        <div class="hero-icon" id="hero-icon">●</div>
+        <div class="hero-body">
+          <div class="hero-badge" id="hero-badge">—</div>
+          <div class="hero-headline" id="hero-headline">Checking current conditions…</div>
+          <div class="hero-sub" id="hero-sub">Overall level is the worst of your three risks below.</div>
         </div>
       </div>
-
-      <div class="fwi-codes">
-        <div class="fwi-chip"><div class="val" id="fwi-ffmc">--</div><div class="lbl">FFMC</div></div>
-        <div class="fwi-chip"><div class="val" id="fwi-dmc">--</div><div class="lbl">DMC</div></div>
-        <div class="fwi-chip"><div class="val" id="fwi-dc">--</div><div class="lbl">DC</div></div>
-        <div class="fwi-chip"><div class="val" id="fwi-isi">--</div><div class="lbl">ISI</div></div>
-        <div class="fwi-chip"><div class="val" id="fwi-bui">--</div><div class="lbl">BUI</div></div>
-      </div>
-
-      <div class="factors">
-        <h4>Risk Factors</h4>
-        <div id="factors-list"></div>
-      </div>
-
-      <div id="concern-box" class="concern hidden">
-        <b>Main Concern</b>
-        <span id="concern-text"></span>
-      </div>
-
-      <div class="method-note">
-        Computed using the Canadian Forest Fire Weather Index System (Van Wagner, 1987) — the
-        same methodology used operationally by Canadian and European fire agencies. FFMC, DMC and DC
-        track fuel moisture at increasing depths and timescales; ISI and BUI describe spread rate and
-        fuel availability; FWI combines them into overall fire intensity potential.
-        <span id="cold-start-note">This estimate uses standard start-up values rather than multi-day
-        carried-forward moisture history, so deep-drought effects (DC) may be understated.</span>
+      <div class="hero-right">
+        <div class="place" id="hero-place">—</div>
+        <div id="hero-updated">—</div>
       </div>
     </div>
 
     <!-- HAZARD ALERTS -->
     <div id="hazard-alerts" class="hazard-alerts"></div>
 
-    <!-- CONDITIONS: AIR QUALITY -->
-    <div class="sect-head"><h3>Air Quality</h3><div class="rule"></div></div>
-    <div class="aqi-card">
-      <div class="eyebrow">Air Quality Index</div>
-      <div class="aqi-row">
-        <span class="aqi-num" id="aqi-num">--</span>
-        <span class="aqi-label" id="aqi-label">—</span>
+    <!-- THREE RISK CARDS -->
+    <div class="risk-row">
+
+      <!-- WILDFIRE -->
+      <div class="risk-card" id="card-fire" onclick="toggleDetail('fire')">
+        <div class="risk-card-head">
+          <div class="risk-card-label hz-fire">🔥 Wildfire</div>
+          <div class="risk-card-level" id="fire-level"><span class="dot"></span><span id="fire-level-word">—</span></div>
+        </div>
+        <div class="risk-big"><span id="fire-big">--</span><span class="unit" id="fire-big-unit"></span></div>
+        <div class="risk-desc" id="fire-desc">Loading fire detection data…</div>
+        <div class="risk-foot" id="fire-foot">Source: NASA FIRMS</div>
+        <div class="risk-detail-hint">Tap for FWI fire-danger details ▾</div>
+
+        <div class="risk-detail hidden" id="fire-detail">
+          <div class="gauge-wrap">
+            <div class="gauge-num"><span id="score-num">--</span><span class="unit">FWI</span></div>
+            <div>
+              <div class="cat-badge" id="cat-badge">—</div>
+              <div class="gauge-sub">Fire Weather Index — Canadian FWI System</div>
+              <div class="gauge-updated" id="updated-text">—</div>
+            </div>
+          </div>
+          <div class="fwi-codes">
+            <div class="fwi-chip"><div class="val" id="fwi-ffmc">--</div><div class="lbl">FFMC</div></div>
+            <div class="fwi-chip"><div class="val" id="fwi-dmc">--</div><div class="lbl">DMC</div></div>
+            <div class="fwi-chip"><div class="val" id="fwi-dc">--</div><div class="lbl">DC</div></div>
+            <div class="fwi-chip"><div class="val" id="fwi-isi">--</div><div class="lbl">ISI</div></div>
+            <div class="fwi-chip"><div class="val" id="fwi-bui">--</div><div class="lbl">BUI</div></div>
+          </div>
+          <div class="factors">
+            <h4>Risk Factors</h4>
+            <div id="factors-list"></div>
+          </div>
+          <div id="concern-box" class="concern hidden">
+            <b>Main Concern</b>
+            <span id="concern-text"></span>
+          </div>
+          <div class="method-note">
+            FFMC, DMC and DC track fuel moisture at increasing depths and timescales; ISI and BUI describe
+            spread rate and fuel availability; FWI combines them into overall fire intensity potential.
+            <span id="cold-start-note">This estimate uses standard start-up values rather than multi-day
+            carried-forward moisture history, so deep-drought effects (DC) may be understated.</span>
+          </div>
+        </div>
       </div>
-      <div class="aqi-desc" id="aqi-desc">Loading air quality data…</div>
-      <div class="aqi-source-toggle">
-        <button data-source="openmeteo" class="active" onclick="setAqiSource('openmeteo')">Open-Meteo</button>
-        <button data-source="openweathermap" onclick="setAqiSource('openweathermap')">OpenWeatherMap</button>
+
+      <!-- AIR QUALITY -->
+      <div class="risk-card" id="card-air" onclick="toggleDetail('air')">
+        <div class="risk-card-head">
+          <div class="risk-card-label hz-air">🌫️ Air Quality</div>
+          <div class="risk-card-level" id="air-level"><span class="dot"></span><span id="air-level-word">—</span></div>
+        </div>
+        <div class="risk-big"><span id="aqi-num">--</span><span class="unit">AQI</span></div>
+        <div class="risk-desc" id="aqi-desc">Loading air quality data…</div>
+        <div class="risk-foot" id="aqi-foot">Source: Open-Meteo</div>
+        <div class="risk-detail-hint">Tap to change data source ▾</div>
+
+        <div class="risk-detail hidden" id="air-detail">
+          <div class="aqi-source-toggle">
+            <button data-source="openmeteo" class="active" onclick="setAqiSource('openmeteo', event)">Open-Meteo</button>
+            <button data-source="openweathermap" onclick="setAqiSource('openweathermap', event)">OpenWeatherMap</button>
+          </div>
+        </div>
       </div>
+
+      <!-- HEAT -->
+      <div class="risk-card" id="card-heat">
+        <div class="risk-card-head">
+          <div class="risk-card-label hz-heat">🌡️ Heat</div>
+          <div class="risk-card-level" id="heat-level"><span class="dot"></span><span id="heat-level-word">—</span></div>
+        </div>
+        <div class="risk-big"><span id="heat-big">--</span><span class="unit">°C feels-like</span></div>
+        <div class="risk-desc" id="heat-desc">Loading weather data…</div>
+        <div class="risk-foot" id="heat-foot">Source: Open-Meteo</div>
+      </div>
+
     </div>
 
-    <!-- MAP -->
-    <div class="sect-head"><h3>Map</h3><div class="rule"></div></div>
-    <div id="firms-tile-toggle-wrap" class="map-toggle hidden">
-      <button id="firms-tile-btn" class="active" onclick="toggleFirmsTileBtn()">🔥 FIRMS thermal layer</button>
-    </div>
-    <div id="map"></div>
-    <div class="map-legend">
-      <span><i style="background:#4A90D9"></i>Your location</span>
-      <span><i style="background:#FF5A36"></i>Fire detection (point)</span>
-      <span><i style="background:#B8860B"></i>Earthquake (7 days)</span>
-    </div>
-    <div id="fires-count-note" class="empty-note hidden" style="margin-top:8px;"></div>
+    <!-- TWO COLUMN: (fires + map) | (advice + scale) -->
+    <div class="two-col">
 
-    <!-- EARTHQUAKES -->
-    <div class="sect-head"><h3>Nearby Earthquakes</h3><div class="rule"></div></div>
-    <div class="quake-list" id="quake-list">
-      <div class="empty-note">Checking for recent seismic activity…</div>
+      <div class="col-stack">
+        <div class="panel">
+          <h3>Nearby Fires</h3>
+          <div class="quake-list" id="fires-detail-list">
+            <div class="empty-note">Checking for nearby fire detections…</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Map</h3>
+          <div id="firms-tile-toggle-wrap" class="map-toggle hidden">
+            <button id="firms-tile-btn" class="active" onclick="toggleFireHeatLayer()">🔥 Fire density layer</button>
+            <button id="perimeters-btn" onclick="toggleFirePerimeters()">🗺 US perimeters</button>
+          </div>
+          <div id="map"></div>
+          <div class="map-legend">
+            <span><i style="background:#4A90D9"></i>Your location</span>
+            <span><i style="background:#ff5e2a"></i>Fire detection (point)</span>
+            <span><i style="background:rgba(255,94,42,0.35);border:1px solid #ff5e2a"></i>Burn perimeter (US)</span>
+            <span>Click the map to check another spot</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-stack">
+        <div class="panel">
+          <h3>What should I do?</h3>
+          <div class="profile-tabs" id="profile-tabs">
+            <button class="profile-tab active" data-profile="general" onclick="setProfile('general')">General</button>
+            <button class="profile-tab" data-profile="asthma" onclick="setProfile('asthma')">Asthma</button>
+            <button class="profile-tab" data-profile="elderly" onclick="setProfile('elderly')">Elderly</button>
+            <button class="profile-tab" data-profile="outdoor" onclick="setProfile('outdoor')">Outdoor worker</button>
+          </div>
+          <div class="advice-list" id="advice-list"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Air Quality Scale</h3>
+          <div class="scale-track"><div class="scale-pointer" id="scale-pointer" style="left:0%"></div></div>
+          <div class="scale-note" id="scale-note">US EPA AQI · waiting for data…</div>
+        </div>
+      </div>
+
     </div>
 
     <!-- GLOBAL INCIDENTS -->
-    <div class="sect-head"><h3>Global Wildfire Incidents</h3><div class="rule"></div></div>
+    <div class="sect-head"><h3 class="hz-incidents">Global Wildfire Incidents</h3><div class="rule"></div></div>
     <div class="incidents-toolbar">
       <div id="incidents-count-note" class="empty-note">Loading global incident data…</div>
       <button id="incidents-map-btn" onclick="toggleGlobalIncidentsOnMap()">🌍 Show on map</button>
@@ -145,15 +210,11 @@
       <div class="empty-note">Loading recent wildfire incidents worldwide…</div>
     </div>
 
-    <!-- FLOOD RISK -->
-    <div class="sect-head"><h3>River Flood Risk</h3><div class="rule"></div></div>
-    <div class="flood-card" id="flood-card">Loading river discharge data…</div>
-
     <!-- WEATHER -->
-    <div class="sect-head"><h3>Weather</h3><div class="rule"></div></div>
+    <div class="sect-head"><h3 class="hz-weather">Weather</h3><div class="rule"></div></div>
     <div class="weather-grid">
       <div class="wcell"><div class="wicn">🌡</div><div class="wval" id="w-temp">--°</div><div class="wlabel">Temp</div></div>
-      <div class="wcell"><div class="wicn">💨</div><div class="wval" id="w-wind">--</div><div class="wlabel">Wind km/h</div></div>
+      <div class="wcell"><div class="wicn">💨</div><div class="wval" id="w-wind">--</div><div class="wlabel">Wind km/h · <span id="w-winddir">—</span></div></div>
       <div class="wcell"><div class="wicn">💧</div><div class="wval" id="w-humidity">--%</div><div class="wlabel">Humidity</div></div>
       <div class="wcell"><div class="wicn">🌧</div><div class="wval" id="w-rain">--mm</div><div class="wlabel">7-day rain</div></div>
     </div>
@@ -163,6 +224,7 @@
   <footer>
     Wildfire risk computed with the Canadian FWI System; other hazards from NASA FIRMS, NASA EONET, USGS, and Open-Meteo.
     Not an official warning — for emergencies, always follow local fire authority guidance.
+    <div class="emg">Emergency? Call <a href="tel:911">911</a> · <a href="https://www.fire.ca.gov/" target="_blank" rel="noopener">CAL FIRE</a> · <a href="tel:211">211</a></div>
   </footer>
 
 </main>
