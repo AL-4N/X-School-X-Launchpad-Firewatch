@@ -1,0 +1,15 @@
+# Copy to .dev.vars for local `wrangler dev` (this file is gitignored).
+# In production, set these with `wrangler secret put <NAME>` instead —
+# never commit real keys.
+
+# Required for /api/fires and /api/fires/tiles/*
+# Get one at https://firms.modaps.eosdis.nasa.gov/api/map_key/
+FIRMS_MAP_KEY=
+
+# Optional — only needed for the OpenWeatherMap air quality source toggle.
+# Get one at https://openweathermap.org/api
+OWM_API_KEY=
+
+# Optional — half-width in degrees of the FIRMS fire-detection search box.
+# Defaults to 0.6 (~65km) if unset.
+FIRMS_RADIUS_DEG=0.6

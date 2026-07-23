@@ -198,6 +198,11 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
  * cited generalized breakpoints.
  */
 function fwiDangerClass(fwi) {
+  // NaN fails every numeric comparison below, so without this guard a
+  // broken/missing upstream weather value would silently fall through to
+  // the final `return` and get reported as "Extreme" — the single worst
+  // class — instead of an explicit "unknown." Fail loud, not falsely severe.
+  if (!Number.isFinite(fwi)) return { class: 'Unknown', level: 0, hex: '#6B6659' };
   if (fwi < 5.2)  return { class: 'Very Low',  level: 1, hex: '#3B7A57' };
   if (fwi < 11.2) return { class: 'Low',       level: 2, hex: '#5C9C5C' };
   if (fwi < 21.3) return { class: 'Moderate',  level: 3, hex: '#C9A227' };
