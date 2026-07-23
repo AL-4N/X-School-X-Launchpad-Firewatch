@@ -11,7 +11,7 @@
 // CORS involved.
 const WORKER_BASE_URL = '';
 
-let map, userMarker, fireLayer, fireHeatLayer, globalFireHeatLayer, incidentLayer, perimeterLayer;
+let map, userMarker, fireLayer, globalFireLayer, incidentLayer, perimeterLayer;
 let userLat, userLon;
 let aqiSource = 'openmeteo'; // 'openmeteo' | 'openweathermap' — both proxied server-side now
 let globalIncidents = [];
@@ -199,8 +199,7 @@ async function loadLocation(lat, lon, knownDisplayName){
   history.replaceState(null, '', `?${params.toString()}`);
 
   if(map){ map.remove(); map = null; }
-  fireHeatLayer = null;
-  globalFireHeatLayer = null;
+  globalFireLayer = null;
   incidentLayer = null;
   perimeterLayer = null;
   incidentsShownOnMap = false;
@@ -328,14 +327,35 @@ function initMap(){
 
   map.on('click', onMapClick);
   document.getElementById('firms-tile-toggle-wrap').classList.remove('hidden');
-  loadGlobalFireHeat();
+  loadGlobalFireDots();
+
+  // Escape key collapses expanded map
+  document.addEventListener('keydown', function onEsc(e){
+    if(e.key === 'Escape') collapseMap();
+  }, { once: false });
 }
 
-/** Ambient worldwide fire activity, visible even before the local ~65km
- * detection layer has anything nearby — otherwise zooming out just shows
- * an empty map, which reads as "broken" even when it's working correctly.
- * Fetched once and cached in memory; rebuilt onto each new map instance. */
-async function loadGlobalFireHeat(){
+function toggleMapExpand(){
+  const panel = document.getElementById('map-panel');
+  const btn = document.getElementById('map-expand-btn');
+  const expanded = panel.classList.toggle('expanded');
+  btn.textContent = expanded ? '✕ Close' : '⤢ Expand';
+  if(map) setTimeout(() => map.invalidateSize(), 50);
+}
+
+function collapseMap(){
+  const panel = document.getElementById('map-panel');
+  if(!panel.classList.contains('expanded')) return;
+  panel.classList.remove('expanded');
+  const btn = document.getElementById('map-expand-btn');
+  if(btn) btn.textContent = '⤢ Expand';
+  if(map) setTimeout(() => map.invalidateSize(), 50);
+}
+
+/** Ambient worldwide fire activity shown as solid red dots — fetched once
+ * and cached in memory; rebuilt onto each new map instance. Dots are
+ * sized by FRP so brighter fires are visually larger. */
+async function loadGlobalFireDots(){
   if(!globalFiresCache){
     try{
       const data = await api('/api/fires/global');
@@ -348,16 +368,15 @@ async function loadGlobalFireHeat(){
   if(!map || !globalFiresCache.length) return;
 
   const maxFrp = globalFiresCache.reduce((m, f) => (f.frp != null && f.frp > m) ? f.frp : m, 1);
-  const points = globalFiresCache.map(f => {
-    const weight = f.frp != null ? Math.min(1, 0.25 + 0.75 * (f.frp / maxFrp)) : 0.4;
-    return [f.lat, f.lon, weight];
+  globalFireLayer = L.layerGroup();
+  globalFiresCache.forEach(f => {
+    const r = f.frp != null ? Math.max(3, Math.min(7, 3 + 4 * (f.frp / maxFrp))) : 4;
+    L.circleMarker([f.lat, f.lon], {
+      radius: r, color: '#c0392b', weight: 0,
+      fillColor: '#ff5e2a', fillOpacity: 0.75,
+    }).addTo(globalFireLayer);
   });
-
-  globalFireHeatLayer = L.heatLayer(points, {
-    radius: 14, blur: 18, maxZoom: 18, minOpacity: 0.25,
-    gradient: { 0.2:'#f1c40f', 0.5:'#e67e22', 0.8:'#e74c3c', 1:'#ff2d55' },
-  });
-  if(heatLayerOn) globalFireHeatLayer.addTo(map);
+  if(globalFiresOn) globalFireLayer.addTo(map);
 }
 
 /* ---------------- Click-to-pick a location on the map ---------------- */
@@ -399,37 +418,13 @@ function selectPickedLocation(){
   loadLocation(pickedLat, pickedLon, pickedName || undefined);
 }
 
-/** Density heatmap built from actual FIRMS detection points (not NASA's
- * pre-rendered tile image, which we can't recolor). Each point is weighted
- * by its fire radiative power (FRP, in MW) so clusters of intense fires
- * genuinely render darker/more opaque than a single small detection —
- * real density shading instead of a flat dot-per-pixel raster. */
-function buildFireHeatLayer(fires){
-  if(fireHeatLayer){ map.removeLayer(fireHeatLayer); fireHeatLayer = null; }
-  if(!fires.length) return;
-
-  const maxFrp = fires.reduce((m, f) => (f.frp != null && f.frp > m) ? f.frp : m, 1);
-  const points = fires.map(f => {
-    const weight = f.frp != null ? Math.min(1, 0.3 + 0.7 * (f.frp / maxFrp)) : 0.5;
-    return [f.lat, f.lon, weight];
-  });
-
-  fireHeatLayer = L.heatLayer(points, {
-    radius: 32, blur: 26, maxZoom: 14, minOpacity: 0.35,
-    gradient: { 0.2:'#f1c40f', 0.5:'#e67e22', 0.8:'#e74c3c', 1:'#ff2d55' },
-  });
-  if(heatLayerOn) fireHeatLayer.addTo(map);
-}
-
-let heatLayerOn = true;
-function toggleFireHeatLayer(){
-  heatLayerOn = !heatLayerOn;
+let globalFiresOn = true;
+function toggleGlobalFires(){
+  globalFiresOn = !globalFiresOn;
   const btn = document.getElementById('firms-tile-btn');
-  btn.classList.toggle('active', heatLayerOn);
-  [fireHeatLayer, globalFireHeatLayer].forEach(layer => {
-    if(!layer) return;
-    if(heatLayerOn){ layer.addTo(map); } else { map.removeLayer(layer); }
-  });
+  btn.classList.toggle('active', globalFiresOn);
+  if(!globalFireLayer) return;
+  if(globalFiresOn){ globalFireLayer.addTo(map); } else { map.removeLayer(globalFireLayer); }
 }
 
 /* ---------------- US fire perimeters (NIFC via Worker) ---------------- */
@@ -921,12 +916,16 @@ async function loadFires(){
       dir: bearingCompass(userLat, userLon, f.lat, f.lon),
     })).sort((a, b) => a.distKm - b.distKm);
 
+    // L.circle radius is in metres — matches the ~375m VIIRS pixel footprint
+    // so the circle scales correctly as you zoom in/out.
     lastFires.forEach(f=>{
-      L.circleMarker([f.lat, f.lon], {
-        radius:6, color:'#ff5e2a', fillColor:'#ff5e2a', fillOpacity:0.7, weight:1
-      }).addTo(fireLayer);
+      const r = f.frp != null ? Math.max(300, Math.min(800, 375 + f.frp * 2)) : 375;
+      L.circle([f.lat, f.lon], {
+        radius: r, color: '#c0392b', weight: 1,
+        fillColor: '#ff5e2a', fillOpacity: 0.75,
+      }).bindPopup(`<b>Fire detection</b><br>Confidence: ${confidenceLabel(f.confidence)}${f.frp != null ? '<br>FRP: ' + Math.round(f.frp) + ' MW' : ''}`)
+        .addTo(fireLayer);
     });
-    buildFireHeatLayer(lastFires);
 
     current.fireCount = lastFires.length;
     current.nearestFireMiles = lastFires.length ? lastFires[0].distKm * 0.621371 : null;
