@@ -55,7 +55,6 @@ function parseLatLon(url) {
 const CACHE_TTL_BY_PREFIX = [
   { prefix: '/api/fires/global', ttl: 300 },
   { prefix: '/api/fires/tiles/', ttl: 300 },
-  { prefix: '/api/fires/perimeters', ttl: 300 },
   { prefix: '/api/fires', ttl: 180 },
   { prefix: '/api/risk', ttl: 300 },
   { prefix: '/api/airquality', ttl: 300 },
@@ -91,7 +90,6 @@ export default {
       if (url.pathname === '/api/risk') response = await handleRisk(url);
       else if (url.pathname === '/api/airquality') response = await handleAirQuality(url, env);
       else if (url.pathname === '/api/fires/global') response = await handleGlobalFires(url, env);
-      else if (url.pathname === '/api/fires/perimeters') response = await handleFirePerimeters(url, env);
       else if (url.pathname === '/api/fires') response = await handleFires(url, env);
       else if (url.pathname.startsWith('/api/fires/tiles/')) response = await handleFireTiles(url, request, env);
       else if (url.pathname === '/api/geocode/search') response = await handleGeocodeSearch(url);
@@ -315,20 +313,6 @@ async function handleGlobalFires(url, env) {
   const binned = binFires(fires, 0.25);
 
   return json({ count: binned.length, fires: binned }, 200, { 'Cache-Control': 'public, max-age=300' });
-}
-
-/** Proxies the NIFC current-year interagency fire perimeters as GeoJSON.
- * Returns the full FeatureCollection so Leaflet can draw burn polygons.
- * US-only data — only displayed when the user toggles the perimeter layer. */
-async function handleFirePerimeters(url, env) {
-  const nifcUrl =
-    'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/' +
-    'WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query' +
-    '?where=1%3D1&outFields=IncidentName,GISAcres,CreateDate&returnGeometry=true&f=geojson';
-  const res = await fetch(nifcUrl);
-  if (!res.ok) return json({ error: 'Upstream NIFC perimeters error' }, 502);
-  const data = await res.json();
-  return json(data, 200, { 'Cache-Control': 'public, max-age=300' });
 }
 
 /** Passes through NASA FIRMS WMS tile images. The frontend requests

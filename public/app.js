@@ -11,13 +11,11 @@
 // CORS involved.
 const WORKER_BASE_URL = '';
 
-let map, userMarker, fireLayer, globalFireLayer, incidentLayer, perimeterLayer;
+let map, userMarker, fireLayer, globalFireLayer, incidentLayer;
 let userLat, userLon;
 let aqiSource = 'openmeteo'; // 'openmeteo' | 'openweathermap' — both proxied server-side now
 let globalIncidents = [];
 let incidentsShownOnMap = false;
-let perimeterShown = false;
-let perimeterCache = null; // fetched once per session, lazy on first toggle
 let searchDebounceTimer = null;
 let lastSearchResults = [];
 let lastFires = [];
@@ -201,15 +199,11 @@ async function loadLocation(lat, lon, knownDisplayName){
   if(map){ map.remove(); map = null; }
   globalFireLayer = null;
   incidentLayer = null;
-  perimeterLayer = null;
   incidentsShownOnMap = false;
-  perimeterShown = false;
   pickMarker = null;
   pickedLat = pickedLon = pickedName = null;
   const incidentsBtn = document.getElementById('incidents-map-btn');
   if(incidentsBtn) incidentsBtn.classList.remove('active');
-  const perimBtn = document.getElementById('perimeters-btn');
-  if(perimBtn) perimBtn.classList.remove('active');
 
   updateSaveBtn();
   renderSavedPlaces();
@@ -425,45 +419,6 @@ function toggleGlobalFires(){
   btn.classList.toggle('active', globalFiresOn);
   if(!globalFireLayer) return;
   if(globalFiresOn){ globalFireLayer.addTo(map); } else { map.removeLayer(globalFireLayer); }
-}
-
-/* ---------------- US fire perimeters (NIFC via Worker) ---------------- */
-
-async function toggleFirePerimeters(){
-  if(!map) return;
-  const btn = document.getElementById('perimeters-btn');
-  perimeterShown = !perimeterShown;
-  btn.classList.toggle('active', perimeterShown);
-
-  if(!perimeterShown){
-    if(perimeterLayer){ map.removeLayer(perimeterLayer); perimeterLayer = null; }
-    return;
-  }
-
-  // Lazy-load perimeter GeoJSON on first toggle; reuse on subsequent toggles
-  if(!perimeterCache){
-    btn.textContent = '⏳ Loading…';
-    try{
-      perimeterCache = await api('/api/fires/perimeters');
-    }catch(e){
-      console.error('Fire perimeters load failed', e);
-      btn.textContent = '🗺 US perimeters';
-      perimeterShown = false;
-      btn.classList.remove('active');
-      return;
-    }
-    btn.textContent = '🗺 US perimeters';
-  }
-
-  perimeterLayer = L.geoJSON(perimeterCache, {
-    style: { color: '#ff5e2a', weight: 1.5, fillColor: '#ff5e2a', fillOpacity: 0.18 },
-    onEachFeature(feature, layer){
-      const p = feature.properties || {};
-      const name = p.IncidentName || 'Unknown fire';
-      const acres = p.GISAcres ? `${Math.round(p.GISAcres).toLocaleString()} acres` : '';
-      layer.bindPopup(`<b>${name}</b>${acres ? '<br>' + acres : ''}`);
-    },
-  }).addTo(map);
 }
 
 /* ---------------- Location name ---------------- */
