@@ -286,6 +286,8 @@ async function loadLocation(lat, lon, knownDisplayName){
   loadAirQuality();
   loadFires();
   loadGlobalIncidents();
+  loadForecast();
+  loadWeatherAlerts();
 }
 
 /* ---------------- Location search (manual location picker) ---------------- */
@@ -995,6 +997,7 @@ function updateAqiCard(numText, cat, descText, footText, approxUsAqi){
 function renderAQI_US(aqi, pm25, sourceLabel){
   const cat = usAqiCategory(aqi);
   const pmText = pm25 != null ? ` PM2.5 is ${Math.round(pm25)} µg/m³.` : '';
+  clearOwmPollutants();
   updateAqiCard(aqi, cat, `${cat.desc}${pmText}`, `Dominant pollutant: PM2.5 · source: ${sourceLabel}`, aqi);
   updateHazards('aqi', aqi > 150 ? [{
     level: aqi > 200 ? 'severe' : 'warn', icon:'😷',
@@ -1013,6 +1016,41 @@ function renderAQI_OWM(level, components){
     title: level === 5 ? 'Unhealthy Air Quality' : 'Air Quality Advisory',
     text: 'Poor air quality may indicate nearby smoke or pollution — consider limiting outdoor exposure.'
   }] : []);
+
+  // Render individual pollutant breakdown when OWM source is active.
+  renderOwmPollutants(components);
+}
+
+function renderOwmPollutants(components){
+  const box = document.getElementById('owm-pollutants');
+  if(!box) return;
+  if(!components){ box.classList.add('hidden'); return; }
+
+  const pollutants = [
+    { key:'pm2_5',  label:'PM2.5',  unit:'µg/m³' },
+    { key:'pm10',   label:'PM10',   unit:'µg/m³' },
+    { key:'no2',    label:'NO₂',    unit:'µg/m³' },
+    { key:'o3',     label:'O₃',     unit:'µg/m³' },
+    { key:'co',     label:'CO',     unit:'µg/m³' },
+    { key:'so2',    label:'SO₂',    unit:'µg/m³' },
+  ].filter(p => components[p.key] != null);
+
+  if(!pollutants.length){ box.classList.add('hidden'); return; }
+
+  box.className = 'owm-pollutants';
+  box.innerHTML = pollutants.map(p => {
+    const val = components[p.key];
+    return `<div class="poll-chip">
+      <div class="poll-val">${val < 10 ? val.toFixed(1) : Math.round(val)}</div>
+      <div class="poll-lbl">${p.label}<br><span style="opacity:0.6">${p.unit}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// Clear the pollutant breakdown when switching away from OWM source.
+function clearOwmPollutants(){
+  const box = document.getElementById('owm-pollutants');
+  if(box){ box.classList.add('hidden'); box.innerHTML = ''; }
 }
 
 /* ---------------- Fires (NASA FIRMS, via Worker) ---------------- */
@@ -1414,6 +1452,89 @@ function toggleGlobalIncidentsOnMap(){
   } else {
     incidentLayer.clearLayers();
     map.setView([userLat, userLon], 10);
+  }
+}
+
+/* ---------------- 5-Day Fire Weather Forecast ---------------- */
+
+/** Maps OWM icon codes to a single representative emoji. */
+function owmIconEmoji(code){
+  const map = {
+    '01':'☀️', '02':'⛅', '03':'☁️', '04':'☁️',
+    '09':'🌧️', '10':'🌦️', '11':'⛈️', '13':'❄️', '50':'🌫️',
+  };
+  return map[code.slice(0, 2)] || '🌤️';
+}
+
+async function loadForecast(){
+  const row = document.getElementById('forecast-row');
+  if(!row) return;
+  try{
+    const data = await api(`/api/forecast?lat=${userLat}&lon=${userLon}`);
+    const days = data.days || [];
+    if(!days.length){
+      row.innerHTML = '<div class="empty-note">No forecast data available for this location.</div>';
+      return;
+    }
+    row.innerHTML = '';
+    days.forEach(d => {
+      const date = new Date(d.date + 'T12:00:00Z');
+      const dayName = date.toLocaleDateString([], { weekday:'short', timeZone:'UTC' });
+      const tempStr = unit === 'F' ? `${Math.round(cToF(d.temp))}°F` : `${d.temp}°C`;
+      const windStr = unit === 'F' ? `${Math.round(kmhToMph(d.wind))} mph` : `${d.wind} km/h`;
+
+      const card = document.createElement('div');
+      card.className = 'forecast-day';
+      card.style.borderTopColor = d.danger.hex;
+      card.innerHTML = `
+        <div class="forecast-day-name">${dayName}</div>
+        <div class="forecast-day-icon">${owmIconEmoji(d.icon)}</div>
+        <div class="forecast-fwi">${d.fwi}</div>
+        <div class="forecast-fwi-lbl">FWI</div>
+        <div class="forecast-danger" style="background:${d.danger.hex}">${d.danger.class}</div>
+        <div class="forecast-stats">
+          <span>🌡 ${tempStr}</span>
+          <span>💧 ${d.humidity}%</span>
+          <span>💨 ${windStr}</span>
+        </div>`;
+      row.appendChild(card);
+    });
+  }catch(e){
+    console.error('Forecast load failed', e);
+    if(row) row.innerHTML = '<div class="empty-note">Fire weather outlook temporarily unavailable.</div>';
+  }
+}
+
+/* ---------------- Weather Alerts (OWM One Call) ---------------- */
+
+/** Maps a raw OWM alert event string to a severity level and icon. */
+function classifyAlert(event){
+  const e = event.toLowerCase();
+  if(/red flag|fire weather|extreme fire/.test(e)) return { level:'severe', icon:'🔥' };
+  if(/tornado|hurricane|typhoon/.test(e)) return { level:'severe', icon:'🌪' };
+  if(/flood|tsunami/.test(e)) return { level:'severe', icon:'🌊' };
+  if(/extreme heat|excessive heat|heat emergency/.test(e)) return { level:'severe', icon:'🌡' };
+  if(/high wind|damaging wind/.test(e)) return { level:'severe', icon:'💨' };
+  if(/heat|wind|thunderstorm|snow|ice/.test(e)) return { level:'warn', icon:'⚠️' };
+  return { level:'warn', icon:'⚠️' };
+}
+
+async function loadWeatherAlerts(){
+  try{
+    const data = await api(`/api/alerts?lat=${userLat}&lon=${userLon}`);
+    const alerts = data.alerts || [];
+    if(!alerts.length){ updateHazards('owm-alerts', []); return; }
+
+    const chips = alerts.map(a => {
+      const { level, icon } = classifyAlert(a.event);
+      // Trim description to one sentence for the chip.
+      const desc = (a.description || '').split(/[.\n]/)[0].trim().slice(0, 160);
+      return { level, icon, title: a.event, text: desc || `Issued by ${a.sender || 'local authority'}.` };
+    });
+    updateHazards('owm-alerts', chips);
+  }catch(e){
+    console.error('Alerts load failed', e);
+    updateHazards('owm-alerts', []);
   }
 }
 

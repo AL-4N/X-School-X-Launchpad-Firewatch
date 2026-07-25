@@ -154,6 +154,7 @@
             <button data-source="openmeteo" class="active" onclick="setAqiSource('openmeteo', event)">Open-Meteo</button>
             <button data-source="openweathermap" onclick="setAqiSource('openweathermap', event)">OpenWeatherMap</button>
           </div>
+          <div id="owm-pollutants" class="hidden"></div>
         </div>
       </div>
 
@@ -252,6 +253,12 @@
     </div>
     <div class="quake-list" id="incidents-list">
       <div class="empty-note">Loading recent wildfire incidents worldwide…</div>
+    </div>
+
+    <!-- 5-DAY FIRE WEATHER OUTLOOK -->
+    <div class="sect-head"><h3 class="hz-fire">5-Day Fire Weather Outlook</h3><div class="rule"></div></div>
+    <div class="forecast-row" id="forecast-row">
+      <div class="empty-note">Loading fire weather outlook…</div>
     </div>
 
     <!-- WEATHER -->

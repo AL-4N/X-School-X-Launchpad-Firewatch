@@ -16,6 +16,8 @@ import { fetchLocalFires, fetchGlobalFires } from './fires.js';
 import { fetchGlobalIncidents } from './incidents.js';
 import { forwardGeocode, reverseGeocode } from './geocode.js';
 import { getPrevCodes, saveCodes } from './fwiCache.js';
+import { fetchFireForecast } from './forecast.js';
+import { fetchWeatherAlerts } from './alerts.js';
 
 const JSON_HEADERS = { 'content-type': 'application/json;charset=UTF-8' };
 
@@ -115,6 +117,18 @@ const routes = {
     const data = await fetchGlobalIncidents(Number.isFinite(days) ? days : 30);
     return json(data);
   },
+
+  '/api/forecast': async (url, env) => {
+    const { lat, lon } = requireLatLon(url);
+    const data = await fetchFireForecast(lat, lon, env);
+    return json(data);
+  },
+
+  '/api/alerts': async (url, env) => {
+    const { lat, lon } = requireLatLon(url);
+    const data = await fetchWeatherAlerts(lat, lon, env);
+    return json(data);
+  },
 };
 
 // Per-route edge-cache TTLs (seconds). Fires and weather change fastest;
@@ -127,6 +141,8 @@ const CACHE_TTL = {
   '/api/geocode': 86400,      // 1 day — a lat/lon's place name doesn't change
   '/api/geocode/search': 3600,// 1 hr
   '/api/incidents/global': 900, // 15 min
+  '/api/forecast': 10800,      // 3 hr — forecast changes slowly
+  '/api/alerts': 1800,         // 30 min — alerts can appear/expire
 };
 
 export default {

@@ -414,6 +414,38 @@ main{max-width:520px;margin:0 auto;padding:0 16px;}
 }
 .map-toggle button.active{background:var(--ember);color:var(--bg);border-color:var(--ember);font-weight:700;}
 
+/* ---- 5-day fire weather forecast ---- */
+.forecast-row{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:4px;
+}
+@media(max-width:540px){.forecast-row{grid-template-columns:repeat(3,1fr) repeat(2,1fr);}}
+.forecast-day{
+  background:var(--card);border:1px solid var(--border);border-top:4px solid var(--border);
+  border-radius:12px;padding:12px 8px 10px;text-align:center;
+}
+.forecast-day-name{font-size:9.5px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:700;}
+.forecast-day-icon{font-size:20px;margin:6px 0 4px;}
+.forecast-fwi{font-family:'Oswald',sans-serif;font-weight:700;font-size:21px;color:var(--text);}
+.forecast-fwi-lbl{font-size:8px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);}
+.forecast-danger{
+  display:inline-block;font-family:'Oswald',sans-serif;font-weight:600;font-size:8.5px;
+  letter-spacing:0.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;
+  color:#fff;margin:6px 0 8px;
+}
+.forecast-stats{font-size:9.5px;color:var(--muted);line-height:1.7;}
+.forecast-stats span{display:block;}
+
+/* ---- OWM pollutant breakdown ---- */
+.owm-pollutants{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px;
+}
+.poll-chip{
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  border-radius:10px;padding:8px 4px;text-align:center;
+}
+.poll-val{font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;color:var(--text);}
+.poll-lbl{font-size:8px;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);margin-top:2px;}
+
 /* ---- weather ---- */
 .weather-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
 .wcell{
