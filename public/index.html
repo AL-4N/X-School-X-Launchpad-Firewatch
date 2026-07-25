@@ -16,7 +16,13 @@
 
 <header>
   <div class="brand"><span class="fire">Fire</span><span class="watch">Watch</span></div>
-  <div class="tag">Risk Intelligence</div>
+  <div class="header-right">
+    <div class="unit-toggle" id="unit-toggle" role="group" aria-label="Temperature unit">
+      <button id="unit-c" class="active" onclick="setUnit('C')">°C</button>
+      <button id="unit-f" onclick="setUnit('F')">°F</button>
+    </div>
+    <div class="tag">Risk Intelligence</div>
+  </div>
 </header>
 
 <main>
@@ -103,6 +109,16 @@
             <div class="fwi-chip"><div class="val" id="fwi-isi">--</div><div class="lbl">ISI</div></div>
             <div class="fwi-chip"><div class="val" id="fwi-bui">--</div><div class="lbl">BUI</div></div>
           </div>
+
+          <div class="composite-wrap">
+            <div class="composite-head">
+              <h4>Composite Risk Score</h4>
+              <span class="composite-score" id="composite-score">--<small>/100</small></span>
+            </div>
+            <div class="composite-bar"><div class="composite-bar-fill" id="composite-bar-fill"></div></div>
+            <div class="composite-breakdown" id="composite-breakdown"></div>
+          </div>
+
           <div class="factors">
             <h4>Risk Factors</h4>
             <div id="factors-list"></div>
@@ -113,7 +129,9 @@
           </div>
           <div class="method-note">
             FFMC, DMC and DC track fuel moisture at increasing depths and timescales; ISI and BUI describe
-            spread rate and fuel availability; FWI combines them into overall fire intensity potential.
+            spread rate and fuel availability; FWI combines them into overall fire intensity potential. The
+            composite score above blends this weather-danger signal with real satellite fire-detection
+            proximity, intensity trend, and wind amplification into one auditable 0–100 number.
             <span id="cold-start-note">This estimate uses standard start-up values rather than multi-day
             carried-forward moisture history, so deep-drought effects (DC) may be understated.</span>
           </div>
@@ -145,11 +163,36 @@
           <div class="risk-card-label hz-heat">🌡️ Heat</div>
           <div class="risk-card-level" id="heat-level"><span class="dot"></span><span id="heat-level-word">—</span></div>
         </div>
-        <div class="risk-big"><span id="heat-big">--</span><span class="unit">°C feels-like</span></div>
+        <div class="risk-big"><span id="heat-big">--</span><span class="unit" id="heat-big-unit">°C feels-like</span></div>
         <div class="risk-desc" id="heat-desc">Loading weather data…</div>
         <div class="risk-foot" id="heat-foot">Source: Open-Meteo</div>
       </div>
 
+    </div>
+
+    <!-- SATELLITE FIRE ANALYTICS -->
+    <div class="sect-head"><h3 class="hz-sat">Satellite Fire Analytics</h3><div class="rule"></div></div>
+    <div class="sat-card" id="sat-card">
+      <div class="sat-top">
+        <div>
+          <div class="eyebrow">Derived from NASA FIRMS (MODIS/VIIRS)</div>
+          <div class="sat-verdict" id="sat-verdict">Gathering satellite passes…</div>
+        </div>
+        <div class="sat-trend" id="sat-trend">—</div>
+      </div>
+      <div class="sat-grid">
+        <div class="sat-cell"><div class="sat-val" id="sat-frp-total">--</div><div class="sat-lbl">Total FRP (MW)</div></div>
+        <div class="sat-cell"><div class="sat-val" id="sat-clusters">--</div><div class="sat-lbl">Active clusters</div></div>
+        <div class="sat-cell"><div class="sat-val" id="sat-growth">--</div><div class="sat-lbl">Growth vs last pass</div></div>
+        <div class="sat-cell"><div class="sat-val" id="sat-confidence">--</div><div class="sat-lbl">Avg. confidence</div></div>
+      </div>
+      <div class="sat-note">
+        Satellite passes detect thermal anomalies (active fire pixels), not smoke, imagery texture, or burn
+        scars. Detections within ~2km are grouped into clusters so repeated passes over one fire don't read
+        as several. FRP (Fire Radiative Power) approximates energy release; rising total FRP across
+        consecutive passes over the same area indicates an intensifying, not just persistent, fire.
+      </div>
+      <div class="sat-note sat-note-future" id="sat-future-note"></div>
     </div>
 
     <!-- TWO COLUMN: (fires + map) | (advice + scale) -->
@@ -215,7 +258,7 @@
     <div class="sect-head"><h3 class="hz-weather">Weather</h3><div class="rule"></div></div>
     <div class="weather-grid">
       <div class="wcell"><div class="wicn">🌡</div><div class="wval" id="w-temp">--°</div><div class="wlabel">Temp</div></div>
-      <div class="wcell"><div class="wicn">💨</div><div class="wval" id="w-wind">--</div><div class="wlabel">Wind km/h · <span id="w-winddir">—</span></div></div>
+      <div class="wcell"><div class="wicn">💨</div><div class="wval" id="w-wind">--</div><div class="wlabel" id="w-wind-lbl">Wind km/h · <span id="w-winddir">—</span></div></div>
       <div class="wcell"><div class="wicn">💧</div><div class="wval" id="w-humidity">--%</div><div class="wlabel">Humidity</div></div>
       <div class="wcell"><div class="wicn">🌧</div><div class="wval" id="w-rain">--mm</div><div class="wlabel">7-day rain</div></div>
     </div>
@@ -223,7 +266,8 @@
   </div>
 
   <footer>
-    Wildfire risk computed with the Canadian FWI System; other hazards from NASA FIRMS, NASA EONET, USGS, and Open-Meteo.
+    Wildfire risk computed with the Canadian FWI System and a composite satellite-informed score; other
+    hazards from NASA FIRMS, NASA EONET, and Open-Meteo.
     Not an official warning — for emergencies, always follow local fire authority guidance.
     <div class="emg">Emergency? Call <a href="tel:911">911</a> · <a href="https://www.fire.ca.gov/" target="_blank" rel="noopener">CAL FIRE</a> · <a href="tel:211">211</a></div>
   </footer>

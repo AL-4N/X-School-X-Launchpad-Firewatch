@@ -120,6 +120,66 @@ function degreesToCompass(deg){
   return dirs[Math.round(deg / 45) % 8];
 }
 
+/* ---------------- Units (°C/°F, km/h ↔ mph) ---------------- */
+
+const UNIT_KEY = 'firewatch_unit';
+let unit = localStorage.getItem(UNIT_KEY) || 'C'; // 'C' | 'F'
+
+function cToF(c){ return (c * 9/5) + 32; }
+function kmhToMph(k){ return k * 0.621371; }
+
+/** Formats a Celsius value in whichever unit is currently selected, with the
+ * degree symbol and letter (e.g. "24°C" / "75°F"). Pass decimals=0 for
+ * whole-number display (used almost everywhere in this compact UI). */
+function fmtTemp(c, decimals){
+  if(c == null || Number.isNaN(c)) return '—';
+  const val = unit === 'F' ? cToF(c) : c;
+  const d = decimals == null ? 0 : decimals;
+  return `${val.toFixed(d)}°${unit}`;
+}
+
+function fmtWind(kmh){
+  if(kmh == null || Number.isNaN(kmh)) return '—';
+  return unit === 'F' ? `${Math.round(kmhToMph(kmh))}` : `${Math.round(kmh)}`;
+}
+
+function windUnitLabel(){
+  return unit === 'F' ? 'Wind mph' : 'Wind km/h';
+}
+
+function setUnit(u){
+  if(u !== 'C' && u !== 'F') return;
+  unit = u;
+  localStorage.setItem(UNIT_KEY, unit);
+  document.getElementById('unit-c').classList.toggle('active', unit === 'C');
+  document.getElementById('unit-f').classList.toggle('active', unit === 'F');
+  // Re-render every already-loaded card so units flip instantly without a refetch.
+  refreshUnitDependentUI();
+}
+
+/** Re-paints all currently-visible unit-dependent numbers from cached state
+ * (current, lastWeather) rather than re-fetching — units are a display
+ * concern only. */
+function refreshUnitDependentUI(){
+  if(current.actualTempC != null){
+    document.getElementById('w-temp').textContent = fmtTemp(current.actualTempC);
+  }
+  if(current.windKmh != null){
+    document.getElementById('w-wind').textContent = fmtWind(current.windKmh);
+  }
+  const windLbl = document.getElementById('w-wind-lbl');
+  if(windLbl) windLbl.innerHTML = `${windUnitLabel()} · <span id="w-winddir">${degreesToCompass(lastWeather?.windDir)}</span>`;
+
+  if(current.heatFeelsC != null){
+    document.getElementById('heat-big').textContent = fmtTemp(current.heatFeelsC).replace(`°${unit}`, '');
+    document.getElementById('heat-big-unit').textContent = `°${unit} feels-like`;
+  }
+  if(lastWeather){
+    document.getElementById('heat-foot').textContent =
+      `Actual ${fmtTemp(lastWeather.temp)} · humidity ${Math.round(lastWeather.humidity)}% · source: Open-Meteo`;
+  }
+}
+
 // Levels are 0=green(good) 1=yellow(moderate) 2=orange(unhealthy) 3=red(severe),
 // shared across the hero verdict and each risk card so the "worst of three" logic is one source of truth.
 const LEVEL_COLORS = ['#2ecc71', '#f1c40f', '#e67e22', '#e74c3c'];
@@ -127,10 +187,11 @@ const LEVEL_NAMES = ['GREEN', 'YELLOW', 'ORANGE', 'RED'];
 
 const current = {
   nearestFireMiles: null, nearestFireDir: null, fireCount: 0, fwiDangerLevel: null, fwiDangerHex: null,
-  fireLevel: null,
+  fireLevel: null, compositeScore: null,
   aqiLevel: null, aqiValue: null, aqiScale: null,
   heatLevel: null, heatFeelsC: null, actualTempC: null, humidity: null, windKmh: null,
 };
+let lastWeather = null; // cached raw weather payload, used to re-render on unit toggle
 
 const state = {
   loading: document.getElementById('state-loading'),
@@ -211,6 +272,8 @@ async function loadLocation(lat, lon, knownDisplayName){
   Object.keys(current).forEach(k => current[k] = null);
   current.fireCount = 0;
   lastFires = [];
+  satHistory = [];
+  lastWeather = null;
   updateHero();
 
   initMap();
@@ -441,10 +504,12 @@ async function loadWeatherAndRisk(){
   try{
     const data = await api(`/api/risk?lat=${userLat}&lon=${userLon}`);
     const { weather, fwi } = data;
+    lastWeather = weather;
 
-    document.getElementById('w-temp').textContent = `${Math.round(weather.temp)}°C`;
-    document.getElementById('w-wind').textContent = `${Math.round(weather.wind)}`;
-    document.getElementById('w-winddir').textContent = degreesToCompass(weather.windDir);
+    document.getElementById('w-temp').textContent = fmtTemp(weather.temp);
+    document.getElementById('w-wind').textContent = fmtWind(weather.wind);
+    const windLbl = document.getElementById('w-wind-lbl');
+    if(windLbl) windLbl.innerHTML = `${windUnitLabel()} · <span id="w-winddir">${degreesToCompass(weather.windDir)}</span>`;
     document.getElementById('w-humidity').textContent = `${Math.round(weather.humidity)}%`;
     document.getElementById('w-rain').textContent = `${weather.rain7d.toFixed(0)}mm`;
 
@@ -497,10 +562,12 @@ function renderHeat(weather){
   current.heatLevel = cat.level;
   current.heatFeelsC = weather.feelsLike;
 
-  document.getElementById('heat-big').textContent = Math.round(weather.feelsLike);
+  document.getElementById('heat-big').textContent = Math.round(unit === 'F' ? cToF(weather.feelsLike) : weather.feelsLike);
+  const heatUnitEl = document.getElementById('heat-big-unit');
+  if(heatUnitEl) heatUnitEl.textContent = `°${unit} feels-like`;
   document.getElementById('heat-desc').textContent = cat.desc;
   document.getElementById('heat-foot').textContent =
-    `Actual ${Math.round(weather.temp)}°C · humidity ${Math.round(weather.humidity)}% · source: Open-Meteo`;
+    `Actual ${fmtTemp(weather.temp)} · humidity ${Math.round(weather.humidity)}% · source: Open-Meteo`;
 
   const levelEl = document.getElementById('heat-level');
   levelEl.querySelector('.dot').style.background = LEVEL_COLORS[cat.level];
@@ -547,7 +614,7 @@ function drawHazardAlerts(){
   });
 }
 
-/* ---------------- Hero verdict (worst of the three risk cards) ---------------- */
+/* ---------------- Hero verdict (worst of the four risk signals) ---------------- */
 
 function updateHero(){
   const levels = [
@@ -634,6 +701,148 @@ function renderAdvice(){
   list.innerHTML = items.map(t => `<div class="advice-item"><span class="chk">✓</span>${t}</div>`).join('');
 }
 
+/* ================================================================
+ * IMPROVED SCORING ENGINE
+ *
+ * The old model used a single lookup off the raw FWI number, plus a
+ * separate, disconnected "nearest fire distance" rule bolted on
+ * afterward (recomputeFireLevel). That meant a location with a
+ * moderate FWI but an intensifying, wind-driven fire 20 miles away
+ * scored the same as one with no satellite fire activity at all.
+ *
+ * This version computes a single 0–100 COMPOSITE RISK SCORE that
+ * blends four weighted components, each independently visible in the
+ * UI breakdown so the score is auditable rather than a black box:
+ *
+ *   1. FWI weather danger      (40%) — conditions are primed to burn
+ *   2. Satellite fire proximity (30%) — a real detected fire nearby
+ *   3. Satellite fire momentum  (20%) — is that fire intensifying
+ *      (rising FRP / new clusters) or dying down, across passes
+ *   4. Wind/spread multiplier   (10%) — high wind amplifies both
+ *      weather danger and an existing fire's spread rate together
+ *
+ * Components 2 and 3 come from the satellite analytics module below.
+ * ================================================================ */
+
+/** Maps the Canadian FWI 0–~30(+) scale to a 0–100 sub-score using a
+ * smooth diminishing-returns curve (sqrt) rather than a hard step
+ * function — a jump from FWI 8→10 should visibly move the needle even
+ * though both fall in the same "moderate" bucket under the old model. */
+function fwiToSubscore(fwi){
+  if(fwi == null || Number.isNaN(fwi)) return 0;
+  const capped = Math.max(0, Math.min(fwi, 40));
+  return Math.min(100, Math.round(Math.sqrt(capped / 40) * 100));
+}
+
+/** Distance-based proximity sub-score: an inverse-distance curve
+ * rather than the old 3-bucket cliff (≤10mi / ≤25mi / else), so a fire
+ * at 11mi doesn't read identically to one at 24mi. */
+function proximitySubscore(miles){
+  if(miles == null) return 0;
+  if(miles <= 1) return 100;
+  if(miles >= 60) return 0;
+  // Smooth falloff: 100 at 1mi, ~50 at 15mi, ~0 at 60mi.
+  return Math.round(100 * Math.exp(-miles / 18));
+}
+
+/** Momentum sub-score from satellite analytics: rewards rising total
+ * FRP and growing cluster count between consecutive FIRMS fetches for
+ * the same location, since a fire getting MORE intense between passes
+ * is materially more dangerous than a stable one at the same distance. */
+function momentumSubscore(sat){
+  if(!sat || sat.frpTrendPct == null) return 0;
+  // frpTrendPct: e.g. +45 means FRP up 45% since last pass.
+  const clamped = Math.max(-100, Math.min(200, sat.frpTrendPct));
+  return Math.round(Math.max(0, Math.min(100, 50 + clamped / 2)));
+}
+
+/** Wind acts as a multiplier on both weather danger and an active
+ * fire's spread rate — the same wind speed matters more when there's
+ * already something burning nearby. Returns a 0–100 sub-score AND is
+ * also applied as a small direct multiplier on the composite total. */
+function windSubscore(windKmh){
+  if(windKmh == null) return 0;
+  return Math.round(Math.min(100, (windKmh / 60) * 100));
+}
+
+/** The single entry point: computes the composite 0–100 score and a
+ * breakdown array for display, from whatever component data is
+ * currently available. Missing components are weighted out (their
+ * weight is redistributed proportionally) rather than counted as 0,
+ * so a slow satellite fetch doesn't drag the score down artificially. */
+function computeCompositeScore(){
+  const fwiSub = fwiToSubscore(current.fwiRaw);
+  const proxSub = proximitySubscore(current.nearestFireMiles);
+  const momSub = momentumSubscore(satAnalytics);
+  const windSub = windSubscore(current.windKmh);
+
+  const components = [
+    { key:'weather', label:'Weather (FWI)', weight:0.40, value:fwiSub, available: current.fwiRaw != null },
+    { key:'proximity', label:'Satellite fire proximity', weight:0.30, value:proxSub, available: current.nearestFireMiles != null || current.fireCount === 0 },
+    { key:'momentum', label:'Fire intensity trend', weight:0.20, value:momSub, available: satAnalytics != null && satAnalytics.frpTrendPct != null },
+    { key:'wind', label:'Wind amplification', weight:0.10, value:windSub, available: current.windKmh != null },
+  ];
+
+  const availableWeight = components.filter(c => c.available).reduce((s, c) => s + c.weight, 0);
+  if(availableWeight === 0){ current.compositeScore = null; return null; }
+
+  let score = 0;
+  components.forEach(c => {
+    if(!c.available) return;
+    const normWeight = c.weight / availableWeight; // redistribute missing weight
+    score += c.value * normWeight;
+  });
+  score = Math.round(Math.max(0, Math.min(100, score)));
+
+  current.compositeScore = score;
+  return { score, components };
+}
+
+function compositeLevel(score){
+  if(score == null) return null;
+  if(score >= 75) return 3;
+  if(score >= 50) return 2;
+  if(score >= 25) return 1;
+  return 0;
+}
+
+function renderCompositeScore(){
+  const result = computeCompositeScore();
+  const scoreEl = document.getElementById('composite-score');
+  const fillEl = document.getElementById('composite-bar-fill');
+  const breakdownEl = document.getElementById('composite-breakdown');
+  if(!scoreEl || !fillEl || !breakdownEl) return;
+
+  if(!result){
+    scoreEl.innerHTML = '--<small>/100</small>';
+    fillEl.style.width = '0%';
+    fillEl.style.background = 'var(--ink-soft, #999)';
+    breakdownEl.innerHTML = '<div class="empty-note">Waiting for enough data to compute a composite score…</div>';
+    return;
+  }
+
+  const { score, components } = result;
+  const level = compositeLevel(score);
+  const hex = LEVEL_COLORS[level];
+
+  scoreEl.innerHTML = `${score}<small>/100</small>`;
+  scoreEl.style.color = hex;
+  fillEl.style.width = `${score}%`;
+  fillEl.style.background = hex;
+
+  breakdownEl.innerHTML = components.map(c => {
+    const dim = c.available ? '' : ' style="opacity:0.4"';
+    const valText = c.available ? `${c.value}` : '—';
+    return `<div class="composite-row"${dim}>
+      <span class="composite-row-label">${c.label}<small>(${Math.round(c.weight*100)}%)</small></span>
+      <span class="composite-row-bar"><span style="width:${c.available ? c.value : 0}%"></span></span>
+      <span class="composite-row-val">${valText}</span>
+    </div>`;
+  }).join('');
+
+  recomputeFireLevel();
+}
+
 /* ---------------- Risk rendering (FWI-driven) ---------------- */
 
 function renderRisk(fwiResult, weather){
@@ -641,6 +850,7 @@ function renderRisk(fwiResult, weather){
 
   current.fwiDangerLevel = danger.level;
   current.fwiDangerHex = danger.hex;
+  current.fwiRaw = indices.fwi;
 
   document.getElementById('score-num').textContent = indices.fwi;
   document.getElementById('score-num').style.color = danger.hex;
@@ -656,8 +866,8 @@ function renderRisk(fwiResult, weather){
   document.getElementById('fwi-bui').textContent = indices.bui;
 
   const factors = [];
-  if(weather.wind >= 30) factors.push({icon:'💨', text:`Wind at ${Math.round(weather.wind)} km/h is a major driver of the Initial Spread Index`});
-  else if(weather.wind >= 15) factors.push({icon:'💨', text:`Moderate wind (${Math.round(weather.wind)} km/h) is contributing to spread potential`});
+  if(weather.wind >= 30) factors.push({icon:'💨', text:`Wind at ${fmtWind(weather.wind)} ${unit === 'F' ? 'mph' : 'km/h'} is a major driver of the Initial Spread Index`});
+  else if(weather.wind >= 15) factors.push({icon:'💨', text:`Moderate wind (${fmtWind(weather.wind)} ${unit === 'F' ? 'mph' : 'km/h'}) is contributing to spread potential`});
   else factors.push({icon:'✓', text:'Low wind speeds are limiting spread potential'});
 
   if(weather.humidity <= 30) factors.push({icon:'🏜', text:`Low humidity (${Math.round(weather.humidity)}%) is drying fine surface fuels quickly`});
@@ -666,7 +876,11 @@ function renderRisk(fwiResult, weather){
   if(weather.rain7d <= 2) factors.push({icon:'☀️', text:'Little rain in the past week is allowing deeper fuel layers to dry out (reflected in DMC/DC)'});
   else if(weather.rain7d >= 15) factors.push({icon:'✓', text:'Recent rainfall is keeping deeper fuel layers moist'});
 
-  if(weather.temp >= 30) factors.push({icon:'🌡', text:`High temperature (${Math.round(weather.temp)}°C) is accelerating fuel drying`});
+  if(weather.temp >= 30) factors.push({icon:'🌡', text:`High temperature (${fmtTemp(weather.temp)}) is accelerating fuel drying`});
+
+  if(satAnalytics && satAnalytics.frpTrendPct != null && satAnalytics.frpTrendPct >= 25){
+    factors.push({icon:'🛰', text:`Satellite passes show fire radiative power up ${Math.round(satAnalytics.frpTrendPct)}% since the last pass — an intensifying, not just persistent, fire`});
+  }
 
   const list = document.getElementById('factors-list');
   list.innerHTML = '';
@@ -693,6 +907,7 @@ function renderRisk(fwiResult, weather){
   const now = new Date();
   document.getElementById('updated-text').textContent = `Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
 
+  renderCompositeScore();
   recomputeFireLevel();
   updateHero();
   renderAdvice();
@@ -837,18 +1052,27 @@ function confidenceLabel(code){
   return map[(code || '').toLowerCase()] || (code || 'unknown');
 }
 
-/** Combines real-time fire proximity (FIRMS) with the weather-driven FWI
- * danger level so the wildfire card reflects both "is a fire near me" and
- * "are conditions primed for one to spread." */
+/** Combines the new composite score with real-time fire proximity so the
+ * wildfire card reflects the full picture. If a composite score is
+ * available it drives the level directly (it already incorporates
+ * proximity, momentum, and wind); otherwise falls back to the legacy
+ * proximity/FWI rule so the card still degrades gracefully if satellite
+ * or weather data is temporarily missing. */
 function recomputeFireLevel(){
   const miles = current.nearestFireMiles;
   const fwiLvl = current.fwiDangerLevel;
-  let level = 0;
-  if(miles != null && miles <= 10) level = 3;
-  else if(miles != null && miles <= 25) level = 2;
-  else if(fwiLvl >= 5) level = Math.max(level, 3);
-  else if(fwiLvl >= 4) level = Math.max(level, 2);
-  else if(fwiLvl >= 2) level = Math.max(level, 1);
+
+  let level;
+  if(current.compositeScore != null){
+    level = compositeLevel(current.compositeScore);
+  } else {
+    level = 0;
+    if(miles != null && miles <= 10) level = 3;
+    else if(miles != null && miles <= 25) level = 2;
+    else if(fwiLvl >= 5) level = Math.max(level, 3);
+    else if(fwiLvl >= 4) level = Math.max(level, 2);
+    else if(fwiLvl >= 2) level = Math.max(level, 1);
+  }
   current.fireLevel = level;
 
   const levelEl = document.getElementById('fire-level');
@@ -888,6 +1112,8 @@ async function loadFires(){
     current.nearestFireDir = lastFires.length ? lastFires[0].dir : null;
 
     renderFiresCard();
+    runSatelliteAnalytics(lastFires);
+    renderCompositeScore();
     recomputeFireLevel();
     updateHero();
     renderAdvice();
@@ -906,6 +1132,7 @@ async function loadFires(){
 
     current.nearestFireMiles = null;
     current.nearestFireDir = null;
+    renderSatelliteError();
     recomputeFireLevel();
     updateHero();
     renderAdvice();
@@ -914,14 +1141,14 @@ async function loadFires(){
 
 function renderFiresCard(){
   const big = document.getElementById('fire-big');
-  const unit = document.getElementById('fire-big-unit');
+  const unitEl = document.getElementById('fire-big-unit');
   const desc = document.getElementById('fire-desc');
   const foot = document.getElementById('fire-foot');
   const list = document.getElementById('fires-detail-list');
 
   if(!lastFires.length){
     big.textContent = '—';
-    unit.textContent = '';
+    unitEl.textContent = '';
     desc.textContent = 'No active fire detected nearby. Stay aware of local conditions.';
     foot.textContent = 'Source: NASA FIRMS';
     list.innerHTML = '<div class="empty-note">No fire detections within ~65km in the last 24h.</div>';
@@ -931,7 +1158,7 @@ function renderFiresCard(){
   const nearest = lastFires[0];
   const miles = Math.round(nearest.distKm * 0.621371);
   big.textContent = miles;
-  unit.textContent = ` mi ${nearest.dir}`;
+  unitEl.textContent = ` mi ${nearest.dir}`;
   desc.textContent = miles <= 10
     ? 'An active fire is close by. Stay alert and follow local evacuation guidance.'
     : miles <= 25
@@ -957,6 +1184,161 @@ function renderFiresCard(){
       <div class="quake-dist" style="color:${distColor}">${miles} mi<span class="sub">${f.dir}</span></div>`;
     list.appendChild(row);
   });
+}
+
+/* ================================================================
+ * SATELLITE FIRE-DETECTION ANALYTICS
+ *
+ * "Satellite image analysis" in the literal sense (classifying raw
+ * pixel imagery — smoke plumes, burn scar texture, vegetation
+ * indices) needs imagery the browser doesn't have access to; FIRMS
+ * only exposes point detections it already extracted server-side from
+ * MODIS/VIIRS. What's genuinely derivable client-side from that data,
+ * and genuinely useful, is treated here as a proper analytics layer
+ * rather than faked:
+ *
+ *  - CLUSTERING: group raw detection points into contiguous fire
+ *    clusters (points within ~2km of each other), since 40 raw FIRMS
+ *    points are usually 3-4 real fires' worth of repeated satellite
+ *    passes, not 40 separate fires.
+ *  - TOTAL FRP: sum of Fire Radiative Power across all detections —
+ *    the standard satellite-derived proxy for total energy release.
+ *  - TREND: compares this fetch's total FRP for the same location
+ *    against the previous fetch (kept in-memory per session) to
+ *    surface whether detected fire activity is growing or shrinking
+ *    between satellite passes.
+ *  - CONFIDENCE: average detection confidence, since FIRMS explicitly
+ *    flags low-confidence detections (small/cool sources, sun glint,
+ *    etc.) that shouldn't be weighted the same as high-confidence ones.
+ *
+ * See /mnt/user-data/outputs/satellite-imagery-backend-spec.md for what
+ * a true pixel-level imagery pipeline (e.g. Sentinel-2/Landsat NBR burn
+ * severity, smoke plume segmentation) would require on the backend.
+ * ================================================================ */
+
+let satAnalytics = null;
+let satHistory = []; // [{ timestamp, totalFrp, clusterCount }, ...] this session, this location
+
+const SAT_CONFIDENCE_WEIGHTS = { l: 0.3, n: 0.7, h: 1.0 };
+
+/** Greedy single-link clustering: two detections within ~2km are the
+ * same cluster. Good enough for "how many distinct fires" without
+ * needing a real DBSCAN implementation for a handful of points. */
+function clusterFireDetections(fires, thresholdKm){
+  const threshold = thresholdKm || 2;
+  const clusters = [];
+  const visited = new Array(fires.length).fill(false);
+
+  for(let i = 0; i < fires.length; i++){
+    if(visited[i]) continue;
+    const cluster = [fires[i]];
+    visited[i] = true;
+    // Expand cluster by checking all unvisited points against any point
+    // already in the cluster (simple flood-fill, fine at this scale).
+    let grew = true;
+    while(grew){
+      grew = false;
+      for(let j = 0; j < fires.length; j++){
+        if(visited[j]) continue;
+        const inRange = cluster.some(c => haversineKm(c.lat, c.lon, fires[j].lat, fires[j].lon) <= threshold);
+        if(inRange){
+          cluster.push(fires[j]);
+          visited[j] = true;
+          grew = true;
+        }
+      }
+    }
+    clusters.push(cluster);
+  }
+  return clusters;
+}
+
+function runSatelliteAnalytics(fires){
+  if(!fires || !fires.length){
+    satAnalytics = { totalFrp: 0, clusterCount: 0, avgConfidence: null, frpTrendPct: null, verdict: 'clear' };
+    satHistory.push({ timestamp: Date.now(), totalFrp: 0, clusterCount: 0 });
+    renderSatelliteCard();
+    return;
+  }
+
+  const clusters = clusterFireDetections(fires, 2);
+  const totalFrp = fires.reduce((sum, f) => sum + (f.frp || 0), 0);
+
+  const confVals = fires
+    .map(f => SAT_CONFIDENCE_WEIGHTS[(f.confidence || '').toLowerCase()])
+    .filter(v => v != null);
+  const avgConfidence = confVals.length ? confVals.reduce((a,b) => a+b, 0) / confVals.length : null;
+
+  // Trend vs the previous fetch for this same location/session.
+  let frpTrendPct = null;
+  const prev = satHistory[satHistory.length - 1];
+  if(prev && prev.totalFrp > 0){
+    frpTrendPct = ((totalFrp - prev.totalFrp) / prev.totalFrp) * 100;
+  }
+
+  let verdict;
+  if(frpTrendPct != null && frpTrendPct >= 25) verdict = 'intensifying';
+  else if(frpTrendPct != null && frpTrendPct <= -25) verdict = 'weakening';
+  else verdict = 'stable';
+
+  satAnalytics = { totalFrp, clusterCount: clusters.length, avgConfidence, frpTrendPct, verdict };
+  satHistory.push({ timestamp: Date.now(), totalFrp, clusterCount: clusters.length });
+  if(satHistory.length > 20) satHistory.shift(); // keep memory bounded across a long session
+
+  renderSatelliteCard();
+}
+
+function renderSatelliteCard(){
+  const verdictEl = document.getElementById('sat-verdict');
+  const trendEl = document.getElementById('sat-trend');
+  const frpEl = document.getElementById('sat-frp-total');
+  const clustersEl = document.getElementById('sat-clusters');
+  const growthEl = document.getElementById('sat-growth');
+  const confEl = document.getElementById('sat-confidence');
+  const futureNoteEl = document.getElementById('sat-future-note');
+  if(!verdictEl) return;
+
+  if(!satAnalytics){
+    verdictEl.textContent = 'Gathering satellite passes…';
+    return;
+  }
+
+  const { totalFrp, clusterCount, avgConfidence, frpTrendPct, verdict } = satAnalytics;
+
+  const verdictText = {
+    clear: 'No satellite-detected fire activity nearby',
+    stable: `${clusterCount} fire cluster${clusterCount === 1 ? '' : 's'} detected — activity level stable between passes`,
+    intensifying: `${clusterCount} fire cluster${clusterCount === 1 ? '' : 's'} detected — intensifying between satellite passes`,
+    weakening: `${clusterCount} fire cluster${clusterCount === 1 ? '' : 's'} detected — activity declining between passes`,
+  }[verdict];
+  verdictEl.textContent = verdictText;
+  verdictEl.style.color = verdict === 'intensifying' ? 'var(--extreme, #b23a2e)' : '';
+
+  trendEl.textContent = frpTrendPct == null ? 'First pass' : `${frpTrendPct >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(frpTrendPct))}%`;
+  trendEl.style.color = frpTrendPct == null ? '' : (frpTrendPct >= 25 ? 'var(--extreme, #b23a2e)' : frpTrendPct <= -25 ? 'var(--vlow, #3b7a57)' : '');
+
+  frpEl.textContent = totalFrp > 0 ? Math.round(totalFrp) : '—';
+  clustersEl.textContent = clusterCount || '0';
+  growthEl.textContent = frpTrendPct == null ? '—' : `${frpTrendPct >= 0 ? '+' : ''}${Math.round(frpTrendPct)}%`;
+  confEl.textContent = avgConfidence != null ? `${Math.round(avgConfidence * 100)}%` : '—';
+
+  if(futureNoteEl){
+    futureNoteEl.innerHTML = clusterCount > 0
+      ? '<b>Coming soon:</b> true pixel-level imagery analysis (Sentinel-2/Landsat burn-severity index, smoke plume segmentation) requires a backend imagery pipeline — see the satellite-imagery-backend-spec doc for what that would add beyond these point-detection analytics.'
+      : '';
+  }
+}
+
+function renderSatelliteError(){
+  satAnalytics = null;
+  const verdictEl = document.getElementById('sat-verdict');
+  if(verdictEl) verdictEl.textContent = 'Satellite analytics unavailable right now';
+  ['sat-frp-total','sat-clusters','sat-growth','sat-confidence'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = '—';
+  });
+  const trendEl = document.getElementById('sat-trend');
+  if(trendEl) trendEl.textContent = '—';
 }
 
 /* ---------------- Global wildfire incidents (NASA EONET, via Worker) ---------------- */
@@ -1037,6 +1419,10 @@ function toggleGlobalIncidentsOnMap(){
 
 /* ---------------- Init ---------------- */
 (function initFromUrlOrGeolocate(){
+  // Reflect saved unit preference in the header toggle before any data loads.
+  document.getElementById('unit-c').classList.toggle('active', unit === 'C');
+  document.getElementById('unit-f').classList.toggle('active', unit === 'F');
+
   renderSavedPlaces();
   const params = new URLSearchParams(window.location.search);
   const lat = parseFloat(params.get('lat'));

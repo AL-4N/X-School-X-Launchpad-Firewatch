@@ -19,6 +19,7 @@
   --hz-heat:#ffb036;
   --hz-incidents:#ff9f5a;
   --hz-weather:#ffb036;
+  --hz-sat:#7ac9e8;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;background:var(--bg);}
@@ -53,6 +54,19 @@ header .brand{
 header .brand .fire{color:var(--ember);}
 header .brand .watch{color:var(--text);}
 header .tag{font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;}
+header .header-right{display:flex;align-items:center;gap:14px;}
+
+/* ---- °C/°F unit toggle ---- */
+.unit-toggle{
+  display:flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;
+}
+.unit-toggle button{
+  background:transparent;border:none;color:var(--muted);
+  font-family:'Inter',sans-serif;font-weight:600;font-size:11px;
+  padding:5px 11px;cursor:pointer;letter-spacing:0.03em;
+}
+.unit-toggle button.active{background:var(--ember);color:var(--bg);}
+.unit-toggle button:not(.active):hover{color:var(--text);}
 
 main{max-width:520px;margin:0 auto;padding:0 16px;}
 @media(min-width:860px){
@@ -181,6 +195,29 @@ main{max-width:520px;margin:0 auto;padding:0 16px;}
 .fwi-chip{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:8px 3px;text-align:center;}
 .fwi-chip .val{font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;color:var(--text);}
 .fwi-chip .lbl{font-size:8.5px;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);margin-top:2px;}
+
+/* ---- composite risk score ---- */
+.composite-wrap{
+  margin-top:16px;padding:14px 14px 12px;border-radius:12px;
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+}
+.composite-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px;}
+.composite-head h4{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);
+  margin:0;font-weight:700;
+}
+.composite-score{font-family:'Oswald',sans-serif;font-weight:700;font-size:20px;color:var(--text);}
+.composite-score small{font-size:11px;font-weight:500;color:var(--muted);margin-left:2px;}
+.composite-bar{height:7px;border-radius:4px;background:rgba(255,255,255,0.08);overflow:hidden;margin-bottom:12px;}
+.composite-bar-fill{height:100%;width:0%;border-radius:4px;transition:width 0.4s ease, background 0.4s ease;}
+.composite-breakdown{display:flex;flex-direction:column;gap:8px;}
+.composite-row{display:grid;grid-template-columns:1fr 72px 30px;align-items:center;gap:10px;font-size:11px;color:var(--text);}
+.composite-row-label{color:var(--muted);}
+.composite-row-label small{margin-left:4px;color:var(--muted);opacity:0.7;}
+.composite-row-bar{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;}
+.composite-row-bar span{display:block;height:100%;background:var(--ember);border-radius:3px;}
+.composite-row-val{text-align:right;font-family:'Oswald',sans-serif;font-weight:600;color:var(--text);}
+
 .factors{margin-top:14px;}
 .factors h4{font-size:10.5px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin:0 0 9px;font-weight:700;}
 .factor-row{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.4;margin-bottom:7px;color:var(--text);}
@@ -239,6 +276,7 @@ main{max-width:520px;margin:0 auto;padding:0 16px;}
 .sect-head h3.hz-fire{color:var(--hz-fire);}
 .sect-head h3.hz-incidents{color:var(--hz-incidents);}
 .sect-head h3.hz-weather{color:var(--hz-weather);}
+.sect-head h3.hz-sat{color:var(--hz-sat);}
 .sect-head .rule{flex:1;height:1px;background:var(--border);}
 
 .aqi-source-toggle{display:flex;gap:6px;margin-top:12px;}
@@ -297,6 +335,26 @@ main{max-width:520px;margin:0 auto;padding:0 16px;}
 }
 .incident-badge.open{ background:rgba(255,94,42,0.18); color:var(--ember); }
 .incident-badge.closed{ background:rgba(255,255,255,0.08); color:var(--muted); }
+
+/* ---- satellite fire analytics ---- */
+.sat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;
+}
+.sat-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.sat-top .eyebrow{font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:600;}
+.sat-verdict{font-family:'Oswald',sans-serif;font-weight:600;font-size:15px;color:var(--text);margin-top:5px;line-height:1.3;}
+.sat-trend{
+  font-family:'Oswald',sans-serif;font-weight:700;font-size:16px;color:var(--muted);
+  flex-shrink:0;white-space:nowrap;
+}
+.sat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px;}
+.sat-cell{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:11px 6px;text-align:center;}
+.sat-val{font-family:'Oswald',sans-serif;font-weight:700;font-size:16px;color:var(--text);}
+.sat-lbl{font-size:8.5px;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);margin-top:3px;line-height:1.3;}
+.sat-note{margin-top:14px;font-size:11px;color:var(--muted);line-height:1.55;border-top:1px solid var(--border);padding-top:12px;}
+.sat-note-future{border-top:none;padding-top:0;margin-top:8px;}
+.sat-note-future b{color:var(--hz-sat);}
 
 /* ---- map ---- */
 .map-panel-head{
