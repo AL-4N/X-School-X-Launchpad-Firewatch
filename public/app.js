@@ -698,44 +698,109 @@ function updateHero(){
 
 /* ---------------- "What should I do?" advice engine ---------------- */
 
+/* Profile-specific advice that is always shown regardless of conditions. */
+const STANDING_ADVICE = {
+  general: [
+    'Check local fire authority alerts before outdoor activities.',
+    'Keep windows closed on smoky or high-wind days.',
+    'Know your nearest two evacuation routes.',
+    'Keep at least 3 days of emergency supplies at home.',
+  ],
+  asthma: [
+    'Keep your rescue inhaler accessible at all times.',
+    'Monitor AQI daily — airways react before you feel it.',
+    'Use a HEPA air filter indoors on smoky days.',
+    'Have a written asthma action plan and share it with someone nearby.',
+  ],
+  elderly: [
+    'Stay hydrated — thirst response weakens with age.',
+    'Keep medications stocked for at least 2 weeks.',
+    'Identify a cool refuge (library, community center) if AC fails.',
+    'Ensure someone checks in on you daily during high-risk periods.',
+  ],
+  outdoor: [
+    'Check fire weather forecast before starting each shift.',
+    'Carry water and a dust mask on every job.',
+    'Have a communication plan for areas with no cell signal.',
+    'Know the location of the nearest fire station or emergency exit.',
+  ],
+};
+
+/* Emergency resource links per profile. */
+const PROFILE_RESOURCES = {
+  general:  [{ label:'CAL FIRE alerts', href:'https://www.fire.ca.gov/' }, { label:'Air quality map', href:'https://www.airnow.gov/' }],
+  asthma:   [{ label:'Air quality map', href:'https://www.airnow.gov/' }, { label:'Asthma & Allergy Foundation', href:'https://www.aafa.org/' }],
+  elderly:  [{ label:'CAL FIRE alerts', href:'https://www.fire.ca.gov/' }, { label:'Red Cross preparedness', href:'https://www.redcross.org/get-help/how-to-prepare-for-emergencies.html' }],
+  outdoor:  [{ label:'CAL FIRE alerts', href:'https://www.fire.ca.gov/' }, { label:'OSHA heat safety', href:'https://www.osha.gov/heat' }],
+};
+
 function renderAdvice(){
-  const items = [];
   const { fireLevel, aqiLevel, heatLevel, windKmh } = current;
+  const anyData = fireLevel != null || aqiLevel != null || heatLevel != null;
+
+  // --- Condition-specific items (dynamic) ---
+  const conditionItems = [];
 
   if(aqiLevel != null){
-    const aqiThreshold = profile === 'asthma' ? 1 : 2;
-    if(aqiLevel >= aqiThreshold) items.push('Keep windows and doors closed today.');
-    if(aqiLevel >= 1 && (profile === 'outdoor')) items.push('Wear an N95 mask if working outdoors for long periods.');
-    if(aqiLevel >= 1 && profile === 'asthma') items.push('Keep a rescue inhaler accessible.');
+    if(aqiLevel === 0) conditionItems.push({ icon:'✓', good:true, text:'Air quality is good — fine for outdoor activity today.' });
+    else {
+      const aqiThreshold = profile === 'asthma' ? 1 : 2;
+      if(aqiLevel >= aqiThreshold) conditionItems.push({ icon:'⚠', text:'Keep windows and doors closed today.' });
+      if(aqiLevel >= 1 && profile === 'outdoor') conditionItems.push({ icon:'😷', text:'Wear an N95 mask if working outdoors for extended periods.' });
+      if(aqiLevel >= 1 && profile === 'asthma') conditionItems.push({ icon:'💊', text:'Have your rescue inhaler on your person, not just nearby.' });
+      if(aqiLevel >= 2) conditionItems.push({ icon:'🏠', text:'Stay indoors and run an air purifier or AC on recirculate.' });
+    }
   }
 
   if(heatLevel != null){
-    if(heatLevel >= 2) items.push('Move exercise indoors — skip strenuous outdoor activity.');
-    else if(heatLevel >= 1) items.push('Stay hydrated and take breaks in the shade.');
-    if(heatLevel >= 1 && profile === 'elderly') items.push('Avoid outdoor activity during peak heat hours (12–4pm).');
-    if(heatLevel >= 1 && profile === 'outdoor') items.push('Take shade breaks every 20 minutes and drink water regularly.');
+    if(heatLevel === 0) conditionItems.push({ icon:'✓', good:true, text:'Temperatures are comfortable — no heat precautions needed.' });
+    else {
+      if(heatLevel >= 2) conditionItems.push({ icon:'🌡', text:'Move exercise indoors — avoid strenuous outdoor activity.' });
+      else conditionItems.push({ icon:'💧', text:'Stay hydrated and take breaks in the shade.' });
+      if(heatLevel >= 1 && profile === 'elderly') conditionItems.push({ icon:'🕐', text:'Avoid outdoor activity during peak heat hours (12–4 pm).' });
+      if(heatLevel >= 1 && profile === 'outdoor') conditionItems.push({ icon:'🌿', text:'Take shade breaks every 20 minutes and drink 1 cup of water every 20 min.' });
+      if(heatLevel >= 2 && profile === 'elderly') conditionItems.push({ icon:'📞', text:'Check on neighbours with limited mobility or no air conditioning.' });
+    }
   }
 
   if(fireLevel != null){
-    if(fireLevel >= 2) items.push('Have an evacuation bag ready and monitor CAL FIRE alerts.');
-    else if(fireLevel >= 1) items.push('Stay aware of nearby fire activity and air quality shifts.');
+    if(fireLevel === 0) conditionItems.push({ icon:'✓', good:true, text:'No active fires detected nearby — conditions look calm.' });
+    else if(fireLevel === 1) conditionItems.push({ icon:'👀', text:'Stay aware of nearby fire activity and any sudden air quality changes.' });
+    else if(fireLevel >= 2) conditionItems.push({ icon:'🚗', text:'Have an evacuation bag packed and monitor official fire alerts closely.' });
   }
 
-  if(windKmh != null && windKmh >= 35) items.push('Secure loose outdoor items — winds are strong enough to cause damage.');
+  if(fireLevel >= 3) conditionItems.push({ icon:'🚨', text:'Follow all official evacuation orders immediately — do not wait.' });
+  if(windKmh != null && windKmh >= 35) conditionItems.push({ icon:'💨', text:'Secure loose outdoor furniture and items — winds can spread embers.' });
 
-  if((profile === 'elderly') && [fireLevel, aqiLevel, heatLevel].some(l => l >= 2)) {
-    items.push('Check on elderly neighbors and anyone with limited mobility.');
-  }
+  // --- Standing (always-on) advice for this profile ---
+  const standing = STANDING_ADVICE[profile] || STANDING_ADVICE.general;
 
+  // --- Resources ---
+  const resources = PROFILE_RESOURCES[profile] || PROFILE_RESOURCES.general;
+
+  // --- Render ---
   const list = document.getElementById('advice-list');
-  if(!items.length){
-    const anyData = fireLevel != null || aqiLevel != null || heatLevel != null;
-    list.innerHTML = `<div class="advice-item"><span class="chk">✓</span>${
-      anyData ? 'Conditions are good — no special precautions needed today.' : 'Waiting for current conditions…'
-    }</div>`;
-    return;
+
+  let html = '';
+
+  if(!anyData){
+    html += `<div class="advice-item"><span class="chk muted">…</span>Waiting for current conditions…</div>`;
+  } else if(conditionItems.length){
+    html += `<div class="advice-section-label">Right now</div>`;
+    html += conditionItems.map(i =>
+      `<div class="advice-item${i.good ? ' good' : ''}"><span class="chk">${i.icon}</span>${i.text}</div>`
+    ).join('');
   }
-  list.innerHTML = items.map(t => `<div class="advice-item"><span class="chk">✓</span>${t}</div>`).join('');
+
+  html += `<div class="advice-section-label">Always</div>`;
+  html += standing.map(t => `<div class="advice-item baseline"><span class="chk">✓</span>${t}</div>`).join('');
+
+  html += `<div class="advice-section-label">Resources</div>`;
+  html += `<div class="advice-resources">` +
+    resources.map(r => `<a href="${r.href}" target="_blank" rel="noopener">${r.label} ↗</a>`).join('') +
+    `</div>`;
+
+  list.innerHTML = html;
 }
 
 /* ================================================================
