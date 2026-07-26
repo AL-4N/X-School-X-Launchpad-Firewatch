@@ -15,7 +15,10 @@
 
 const FIRMS_BASE = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv';
 
-const LOCAL_SOURCES = ['VIIRS_SNPP_NRT', 'VIIRS_NOAA20_NRT', 'VIIRS_NOAA21_NRT'];
+// All four active fire sources — VIIRS (375m) for precision, MODIS (1km)
+// for broader temporal coverage. Different satellites have different overpass
+// times, so a fire visible in MODIS may not yet appear in any VIIRS feed.
+const LOCAL_SOURCES = ['VIIRS_SNPP_NRT', 'VIIRS_NOAA20_NRT', 'VIIRS_NOAA21_NRT', 'MODIS_NRT'];
 
 /** Local fires within `radiusKm` of a point, last 24h.
  * Queries all three VIIRS satellites in parallel and deduplicates. */
