@@ -13,6 +13,9 @@ const WORKER_BASE_URL = '';
 
 let map, userMarker, fireLayer, globalFireLayer, incidentLayer;
 let userLat, userLon;
+let fireSort = 'distance'; // 'distance' | 'size'
+let fireSortAsc = true;    // true = closest/smallest first
+let firesExpanded = false;
 let aqiSource = 'openmeteo'; // 'openmeteo' | 'openweathermap' — both proxied server-side now
 let globalIncidents = [];
 let incidentsShownOnMap = false;
@@ -308,6 +311,7 @@ async function loadLocation(lat, lon, knownDisplayName){
   current.fireCount = 0;
   lastFires = [];
   satHistory = [];
+  firesExpanded = false;
   lastWeather = null;
   updateHero();
 
@@ -1277,23 +1281,99 @@ async function loadFires(){
   }
 }
 
+function setFireSort(key){
+  fireSort = key;
+  // Default direction: distance → closest first (asc); size → biggest first (desc)
+  fireSortAsc = key === 'distance';
+  updateFireSortUI();
+  renderFiresCard();
+}
+
+function toggleFireSortDir(){
+  fireSortAsc = !fireSortAsc;
+  updateFireSortUI();
+  renderFiresCard();
+}
+
+function updateFireSortUI(){
+  document.getElementById('sort-btn-distance')?.classList.toggle('active', fireSort === 'distance');
+  document.getElementById('sort-btn-size')?.classList.toggle('active', fireSort === 'size');
+  const dirBtn = document.getElementById('sort-dir-btn');
+  if(dirBtn) dirBtn.textContent = fireSortAsc ? '↑' : '↓';
+}
+
+function toggleFiresExpand(){
+  firesExpanded = !firesExpanded;
+  renderFiresList(getSortedFires());
+}
+
+function getSortedFires(){
+  return [...lastFires].sort((a, b) => {
+    let diff;
+    if(fireSort === 'size') diff = (b.frp || 0) - (a.frp || 0);
+    else diff = a.distKm - b.distKm;
+    return fireSortAsc ? diff : -diff;
+  });
+}
+
+function renderFiresList(sorted){
+  const list = document.getElementById('fires-detail-list');
+  const expandBtn = document.getElementById('fires-expand-btn');
+  const PREVIEW = 5;
+  const shown = firesExpanded ? sorted : sorted.slice(0, PREVIEW);
+
+  list.innerHTML = '';
+  shown.forEach((f, i) => {
+    const miles = Math.round(f.distKm * 0.621371);
+    const distColor = miles <= 10 ? '#e67e22' : miles <= 25 ? '#f1c40f' : '#2ecc71';
+    const frpColor = f.frp >= 100 ? '#e74c3c' : f.frp >= 30 ? '#e67e22' : '#ff5e2a';
+    const row = document.createElement('div');
+    row.className = 'quake-row';
+    row.innerHTML = `
+      <div class="quake-mag" style="background:${frpColor}">🔥</div>
+      <div class="quake-info">
+        <div class="quake-place">Detection #${sorted.indexOf(f)+1}</div>
+        <div class="quake-time">Detected ${timeAgoFromFirms(f.date, f.time)} · confidence ${confidenceLabel(f.confidence)}${f.frp != null ? ` · FRP ${Math.round(f.frp)} MW` : ''}</div>
+      </div>
+      <div class="quake-dist" style="color:${distColor}">${miles} mi<span class="sub">${f.dir}</span></div>`;
+    list.appendChild(row);
+  });
+
+  if(expandBtn){
+    if(sorted.length > PREVIEW){
+      expandBtn.classList.remove('hidden');
+      expandBtn.textContent = firesExpanded
+        ? 'Show less ▴'
+        : `Show all ${sorted.length} ▾`;
+    } else {
+      expandBtn.classList.add('hidden');
+    }
+  }
+}
+
 function renderFiresCard(){
   const big = document.getElementById('fire-big');
   const unitEl = document.getElementById('fire-big-unit');
   const desc = document.getElementById('fire-desc');
   const foot = document.getElementById('fire-foot');
-  const list = document.getElementById('fires-detail-list');
+  const sortBar = document.getElementById('fires-sort-bar');
 
   if(!lastFires.length){
     big.textContent = '—';
     unitEl.textContent = '';
     desc.textContent = 'No active fire detected nearby. Stay aware of local conditions.';
     foot.textContent = 'Source: NASA FIRMS';
-    list.innerHTML = '<div class="empty-note">No fire detections within ~65km in the last 24h.</div>';
+    document.getElementById('fires-detail-list').innerHTML =
+      '<div class="empty-note">No fire detections within ~65km in the last 24h.</div>';
+    document.getElementById('fires-expand-btn')?.classList.add('hidden');
+    if(sortBar) sortBar.classList.add('hidden');
     return;
   }
 
-  const nearest = lastFires[0];
+  if(sortBar) sortBar.classList.remove('hidden');
+
+  // Hero numbers always reflect the closest fire regardless of sort.
+  const nearest = lastFires[0]; // lastFires is always sorted by distance from loadFires()
   const miles = Math.round(nearest.distKm * 0.621371);
   big.textContent = miles;
   unitEl.textContent = ` mi ${nearest.dir}`;
@@ -1304,24 +1384,10 @@ function renderFiresCard(){
       : 'Nearest active fire detection is a safe distance away.';
 
   const brightest = lastFires.reduce((m, f) => f.brightness != null && f.brightness > m ? f.brightness : m, 0);
-  foot.textContent = `${lastFires.length} detection${lastFires.length>1?'s':''} nearby` +
+  foot.textContent = `${lastFires.length} detection${lastFires.length > 1 ? 's' : ''} nearby` +
     (brightest ? ` · brightest ${Math.round(brightest)} K` : '') + ' · source: NASA FIRMS';
 
-  list.innerHTML = '';
-  lastFires.slice(0, 5).forEach((f, i) => {
-    const miles = Math.round(f.distKm * 0.621371);
-    const distColor = miles <= 10 ? '#e67e22' : miles <= 25 ? '#f1c40f' : '#2ecc71';
-    const row = document.createElement('div');
-    row.className = 'quake-row';
-    row.innerHTML = `
-      <div class="quake-mag" style="background:#ff5e2a">🔥</div>
-      <div class="quake-info">
-        <div class="quake-place">Detection #${i+1}</div>
-        <div class="quake-time">Detected ${timeAgoFromFirms(f.date, f.time)} · confidence ${confidenceLabel(f.confidence)}${f.frp != null ? ` · FRP ${Math.round(f.frp)} MW` : ''}</div>
-      </div>
-      <div class="quake-dist" style="color:${distColor}">${miles} mi<span class="sub">${f.dir}</span></div>`;
-    list.appendChild(row);
-  });
+  renderFiresList(getSortedFires());
 }
 
 /* ================================================================

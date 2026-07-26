@@ -200,11 +200,19 @@
     <div class="two-col">
 
       <div class="col-stack">
-        <div class="panel">
-          <h3>Nearby Fires</h3>
+        <div class="panel" id="fires-panel">
+          <div class="fires-panel-head">
+            <h3>Nearby Fires</h3>
+            <div class="fires-sort-bar" id="fires-sort-bar">
+              <button class="sort-btn active" id="sort-btn-distance" onclick="setFireSort('distance')">Distance</button>
+              <button class="sort-btn" id="sort-btn-size" onclick="setFireSort('size')">Size</button>
+              <button class="sort-dir-btn" id="sort-dir-btn" onclick="toggleFireSortDir()" title="Toggle sort direction">↑</button>
+            </div>
+          </div>
           <div class="quake-list" id="fires-detail-list">
             <div class="empty-note">Checking for nearby fire detections…</div>
           </div>
+          <button class="fires-expand-btn hidden" id="fires-expand-btn" onclick="toggleFiresExpand()">Show all</button>
         </div>
 
         <div class="panel" id="map-panel">
