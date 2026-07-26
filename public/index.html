@@ -241,6 +241,31 @@
           <div class="scale-track"><div class="scale-pointer" id="scale-pointer" style="left:0%"></div></div>
           <div class="scale-note" id="scale-note">US EPA AQI · waiting for data…</div>
         </div>
+
+        <div class="panel">
+          <div class="ready-head">
+            <h3>Be Ready</h3>
+            <div class="ready-progress" id="ready-progress">0 / 8</div>
+          </div>
+          <div class="ready-sub">Emergency preparedness checklist</div>
+          <div class="ready-list" id="ready-list">
+            <label class="ready-item" data-key="gobag"><input type="checkbox" onchange="onReadyCheck(this)"><span>Go bag packed with 3-day supplies</span></label>
+            <label class="ready-item" data-key="docs"><input type="checkbox" onchange="onReadyCheck(this)"><span>Important documents copied or backed up</span></label>
+            <label class="ready-item" data-key="meds"><input type="checkbox" onchange="onReadyCheck(this)"><span>Medications (7-day supply)</span></label>
+            <label class="ready-item" data-key="routes"><input type="checkbox" onchange="onReadyCheck(this)"><span>Know your evacuation routes</span></label>
+            <label class="ready-item" data-key="alerts"><input type="checkbox" onchange="onReadyCheck(this)"><span>Signed up for local emergency alerts</span></label>
+            <label class="ready-item" data-key="masks"><input type="checkbox" onchange="onReadyCheck(this)"><span>N95 masks on hand for smoke</span></label>
+            <label class="ready-item" data-key="battery"><input type="checkbox" onchange="onReadyCheck(this)"><span>Phone charger and backup battery</span></label>
+            <label class="ready-item" data-key="pets"><input type="checkbox" onchange="onReadyCheck(this)"><span>Pet carriers and supplies ready</span></label>
+          </div>
+          <div class="ready-contacts">
+            <div class="ready-contacts-title">Emergency Contacts</div>
+            <div class="ready-contact-row"><span>Emergency</span><a href="tel:911">911</a></div>
+            <div class="ready-contact-row"><span>CAL FIRE</span><a href="https://www.fire.ca.gov/" target="_blank" rel="noopener">fire.ca.gov</a></div>
+            <div class="ready-contact-row"><span>Red Cross</span><a href="tel:18004733767">1-800-RED-CROSS</a></div>
+            <div class="ready-contact-row"><span>Air Quality</span><a href="https://www.airnow.gov/" target="_blank" rel="noopener">airnow.gov</a></div>
+          </div>
+        </div>
       </div>
 
     </div>

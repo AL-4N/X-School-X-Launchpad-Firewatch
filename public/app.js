@@ -112,6 +112,41 @@ function renderSavedPlaces(){
   });
 }
 
+/* ---------------- Be Ready checklist ---------------- */
+
+const READY_KEY = 'firewatch_ready_checklist';
+
+function loadReadyChecklist(){
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(READY_KEY) || '{}'); } catch {}
+  document.querySelectorAll('.ready-item').forEach(item => {
+    const key = item.dataset.key;
+    const cb = item.querySelector('input[type=checkbox]');
+    if(saved[key]){ cb.checked = true; item.classList.add('checked'); }
+  });
+  updateReadyProgress();
+}
+
+function onReadyCheck(cb){
+  const item = cb.closest('.ready-item');
+  item.classList.toggle('checked', cb.checked);
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(READY_KEY) || '{}'); } catch {}
+  saved[item.dataset.key] = cb.checked;
+  localStorage.setItem(READY_KEY, JSON.stringify(saved));
+  updateReadyProgress();
+}
+
+function updateReadyProgress(){
+  const items = document.querySelectorAll('.ready-item');
+  const total = items.length;
+  const done = [...items].filter(i => i.querySelector('input').checked).length;
+  const el = document.getElementById('ready-progress');
+  if(!el) return;
+  el.textContent = `${done} / ${total}`;
+  el.classList.toggle('complete', done === total);
+}
+
 /* ---------------- Wind direction ---------------- */
 
 function degreesToCompass(deg){
@@ -1545,6 +1580,7 @@ async function loadWeatherAlerts(){
   document.getElementById('unit-f').classList.toggle('active', unit === 'F');
 
   renderSavedPlaces();
+  loadReadyChecklist();
   const params = new URLSearchParams(window.location.search);
   const lat = parseFloat(params.get('lat'));
   const lon = parseFloat(params.get('lon'));
