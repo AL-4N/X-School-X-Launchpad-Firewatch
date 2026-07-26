@@ -32,11 +32,13 @@ export async function fetchLocalFires(lat, lon, env, radiusKm = 65){
   const west = lon - dLon, east = lon + dLon, south = lat - dLat, north = lat + dLat;
   const bbox = `${west.toFixed(4)},${south.toFixed(4)},${east.toFixed(4)},${north.toFixed(4)}`;
 
-  // Fetch all three satellites simultaneously; treat individual source
-  // failures as empty (one dead feed shouldn't kill the whole result).
+  // Fetch all four satellites simultaneously over 2 days (not 1) to
+  // compensate for the 3-6h NRT processing lag — otherwise recent
+  // detections may not yet appear in the 24h window. Each detection row
+  // carries its own timestamp so users can see how fresh it is.
   const results = await Promise.allSettled(
     LOCAL_SOURCES.map(source =>
-      fetch(`${FIRMS_BASE}/${key}/${source}/${bbox}/1`)
+      fetch(`${FIRMS_BASE}/${key}/${source}/${bbox}/2`)
         .then(res => {
           if(!res.ok) return [];
           return res.text().then(csv => parseFirmsCsv(csv).map(rowToFire));
