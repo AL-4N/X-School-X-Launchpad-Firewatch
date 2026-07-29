@@ -971,6 +971,7 @@ function renderRisk(fwiResult, weather){
   const badge = document.getElementById('cat-badge');
   badge.textContent = danger.class.toUpperCase();
   badge.style.background = danger.hex;
+  badge.dataset.tip = `FWI danger class (Canadian FWI System) — Low (0–5), Moderate (5–10), High (10–17), Very High (17–21), Extreme (21–28), Catastrophic (28+). Current FWI: ${indices.fwi}.`;
 
   document.getElementById('fwi-ffmc').textContent = codes.ffmc;
   document.getElementById('fwi-dmc').textContent = codes.dmc;
@@ -1329,18 +1330,27 @@ function renderFiresList(sorted){
   const PREVIEW = 5;
   const shown = firesExpanded ? sorted : sorted.slice(0, PREVIEW);
 
+  const CONF_TIPS = {
+    low: 'Low confidence — possibly sun glint, industrial heat, or a very small/cool source. Treat with caution.',
+    nominal: 'Nominal confidence — a typical VIIRS detection; likely a real fire but some uncertainty remains.',
+    high: 'High confidence — a strong, clear thermal anomaly very likely to be an active fire.',
+  };
+  const FRP_TIP = 'FRP (Fire Radiative Power) — satellite-measured energy release in megawatts. Approximates fire intensity: higher MW = more energetic burning.';
+
   list.innerHTML = '';
   shown.forEach((f, i) => {
     const miles = Math.round(f.distKm * 0.621371);
     const distColor = miles <= 10 ? '#e67e22' : miles <= 25 ? '#f1c40f' : '#2ecc71';
     const frpColor = f.frp >= 100 ? '#e74c3c' : f.frp >= 30 ? '#e67e22' : '#ff5e2a';
+    const confLabel = confidenceLabel(f.confidence);
+    const confTip = CONF_TIPS[confLabel] || 'Detection confidence reported by the VIIRS satellite sensor.';
     const row = document.createElement('div');
     row.className = 'quake-row';
     row.innerHTML = `
       <div class="quake-mag" style="background:${frpColor}">🔥</div>
       <div class="quake-info">
         <div class="quake-place">Detection #${sorted.indexOf(f)+1}</div>
-        <div class="quake-time">Detected ${timeAgoFromFirms(f.date, f.time)} · confidence ${confidenceLabel(f.confidence)}${f.frp != null ? ` · FRP ${Math.round(f.frp)} MW` : ''}</div>
+        <div class="quake-time">Detected ${timeAgoFromFirms(f.date, f.time)} · <span data-tip="${confTip}">confidence ${confLabel}</span>${f.frp != null ? ` · <span data-tip="${FRP_TIP}">FRP ${Math.round(f.frp)} MW</span>` : ''}</div>
       </div>
       <div class="quake-dist" style="color:${distColor}">${miles} mi<span class="sub">${f.dir}</span></div>`;
     list.appendChild(row);
@@ -1710,6 +1720,61 @@ async function loadWeatherAlerts(){
     updateHazards('owm-alerts', []);
   }
 }
+
+/* ---------------- Tooltip system ---------------- */
+(function initTooltips(){
+  const tip = document.getElementById('tip');
+  if(!tip) return;
+  let active = null;
+  const GAP = 12;
+
+  function pos(cx, cy){
+    const { innerWidth: vw, innerHeight: vh } = window;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let x = cx + GAP, y = cy + GAP;
+    if(x + tw > vw - 8) x = cx - tw - GAP;
+    if(y + th > vh - 8) y = cy - th - GAP;
+    tip.style.left = `${x}px`;
+    tip.style.top  = `${y}px`;
+  }
+
+  function show(target, cx, cy){
+    if(active === target) return;
+    active = target;
+    tip.textContent = target.dataset.tip;
+    tip.classList.add('visible');
+    pos(cx, cy);
+  }
+
+  function hide(){
+    active = null;
+    tip.classList.remove('visible');
+  }
+
+  document.addEventListener('mouseover', e => {
+    const t = e.target.closest('[data-tip]');
+    if(t) show(t, e.clientX, e.clientY);
+  });
+  document.addEventListener('mousemove', e => {
+    if(active) pos(e.clientX, e.clientY);
+  });
+  document.addEventListener('mouseout', e => {
+    const t = e.target.closest('[data-tip]');
+    if(t && !t.contains(e.relatedTarget)) hide();
+  });
+  // Touch: tap once to show, tap elsewhere or same target again to dismiss
+  document.addEventListener('touchstart', e => {
+    const t = e.target.closest('[data-tip]');
+    if(t){
+      e.preventDefault();
+      if(active === t){ hide(); return; }
+      const touch = e.touches[0];
+      show(t, touch.clientX, touch.clientY);
+    } else {
+      hide();
+    }
+  }, { passive: false });
+})();
 
 /* ---------------- Init ---------------- */
 (function initFromUrlOrGeolocate(){

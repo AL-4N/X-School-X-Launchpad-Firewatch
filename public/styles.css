@@ -568,3 +568,24 @@ footer .emg{margin-top:8px;}
 footer .emg a{color:var(--ember);font-weight:600;text-decoration:none;}
 
 .hidden{display:none !important;}
+
+/* ---- Tooltip ---- */
+.tip{
+  position:fixed;
+  z-index:9999;
+  max-width:280px;
+  padding:10px 13px;
+  background:#2a1f18;
+  border:1px solid var(--border);
+  border-radius:8px;
+  font-size:13px;
+  line-height:1.55;
+  color:var(--text);
+  pointer-events:none;
+  opacity:0;
+  transform:translateY(4px);
+  transition:opacity 0.15s,transform 0.15s;
+  box-shadow:0 4px 18px rgba(0,0,0,0.55);
+}
+.tip.visible{opacity:1;transform:translateY(0);}
+[data-tip]{cursor:help;}

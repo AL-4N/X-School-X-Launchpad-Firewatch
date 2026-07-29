@@ -95,7 +95,7 @@
 
         <div class="risk-detail hidden" id="fire-detail">
           <div class="gauge-wrap">
-            <div class="gauge-num"><span id="score-num">--</span><span class="unit">FWI</span></div>
+            <div class="gauge-num"><span id="score-num">--</span><span class="unit" data-tip="Fire Weather Index — the top-level output of the Canadian FWI System. Ranges from 0 (low danger) to 30+ (extreme/catastrophic). Combines ISI (initial fire spread rate) and BUI (total fuel available to burn).">FWI</span></div>
             <div>
               <div class="cat-badge" id="cat-badge">—</div>
               <div class="gauge-sub">Fire Weather Index — Canadian FWI System</div>
@@ -103,11 +103,11 @@
             </div>
           </div>
           <div class="fwi-codes">
-            <div class="fwi-chip"><div class="val" id="fwi-ffmc">--</div><div class="lbl">FFMC</div></div>
-            <div class="fwi-chip"><div class="val" id="fwi-dmc">--</div><div class="lbl">DMC</div></div>
-            <div class="fwi-chip"><div class="val" id="fwi-dc">--</div><div class="lbl">DC</div></div>
-            <div class="fwi-chip"><div class="val" id="fwi-isi">--</div><div class="lbl">ISI</div></div>
-            <div class="fwi-chip"><div class="val" id="fwi-bui">--</div><div class="lbl">BUI</div></div>
+            <div class="fwi-chip" data-tip="Fine Fuel Moisture Code — moisture of surface litter and fine grasses. Higher = drier = more flammable. Scale 0–101."><div class="val" id="fwi-ffmc">--</div><div class="lbl">FFMC</div></div>
+            <div class="fwi-chip" data-tip="Duff Moisture Code — moisture of loosely compacted organic layers a few cm deep. Tracks week-scale drought."><div class="val" id="fwi-dmc">--</div><div class="lbl">DMC</div></div>
+            <div class="fwi-chip" data-tip="Drought Code — deep soil and organic layer moisture reflecting months of drought. Takes weeks of heavy rain to recover."><div class="val" id="fwi-dc">--</div><div class="lbl">DC</div></div>
+            <div class="fwi-chip" data-tip="Initial Spread Index — predicted fire spread rate, combining FFMC (fuel dryness) and wind speed."><div class="val" id="fwi-isi">--</div><div class="lbl">ISI</div></div>
+            <div class="fwi-chip" data-tip="Buildup Index — total fuel available to burn, combining DMC and DC. High BUI means deep fuels are dry and ready to sustain a fire."><div class="val" id="fwi-bui">--</div><div class="lbl">BUI</div></div>
           </div>
 
           <div class="composite-wrap">
@@ -144,7 +144,7 @@
           <div class="risk-card-label hz-air">🌫️ Air Quality</div>
           <div class="risk-card-level" id="air-level"><span class="dot"></span><span id="air-level-word">—</span></div>
         </div>
-        <div class="risk-big"><span id="aqi-num">--</span><span class="unit">AQI</span></div>
+        <div class="risk-big"><span id="aqi-num">--</span><span class="unit" data-tip="Air Quality Index (US EPA scale) — 0–50 Good, 51–100 Moderate, 101–150 Unhealthy for sensitive groups, 151–200 Unhealthy, 201–300 Very Unhealthy, 301+ Hazardous.">AQI</span></div>
         <div class="risk-desc" id="aqi-desc">Loading air quality data…</div>
         <div class="risk-foot" id="aqi-foot">Source: Open-Meteo</div>
         <div class="risk-detail-hint">Tap to change data source ▾</div>
@@ -182,10 +182,10 @@
         <div class="sat-trend" id="sat-trend">—</div>
       </div>
       <div class="sat-grid">
-        <div class="sat-cell"><div class="sat-val" id="sat-frp-total">--</div><div class="sat-lbl">Total FRP (MW)</div></div>
-        <div class="sat-cell"><div class="sat-val" id="sat-clusters">--</div><div class="sat-lbl">Active clusters</div></div>
-        <div class="sat-cell"><div class="sat-val" id="sat-growth">--</div><div class="sat-lbl">Growth vs last pass</div></div>
-        <div class="sat-cell"><div class="sat-val" id="sat-confidence">--</div><div class="sat-lbl">Avg. confidence</div></div>
+        <div class="sat-cell" data-tip="Fire Radiative Power — total energy release across all nearby detections, in megawatts (MW). A satellite-derived proxy for fire intensity. Higher = more energetic burning."><div class="sat-val" id="sat-frp-total">--</div><div class="sat-lbl">Total FRP (MW)</div></div>
+        <div class="sat-cell" data-tip="Number of distinct fires — raw detection points within ~2 km of each other are grouped into one cluster, so repeated satellite passes over the same fire don't inflate the count."><div class="sat-val" id="sat-clusters">--</div><div class="sat-lbl">Active clusters</div></div>
+        <div class="sat-cell" data-tip="Change in total FRP between this satellite pass and the previous one this session. A rising percentage means the fire area is releasing more energy — intensifying, not just persistent."><div class="sat-val" id="sat-growth">--</div><div class="sat-lbl">Growth vs last pass</div></div>
+        <div class="sat-cell" data-tip="Average detection confidence across all fire pixels. VIIRS reports High / Nominal / Low — low-confidence pixels may be sun glint, industrial heat, or very small fires."><div class="sat-val" id="sat-confidence">--</div><div class="sat-lbl">Avg. confidence</div></div>
       </div>
       <div class="sat-note">
         Satellite passes detect thermal anomalies (active fire pixels), not smoke, imagery texture, or burn
@@ -317,5 +317,6 @@
 </main>
 
 <script src="app.js"></script>
+<div id="tip" class="tip" role="tooltip"></div>
 </body>
 </html>
