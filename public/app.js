@@ -469,10 +469,17 @@ async function loadGlobalFireDots(){
   const renderer = L.canvas({ padding: 0.5 });
   globalFireLayer = L.layerGroup();
   globalFiresCache.forEach(f => {
+    // Scale radius logarithmically by FRP (Fire Radiative Power, MW).
+    // log1p gives a smooth curve: frp=0→r=2, frp=10→r=4, frp=100→r=6, frp=1000→r=8
+    const frp = f.frp || 0;
+    const radius = Math.max(2, Math.min(9, 2 + Math.log1p(frp) * 0.95));
+    // Shift color toward red as intensity increases.
+    const color = frp >= 200 ? '#e74c3c' : frp >= 50 ? '#ff7c2a' : '#ff5e2a';
     L.circleMarker([f.lat, f.lon], {
       renderer,
-      radius: 3, weight: 0,
-      fillColor: '#ff5e2a', fillOpacity: 0.8,
+      radius, weight: 0,
+      fillColor: color,
+      fillOpacity: frp >= 50 ? 0.9 : 0.75,
     }).addTo(globalFireLayer);
   });
   if(globalFiresOn) globalFireLayer.addTo(map);
