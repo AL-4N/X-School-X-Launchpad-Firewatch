@@ -316,24 +316,44 @@
       <div class="wcell"><div class="wicn">🌧</div><div class="wval" id="w-rain">--mm</div><div class="wlabel">7-day rain</div></div>
     </div>
 
-    <!-- SAFETY TIPS (extended What should I do) -->
-    <div class="sect-head"><h3 class="hz-fire" data-i18n="tips_eyebrow">STAY SAFE</h3><div class="rule"></div></div>
+    <!-- SAFETY GUIDE: Before / During / After -->
+    <div class="sect-head"><h3 class="hz-fire">WILDFIRE SURVIVAL GUIDE</h3><div class="rule"></div></div>
     <div class="tips-panel">
       <div class="tips-panel-intro">
-        <h3 data-i18n="tips_title">If a wildfire is near you</h3>
-        <p>Practical steps to prepare, stay safe, and know when to go.</p>
+        <h3 id="tips-phase-title">Before a Fire</h3>
+        <p id="tips-phase-sub">What to do now, before fire season puts you under pressure.</p>
       </div>
-      <ul class="tips-grid" id="tips-grid">
-        <li data-i18n="tip_1">Create defensible space by clearing dry brush, leaves, and debris at least 30 feet from your home.</li>
-        <li data-i18n="tip_2">Pack a go-bag with medications, important documents, water, and a flashlight so you can leave fast.</li>
-        <li data-i18n="tip_3">Know two evacuation routes out of your area in case one is blocked by fire or smoke.</li>
-        <li data-i18n="tip_4">Sign up for local emergency alerts and check official fire and air-quality updates regularly.</li>
-        <li data-i18n="tip_5">Keep N95 or P100 masks on hand — cloth and surgical masks don't filter wildfire smoke particles.</li>
-        <li data-i18n="tip_6">Close windows, doors, and vents when smoke is present, and run an air purifier if you have one.</li>
-        <li data-i18n="tip_7">Avoid strenuous outdoor activity once the air quality index passes 100 (unhealthy for sensitive groups).</li>
-        <li data-i18n="tip_8">Never drive through smoke or an active fire zone — visibility can drop to zero within seconds.</li>
-        <li data-i18n="tip_9">If officials order an evacuation, leave immediately rather than waiting to see if the fire arrives.</li>
-        <li data-i18n="tip_10">After a fire passes, wait for official clearance before returning — hidden hot spots can reignite for days.</li>
+      <div class="tips-phase-tabs">
+        <button class="tips-tab active" onclick="setTipsPhase('before')">Before</button>
+        <button class="tips-tab" onclick="setTipsPhase('during')">During</button>
+        <button class="tips-tab" onclick="setTipsPhase('after')">After</button>
+      </div>
+
+      <ul class="tips-grid" id="tips-before">
+        <li><strong>Create defensible space.</strong> Clear dry brush, leaves, and debris at least 30 ft (9 m) from your home. Zone 1 (0–30 ft) should be lean, clean, and green.</li>
+        <li><strong>Harden your home.</strong> Cover roof vents with fine wire mesh. Use non-combustible materials on decks and eaves — embers land there first.</li>
+        <li><strong>Know your evacuation zone.</strong> Look up your zone at ready.gov or your county's OES site. Know two routes out — roads block fast.</li>
+        <li><strong>Build a go-bag.</strong> 3-day supply of water, medications, important documents, cash, phone charger, N95 masks, and a change of clothes. Keep it by the door.</li>
+        <li><strong>Register for alerts.</strong> Sign up for your county's emergency notification system. Many evacuations happen overnight — you need a wake-up call, not a news alert.</li>
+        <li><strong>Back up documents digitally.</strong> Scan IDs, insurance, medical records, and store them in cloud storage you can access from any phone.</li>
+      </ul>
+
+      <ul class="tips-grid hidden" id="tips-during">
+        <li><strong>Leave early — not when you see flames.</strong> Roads clog in minutes. Smoke can make driving impossible within hours. Go when ordered, not when scared.</li>
+        <li><strong>Take the bag, leave everything else.</strong> Once you're out, don't go back. Houses can be rebuilt. Don't risk getting trapped.</li>
+        <li><strong>Text, don't call.</strong> Texts route around congested networks. Calling ties up lines emergency services need.</li>
+        <li><strong>Drive with windows up, headlights on, AC on recirculate.</strong> This keeps smoke out and makes you visible in low visibility conditions.</li>
+        <li><strong>If you're trapped in a building</strong>, close all vents and doors, seal gaps with wet towels, turn off HVAC, and signal rescuers from a window or roof.</li>
+        <li><strong>Never shelter in your car in the open.</strong> If you must pull over, stay low below window level and cover yourself with a wool blanket. Call 911 and report your location.</li>
+      </ul>
+
+      <ul class="tips-grid hidden" id="tips-after">
+        <li><strong>Wait for official clearance.</strong> Hot spots remain active for days. Carbon monoxide, unstable structures, and downed power lines are invisible killers.</li>
+        <li><strong>Document everything before cleaning.</strong> Photograph all damage thoroughly for insurance before moving or discarding anything.</li>
+        <li><strong>Wear N95 when cleaning ash.</strong> Ash from burned homes contains heavy metals, asbestos, and carcinogens — not just soot. Double-bag debris before disposal.</li>
+        <li><strong>Don't drink tap water without checking.</strong> Wildfire heat can warp plastic pipes and contaminate water mains miles from the burn area. Wait for official confirmation.</li>
+        <li><strong>Inspect before entering.</strong> Look for cracks in the foundation, smell for gas, check that the roof isn't compromised. Have a pro assess structural integrity first.</li>
+        <li><strong>Wildfire trauma is real.</strong> PTSD, anxiety, and grief are common after losing a home or community. Local mental health resources and SAMHSA (1-800-662-4357) can help.</li>
       </ul>
     </div>
 

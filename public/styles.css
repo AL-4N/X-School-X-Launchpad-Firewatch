@@ -35,11 +35,16 @@ body{
 
 header{
   background:var(--bg2);
-  padding:20px 20px 16px;
+  padding:14px 20px;
   display:flex;
-  align-items:baseline;
+  align-items:center;
   justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
   border-bottom:1px solid var(--border);
+  position:relative;
+  z-index:100;
+  overflow:visible;
 }
 header .brand{
   font-family:'Oswald',sans-serif;
@@ -54,7 +59,7 @@ header .brand{
 header .brand .fire{color:var(--ember);}
 header .brand .watch{color:var(--text);}
 header .tag{font-size:14.0px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;}
-header .header-right{display:flex;align-items:center;gap:14px;}
+header .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;overflow:visible;}
 
 /* ---- °C/°F unit toggle ---- */
 .unit-toggle{
@@ -660,12 +665,25 @@ body.theme-light .hazard-chip{ border:1px solid var(--border); }
   background:var(--card);border:1px solid var(--border);
   border-radius:16px;padding:28px 28px 32px;margin-bottom:32px;
 }
-.tips-panel-intro{ margin-bottom:22px; }
+.tips-panel-intro{ margin-bottom:14px; }
 .tips-panel-intro h3{
   font-family:'Oswald',sans-serif;font-size:21px;font-weight:600;
-  color:var(--hz-fire);margin:0 0 6px;text-transform:uppercase;letter-spacing:0.04em;
+  color:var(--hz-fire);margin:0 0 4px;letter-spacing:0.02em;
 }
-.tips-panel-intro p{ color:var(--muted);font-size:15px;margin:0; }
+.tips-panel-intro p{ color:var(--muted);font-size:14px;margin:0; }
+
+.tips-phase-tabs{
+  display:flex;gap:6px;margin-bottom:20px;
+  border-bottom:1px solid var(--border);padding-bottom:12px;
+}
+.tips-tab{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  border-radius:999px;padding:6px 16px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:background 0.15s,color 0.15s,border-color 0.15s;
+}
+.tips-tab.active,.tips-tab:hover{
+  background:var(--ember);border-color:var(--ember);color:#fff;
+}
 
 .tips-grid{
   list-style:none;padding:0;margin:0;
@@ -673,8 +691,9 @@ body.theme-light .hazard-chip{ border:1px solid var(--border); }
 }
 .tips-grid li{
   background:var(--bg2);border-left:3px solid var(--ember);
-  border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.55;color:var(--text);
+  border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.6;color:var(--text);
 }
+.tips-grid li strong{ display:block;margin-bottom:3px;color:var(--text); }
 
 /* ================================================================
  * FIRE SIGHTING REPORT PANEL

@@ -1913,6 +1913,31 @@ document.addEventListener('click', e => {
 });
 
 /* ================================================================
+ * SURVIVAL GUIDE TABS (Before / During / After)
+ * ================================================================ */
+
+const TIPS_PHASES = {
+  before: { title:'Before a Fire', sub:'What to do now, before fire season puts you under pressure.' },
+  during: { title:'During a Fire', sub:'Real-time decisions that save lives when every minute counts.' },
+  after:  { title:'After a Fire', sub:'Safe re-entry and recovery steps to protect your health.' },
+};
+
+function setTipsPhase(phase){
+  ['before','during','after'].forEach(p => {
+    const list = document.getElementById(`tips-${p}`);
+    if(list) list.classList.toggle('hidden', p !== phase);
+  });
+  document.querySelectorAll('.tips-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', ['before','during','after'][i] === phase);
+  });
+  const info = TIPS_PHASES[phase];
+  const titleEl = document.getElementById('tips-phase-title');
+  const subEl   = document.getElementById('tips-phase-sub');
+  if(titleEl) titleEl.textContent = info.title;
+  if(subEl)   subEl.textContent   = info.sub;
+}
+
+/* ================================================================
  * FIRE SIGHTING REPORT
  * ================================================================ */
 
