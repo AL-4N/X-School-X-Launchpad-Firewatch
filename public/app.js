@@ -11,7 +11,7 @@
 // CORS involved.
 const WORKER_BASE_URL = '';
 
-let map, userMarker, fireLayer, globalFireLayer, incidentLayer;
+let map, userMarker, fireLayer, globalFireLayer, incidentLayer, tileLayer;
 let userLat, userLon;
 let fireSort = 'distance'; // 'distance' | 'size'
 let fireSortAsc = true;    // true = closest/smallest first
@@ -410,10 +410,12 @@ function initMap(){
     minZoom:1, maxBoundsViscosity:1.0,
   }).setView([userLat, userLon], 10);
   map.setMaxBounds([[-90,-180],[90,180]]);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    maxZoom: 18, noWrap: true,
-  }).addTo(map);
+  tileLayer = L.tileLayer(
+    document.body.classList.contains('theme-light')
+      ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18, noWrap: true }
+  ).addTo(map);
 
   const userIcon = L.divIcon({
     className:'',
@@ -1721,6 +1723,263 @@ async function loadWeatherAlerts(){
   }
 }
 
+/* ================================================================
+ * LIGHT / DARK THEME
+ * ================================================================ */
+
+const THEME_KEY = 'fw-theme';
+
+function applyTheme(theme){
+  document.body.classList.remove('theme-dark','theme-light');
+  document.body.classList.add(`theme-${theme}`);
+  const btn = document.getElementById('theme-toggle-btn');
+  if(btn) btn.textContent = theme === 'dark' ? '☀' : '🌙';
+  localStorage.setItem(THEME_KEY, theme);
+  // Swap map tiles to match theme
+  if(map && tileLayer){
+    map.removeLayer(tileLayer);
+    tileLayer = L.tileLayer(
+      theme === 'light'
+        ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      { attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:18, noWrap:true }
+    ).addTo(map);
+  }
+}
+
+function initTheme(){
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(saved);
+}
+
+function toggleTheme(){
+  applyTheme(document.body.classList.contains('theme-dark') ? 'light' : 'dark');
+}
+
+/* ================================================================
+ * INTERNATIONALISATION (i18n)
+ * ================================================================ */
+
+const LANG_KEY = 'fw-lang';
+let currentLang = 'en';
+
+const TRANSLATIONS = {
+  en:{
+    risk_intelligence:'Risk Intelligence',satellite_title:'Satellite Fire Analytics',
+    nearby_title:'Nearby Fires',map_title:'Map',advice_title:'What should I do?',
+    air_scale_title:'Air Quality Scale',incidents_title:'Global Wildfire Incidents',
+    forecast_title:'5-Day Fire Weather Outlook',weather_title:'Weather',be_ready_title:'Be Ready',
+    tips_eyebrow:'STAY SAFE',tips_title:'If a wildfire is near you',
+    report_eyebrow:'HELP YOUR COMMUNITY',report_title:'Report a Fire Sighting',
+    profile_general:'General',profile_asthma:'Asthma',profile_elderly:'Elderly',profile_outdoor:'Outdoor worker',
+    sort_distance:'Distance',sort_size:'Size',
+    tip_1:'Create defensible space by clearing dry brush, leaves, and debris at least 30 feet from your home.',
+    tip_2:'Pack a go-bag with medications, important documents, water, and a flashlight so you can leave fast.',
+    tip_3:'Know two evacuation routes out of your area in case one is blocked by fire or smoke.',
+    tip_4:'Sign up for local emergency alerts and check official fire and air-quality updates regularly.',
+    tip_5:"Keep N95 or P100 masks on hand — cloth and surgical masks don't filter wildfire smoke particles.",
+    tip_6:'Close windows, doors, and vents when smoke is present, and run an air purifier if you have one.',
+    tip_7:'Avoid strenuous outdoor activity once the air quality index passes 100 (unhealthy for sensitive groups).',
+    tip_8:'Never drive through smoke or an active fire zone — visibility can drop to zero within seconds.',
+    tip_9:"If officials order an evacuation, leave immediately rather than waiting to see if the fire arrives.",
+    tip_10:'After a fire passes, wait for official clearance before returning — hidden hot spots can reignite for days.',
+  },
+  es:{
+    risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
+    nearby_title:'Incendios Cercanos',map_title:'Mapa',advice_title:'¿Qué debo hacer?',
+    air_scale_title:'Escala de Calidad del Aire',incidents_title:'Incendios Forestales Globales',
+    forecast_title:'Pronóstico de Riesgo de Incendio (5 días)',weather_title:'Clima',be_ready_title:'Prepárate',
+    tips_eyebrow:'MANTENTE SEGURO',tips_title:'Si hay un incendio cerca de ti',
+    report_eyebrow:'AYUDA A TU COMUNIDAD',report_title:'Reportar un Avistamiento',
+    profile_general:'General',profile_asthma:'Asma',profile_elderly:'Adulto mayor',profile_outdoor:'Trabajador al aire libre',
+    sort_distance:'Distancia',sort_size:'Tamaño',
+    tip_1:'Crea un espacio defensivo limpiando hierba seca, hojas y escombros a al menos 9 metros de tu hogar.',
+    tip_2:'Prepara una mochila de emergencia con medicamentos, documentos importantes, agua y una linterna.',
+    tip_3:'Conoce dos rutas de evacuación de tu zona en caso de que una esté bloqueada por fuego o humo.',
+    tip_4:'Regístrate para recibir alertas de emergencia locales y consulta actualizaciones oficiales con regularidad.',
+    tip_5:'Ten máscaras N95 o P100 a mano — las telas y quirúrgicas no filtran el humo de incendios.',
+    tip_6:'Cierra ventanas, puertas y ventilaciones cuando haya humo y usa un purificador de aire si tienes uno.',
+    tip_7:'Evita la actividad física intensa al exterior cuando el AQI supere 100.',
+    tip_8:'Nunca manejes a través del humo o una zona de incendio activo — la visibilidad puede caer a cero.',
+    tip_9:'Si las autoridades ordenan una evacuación, sal inmediatamente sin esperar a ver si llega el fuego.',
+    tip_10:'Tras el incendio, espera la autorización oficial antes de regresar — los puntos calientes pueden reactivarse.',
+  },
+  fr:{
+    risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
+    nearby_title:'Incendies à Proximité',map_title:'Carte',advice_title:'Que dois-je faire ?',
+    air_scale_title:"Échelle de Qualité de l'Air",incidents_title:'Incendies Mondiaux',
+    forecast_title:'Prévisions Météo-Feux sur 5 Jours',weather_title:'Météo',be_ready_title:'Soyez Prêt',
+    tips_eyebrow:'RESTEZ EN SÉCURITÉ',tips_title:'Si un incendie est près de chez vous',
+    report_eyebrow:'AIDEZ VOTRE COMMUNAUTÉ',report_title:'Signaler un Incendie Observé',
+    profile_general:'Général',profile_asthma:'Asthme',profile_elderly:'Personnes âgées',profile_outdoor:'Travailleur en plein air',
+    sort_distance:'Distance',sort_size:'Taille',
+    tip_1:'Créez un espace défensif en dégageant broussailles sèches et débris à au moins 9 m de votre maison.',
+    tip_2:"Préparez un sac d'urgence avec médicaments, documents importants, eau et lampe de poche.",
+    tip_3:"Connaissez deux itinéraires d'évacuation au cas où l'un serait bloqué par le feu ou la fumée.",
+    tip_4:"Inscrivez-vous aux alertes d'urgence locales et consultez régulièrement les mises à jour officielles.",
+    tip_5:"Ayez des masques N95 ou P100 à portée — les masques en tissu ne filtrent pas la fumée des incendies.",
+    tip_6:"Fermez fenêtres, portes et aérations en cas de fumée et utilisez un purificateur d'air si possible.",
+    tip_7:"Évitez l'effort physique intense en extérieur quand l'indice de qualité de l'air dépasse 100.",
+    tip_8:"Ne conduisez jamais à travers la fumée ou une zone d'incendie actif — la visibilité peut être nulle.",
+    tip_9:"Si une évacuation est ordonnée, partez immédiatement sans attendre que le feu arrive.",
+    tip_10:"Après un incendie, attendez l'autorisation officielle avant de revenir — des points chauds peuvent se réactiver.",
+  },
+  zh:{
+    risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
+    nearby_title:'附近火灾',map_title:'地图',advice_title:'我该怎么做？',
+    air_scale_title:'空气质量指数',incidents_title:'全球野火事件',
+    forecast_title:'5日火险天气预报',weather_title:'天气',be_ready_title:'做好准备',
+    tips_eyebrow:'保持安全',tips_title:'如果野火在附近',
+    report_eyebrow:'帮助您的社区',report_title:'举报火情目击',
+    profile_general:'一般',profile_asthma:'哮喘',profile_elderly:'老年人',profile_outdoor:'户外工作者',
+    sort_distance:'距离',sort_size:'规模',
+    tip_1:'清除房屋周围至少9米内的干草、落叶和杂物，建立防火隔离带。',
+    tip_2:'准备应急包，包含药物、重要文件、水和手电筒，以便快速撤离。',
+    tip_3:'了解两条不同的撤离路线，以防其中一条被火或烟雾堵塞。',
+    tip_4:'注册当地紧急警报，定期查看官方火灾和空气质量更新。',
+    tip_5:'备好N95或P100口罩——布口罩和外科口罩无法过滤野火烟雾颗粒。',
+    tip_6:'有烟雾时关闭窗户、门和通风口，如有空气净化器请开启。',
+    tip_7:'当空气质量指数超过100时，避免剧烈户外活动。',
+    tip_8:'切勿驾车穿越烟雾或活跃火区——能见度可能瞬间降至零。',
+    tip_9:'官员下令撤离时，立即离开，不要等待火势蔓延。',
+    tip_10:'火灾过后，等待官方许可再返回——隐藏的火点可能数天后复燃。',
+  },
+  pt:{
+    risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
+    nearby_title:'Incêndios Próximos',map_title:'Mapa',advice_title:'O que devo fazer?',
+    air_scale_title:'Escala de Qualidade do Ar',incidents_title:'Incêndios Florestais Globais',
+    forecast_title:'Previsão de Risco de Incêndio (5 dias)',weather_title:'Clima',be_ready_title:'Esteja Pronto',
+    tips_eyebrow:'FIQUE SEGURO',tips_title:'Se um incêndio estiver perto',
+    report_eyebrow:'AJUDE SUA COMUNIDADE',report_title:'Reportar um Avistamento',
+    profile_general:'Geral',profile_asthma:'Asma',profile_elderly:'Idosos',profile_outdoor:'Trabalhador ao ar livre',
+    sort_distance:'Distância',sort_size:'Tamanho',
+    tip_1:'Crie um espaço defensivo limpando arbustos secos e detritos a pelo menos 9 metros de sua casa.',
+    tip_2:'Prepare uma mochila de emergência com medicamentos, documentos, água e lanterna.',
+    tip_3:'Conheça duas rotas de evacuação da sua área caso uma esteja bloqueada por fogo ou fumaça.',
+    tip_4:'Cadastre-se em alertas de emergência locais e consulte atualizações oficiais regularmente.',
+    tip_5:'Tenha máscaras N95 ou P100 à mão — máscaras de tecido não filtram a fumaça de incêndios.',
+    tip_6:'Feche janelas, portas e ventilações quando houver fumaça e use purificador de ar se tiver.',
+    tip_7:'Evite atividade física intensa ao ar livre quando o índice de qualidade do ar ultrapassar 100.',
+    tip_8:'Nunca dirija pela fumaça ou zona de incêndio ativo — a visibilidade pode cair a zero instantaneamente.',
+    tip_9:'Se as autoridades ordenarem evacuação, saia imediatamente sem esperar o fogo chegar.',
+    tip_10:'Após o incêndio, aguarde autorização oficial antes de retornar — pontos quentes podem reacender por dias.',
+  },
+};
+
+function t(key){ return (TRANSLATIONS[currentLang]||TRANSLATIONS.en)[key] || TRANSLATIONS.en[key] || key; }
+
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const v = t(el.dataset.i18n);
+    if(v) el.textContent = v;
+  });
+  document.documentElement.lang = currentLang;
+  const d = document.getElementById('lang-current');
+  if(d) d.textContent = currentLang.toUpperCase();
+}
+
+function initLang(){
+  const saved = localStorage.getItem(LANG_KEY);
+  if(saved && TRANSLATIONS[saved]) currentLang = saved;
+  else {
+    const browser = (navigator.language || 'en').slice(0,2).toLowerCase();
+    if(TRANSLATIONS[browser]) currentLang = browser;
+  }
+  applyI18n();
+}
+
+function setLang(lang){
+  if(!TRANSLATIONS[lang]) return;
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+  applyI18n();
+  closeLangMenu();
+}
+
+function toggleLangMenu(){
+  const menu = document.getElementById('lang-menu');
+  if(!menu) return;
+  const open = menu.classList.toggle('hidden');
+  document.getElementById('lang-toggle-btn')?.setAttribute('aria-expanded', String(!open));
+}
+
+function closeLangMenu(){
+  document.getElementById('lang-menu')?.classList.add('hidden');
+  document.getElementById('lang-toggle-btn')?.setAttribute('aria-expanded','false');
+}
+
+document.addEventListener('click', e => {
+  if(!document.getElementById('lang-picker')?.contains(e.target)) closeLangMenu();
+});
+
+/* ================================================================
+ * FIRE SIGHTING REPORT
+ * ================================================================ */
+
+const REPORTS_KEY = 'firewatch_reports';
+
+function submitReport(e){
+  e.preventDefault();
+  const type  = document.getElementById('report-type')?.value || 'other';
+  const notes = (document.getElementById('report-notes')?.value || '').trim();
+  const loc   = document.getElementById('place-name')?.textContent?.trim() ||
+                (userLat != null ? `${userLat.toFixed(4)}, ${userLon.toFixed(4)}` : 'Unknown location');
+  const timestamp = new Date().toLocaleString();
+
+  const TYPE_LABELS = { smoke:'Smoke column or haze', flame:'Active flames visible', glow:'Unusual orange glow at night', other:'Other unusual activity' };
+  const lines = [
+    '🔥 FIRE SIGHTING REPORT',
+    `Location : ${loc}`,
+    `Time     : ${timestamp}`,
+    `Observed : ${TYPE_LABELS[type] || type}`,
+  ];
+  if(notes) lines.push(`Notes    : ${notes}`);
+  lines.push('Reported via Firewatch');
+  const text = lines.join('\n');
+
+  const outputEl = document.getElementById('report-output');
+  const textEl   = document.getElementById('report-output-text');
+  if(outputEl && textEl){
+    textEl.textContent = text;
+    outputEl.classList.remove('hidden');
+    outputEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  let reports = [];
+  try { reports = JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]'); } catch {}
+  reports.unshift({ type, loc, notes, timestamp });
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(reports.slice(0, 10)));
+  renderReportHistory();
+
+  const notesEl = document.getElementById('report-notes');
+  if(notesEl) notesEl.value = '';
+}
+
+function copyReport(){
+  const text = document.getElementById('report-output-text')?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.report-copy-btn');
+    if(btn){ const o = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(()=>{ btn.textContent = o; }, 2000); }
+  }).catch(() => window.prompt('Copy this report:', text));
+}
+
+function renderReportHistory(){
+  const el = document.getElementById('report-history');
+  if(!el) return;
+  let reports = [];
+  try { reports = JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]'); } catch {}
+  if(!reports.length){ el.innerHTML = ''; return; }
+  const LABELS = { smoke:'Smoke', flame:'Flames', glow:'Glow', other:'Other' };
+  el.innerHTML = `<div class="report-history-head">Your past reports (${reports.length})</div>` +
+    reports.map(r =>
+      `<div class="report-history-item">
+        <span class="report-history-badge">${LABELS[r.type]||r.type}</span>
+        <span class="report-history-loc">${r.loc}</span>
+        <span class="report-history-time">${r.timestamp}</span>
+      </div>`
+    ).join('');
+}
+
 /* ---------------- Tooltip system ---------------- */
 (function initTooltips(){
   const tip = document.getElementById('tip');
@@ -1794,3 +2053,8 @@ async function loadWeatherAlerts(){
     requestLocation();
   }
 })();
+
+// New feature inits — run after DOM is ready (script is at end of body)
+initTheme();
+initLang();
+renderReportHistory();

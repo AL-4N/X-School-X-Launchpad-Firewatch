@@ -12,7 +12,7 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body id="app-shell" class="theme-dark">
 
 <header>
   <div class="brand"><span class="fire">Fire</span><span class="watch">Watch</span></div>
@@ -21,7 +21,18 @@
       <button id="unit-c" class="active" onclick="setUnit('C')">°C</button>
       <button id="unit-f" onclick="setUnit('F')">°F</button>
     </div>
-    <div class="tag">Risk Intelligence</div>
+    <button id="theme-toggle-btn" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+    <div class="lang-picker" id="lang-picker">
+      <button class="lang-toggle-btn" id="lang-toggle-btn" onclick="toggleLangMenu()" aria-expanded="false">🌐 <span id="lang-current">EN</span></button>
+      <div class="lang-menu hidden" id="lang-menu">
+        <button onclick="setLang('en')">🇺🇸 English</button>
+        <button onclick="setLang('es')">🇪🇸 Español</button>
+        <button onclick="setLang('fr')">🇫🇷 Français</button>
+        <button onclick="setLang('zh')">🇨🇳 中文</button>
+        <button onclick="setLang('pt')">🇧🇷 Português</button>
+      </div>
+    </div>
+    <div class="tag" data-i18n="risk_intelligence">Risk Intelligence</div>
   </div>
 </header>
 
@@ -172,7 +183,7 @@
     </div>
 
     <!-- SATELLITE FIRE ANALYTICS -->
-    <div class="sect-head"><h3 class="hz-sat">Satellite Fire Analytics</h3><div class="rule"></div></div>
+    <div class="sect-head"><h3 class="hz-sat" data-i18n="satellite_title">Satellite Fire Analytics</h3><div class="rule"></div></div>
     <div class="sat-card" id="sat-card">
       <div class="sat-top">
         <div>
@@ -202,10 +213,10 @@
       <div class="col-stack">
         <div class="panel" id="fires-panel">
           <div class="fires-panel-head">
-            <h3>Nearby Fires</h3>
+            <h3 data-i18n="nearby_title">Nearby Fires</h3>
             <div class="fires-sort-bar" id="fires-sort-bar">
-              <button class="sort-btn active" id="sort-btn-distance" onclick="setFireSort('distance')">Distance</button>
-              <button class="sort-btn" id="sort-btn-size" onclick="setFireSort('size')">Size</button>
+              <button class="sort-btn active" id="sort-btn-distance" onclick="setFireSort('distance')" data-i18n="sort_distance">Distance</button>
+              <button class="sort-btn" id="sort-btn-size" onclick="setFireSort('size')" data-i18n="sort_size">Size</button>
               <button class="sort-dir-btn" id="sort-dir-btn" onclick="toggleFireSortDir()" title="Toggle sort direction">↑</button>
             </div>
           </div>
@@ -217,7 +228,7 @@
 
         <div class="panel" id="map-panel">
           <div class="map-panel-head">
-            <h3>Map</h3>
+            <h3 data-i18n="map_title">Map</h3>
             <button id="map-expand-btn" onclick="toggleMapExpand()" title="Expand map">⤢ Expand</button>
           </div>
           <div id="firms-tile-toggle-wrap" class="map-toggle hidden">
@@ -236,25 +247,25 @@
 
       <div class="col-stack">
         <div class="panel">
-          <h3>What should I do?</h3>
+          <h3 data-i18n="advice_title">What should I do?</h3>
           <div class="profile-tabs" id="profile-tabs">
-            <button class="profile-tab active" data-profile="general" onclick="setProfile('general')">General</button>
-            <button class="profile-tab" data-profile="asthma" onclick="setProfile('asthma')">Asthma</button>
-            <button class="profile-tab" data-profile="elderly" onclick="setProfile('elderly')">Elderly</button>
-            <button class="profile-tab" data-profile="outdoor" onclick="setProfile('outdoor')">Outdoor worker</button>
+            <button class="profile-tab active" data-profile="general" onclick="setProfile('general')" data-i18n="profile_general">General</button>
+            <button class="profile-tab" data-profile="asthma" onclick="setProfile('asthma')" data-i18n="profile_asthma">Asthma</button>
+            <button class="profile-tab" data-profile="elderly" onclick="setProfile('elderly')" data-i18n="profile_elderly">Elderly</button>
+            <button class="profile-tab" data-profile="outdoor" onclick="setProfile('outdoor')" data-i18n="profile_outdoor">Outdoor worker</button>
           </div>
           <div class="advice-list" id="advice-list"></div>
         </div>
 
         <div class="panel">
-          <h3>Air Quality Scale</h3>
+          <h3 data-i18n="air_scale_title">Air Quality Scale</h3>
           <div class="scale-track"><div class="scale-pointer" id="scale-pointer" style="left:0%"></div></div>
           <div class="scale-note" id="scale-note">US EPA AQI · waiting for data…</div>
         </div>
 
         <div class="panel">
           <div class="ready-head">
-            <h3>Be Ready</h3>
+            <h3 data-i18n="be_ready_title">Be Ready</h3>
             <div class="ready-progress" id="ready-progress">0 / 8</div>
           </div>
           <div class="ready-sub">Emergency preparedness checklist</div>
@@ -281,7 +292,7 @@
     </div>
 
     <!-- GLOBAL INCIDENTS -->
-    <div class="sect-head"><h3 class="hz-incidents">Global Wildfire Incidents</h3><div class="rule"></div></div>
+    <div class="sect-head"><h3 class="hz-incidents" data-i18n="incidents_title">Global Wildfire Incidents</h3><div class="rule"></div></div>
     <div class="incidents-toolbar">
       <div id="incidents-count-note" class="empty-note">Loading global incident data…</div>
       <button id="incidents-map-btn" onclick="toggleGlobalIncidentsOnMap()">🌍 Show on map</button>
@@ -291,13 +302,13 @@
     </div>
 
     <!-- 5-DAY FIRE WEATHER OUTLOOK -->
-    <div class="sect-head"><h3 class="hz-fire">5-Day Fire Weather Outlook</h3><div class="rule"></div></div>
+    <div class="sect-head"><h3 class="hz-fire" data-i18n="forecast_title">5-Day Fire Weather Outlook</h3><div class="rule"></div></div>
     <div class="forecast-row" id="forecast-row">
       <div class="empty-note">Loading fire weather outlook…</div>
     </div>
 
     <!-- WEATHER -->
-    <div class="sect-head"><h3 class="hz-weather">Weather</h3><div class="rule"></div></div>
+    <div class="sect-head"><h3 class="hz-weather" data-i18n="weather_title">Weather</h3><div class="rule"></div></div>
     <div class="weather-grid">
       <div class="wcell"><div class="wicn">🌡</div><div class="wval" id="w-temp">--°</div><div class="wlabel">Temp</div></div>
       <div class="wcell"><div class="wicn">💨</div><div class="wval" id="w-wind">--</div><div class="wlabel" id="w-wind-lbl">Wind km/h · <span id="w-winddir">—</span></div></div>
@@ -305,7 +316,65 @@
       <div class="wcell"><div class="wicn">🌧</div><div class="wval" id="w-rain">--mm</div><div class="wlabel">7-day rain</div></div>
     </div>
 
-  </div>
+    <!-- SAFETY TIPS (extended What should I do) -->
+    <div class="sect-head"><h3 class="hz-fire" data-i18n="tips_eyebrow">STAY SAFE</h3><div class="rule"></div></div>
+    <div class="tips-panel">
+      <div class="tips-panel-intro">
+        <h3 data-i18n="tips_title">If a wildfire is near you</h3>
+        <p>Practical steps to prepare, stay safe, and know when to go.</p>
+      </div>
+      <ul class="tips-grid" id="tips-grid">
+        <li data-i18n="tip_1">Create defensible space by clearing dry brush, leaves, and debris at least 30 feet from your home.</li>
+        <li data-i18n="tip_2">Pack a go-bag with medications, important documents, water, and a flashlight so you can leave fast.</li>
+        <li data-i18n="tip_3">Know two evacuation routes out of your area in case one is blocked by fire or smoke.</li>
+        <li data-i18n="tip_4">Sign up for local emergency alerts and check official fire and air-quality updates regularly.</li>
+        <li data-i18n="tip_5">Keep N95 or P100 masks on hand — cloth and surgical masks don't filter wildfire smoke particles.</li>
+        <li data-i18n="tip_6">Close windows, doors, and vents when smoke is present, and run an air purifier if you have one.</li>
+        <li data-i18n="tip_7">Avoid strenuous outdoor activity once the air quality index passes 100 (unhealthy for sensitive groups).</li>
+        <li data-i18n="tip_8">Never drive through smoke or an active fire zone — visibility can drop to zero within seconds.</li>
+        <li data-i18n="tip_9">If officials order an evacuation, leave immediately rather than waiting to see if the fire arrives.</li>
+        <li data-i18n="tip_10">After a fire passes, wait for official clearance before returning — hidden hot spots can reignite for days.</li>
+      </ul>
+    </div>
+
+    <!-- FIRE SIGHTING REPORT -->
+    <div class="sect-head"><h3 class="hz-fire" data-i18n="report_eyebrow">HELP YOUR COMMUNITY</h3><div class="rule"></div></div>
+    <div class="report-panel" id="report-panel">
+      <div class="report-intro-row">
+        <h3 class="report-title" data-i18n="report_title">Report a Fire Sighting</h3>
+        <p class="report-sub">See smoke or flames? Generate a shareable report and contact authorities fast.</p>
+      </div>
+      <form class="report-form" id="report-form" onsubmit="submitReport(event)">
+        <div class="report-field">
+          <label>What did you see?</label>
+          <select id="report-type" class="report-select">
+            <option value="smoke">Smoke column or haze</option>
+            <option value="flame">Active flames visible</option>
+            <option value="glow">Unusual orange glow at night</option>
+            <option value="other">Other unusual activity</option>
+          </select>
+        </div>
+        <div class="report-field">
+          <label>Notes (optional)</label>
+          <textarea id="report-notes" class="report-textarea" placeholder="Direction, distance estimate, wind conditions…" rows="3"></textarea>
+        </div>
+        <button type="submit" class="report-submit-btn">Generate Report</button>
+      </form>
+      <div class="report-output hidden" id="report-output">
+        <pre class="report-output-text" id="report-output-text"></pre>
+        <div class="report-output-actions">
+          <button class="report-copy-btn" onclick="copyReport()">📋 Copy</button>
+          <div class="report-official-links">
+            <span>Report to:</span>
+            <a href="tel:911">911</a>
+            <a href="https://www.fire.ca.gov/incidents" target="_blank" rel="noopener">CAL FIRE</a>
+          </div>
+        </div>
+      </div>
+      <div class="report-history" id="report-history"></div>
+    </div>
+
+  </div><!-- /#app -->
 
   <footer>
     Wildfire risk computed with the Canadian FWI System and a composite satellite-informed score; other

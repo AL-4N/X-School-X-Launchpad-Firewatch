@@ -589,3 +589,161 @@ footer .emg a{color:var(--ember);font-weight:600;text-decoration:none;}
 }
 .tip.visible{opacity:1;transform:translateY(0);}
 [data-tip]{cursor:help;}
+
+/* ================================================================
+ * LIGHT / DARK THEME
+ * ================================================================ */
+
+body{ transition: background-color 0.25s, color 0.25s; }
+
+body.theme-light{
+  --ember:#c94010;
+  --bg:#f5f0ea;
+  --bg2:#ede7df;
+  --card:#ffffff;
+  --text:#1a1210;
+  --muted:#6b5c54;
+  --border:#d4c4b5;
+}
+body.theme-light header{ box-shadow:0 1px 0 var(--border); }
+body.theme-light .risk-card,
+body.theme-light .sat-card,
+body.theme-light .panel{ box-shadow:0 1px 6px rgba(0,0,0,0.08); }
+body.theme-light .fwi-chip{ background:var(--bg2); }
+body.theme-light .hazard-chip{ border:1px solid var(--border); }
+
+/* ================================================================
+ * THEME TOGGLE BUTTON
+ * ================================================================ */
+
+.theme-toggle-btn{
+  background:none;border:1px solid var(--border);color:var(--text);
+  border-radius:999px;padding:4px 10px;font-size:16px;cursor:pointer;
+  transition:background 0.2s,border-color 0.2s;line-height:1;
+}
+.theme-toggle-btn:hover{ background:var(--border); }
+
+/* ================================================================
+ * LANGUAGE PICKER
+ * ================================================================ */
+
+.lang-picker{ position:relative; }
+
+.lang-toggle-btn{
+  background:none;border:1px solid var(--border);color:var(--text);
+  border-radius:999px;padding:4px 10px;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;gap:4px;white-space:nowrap;
+  transition:background 0.2s;
+}
+.lang-toggle-btn:hover{ background:var(--border); }
+
+#lang-menu{
+  position:absolute;top:calc(100% + 6px);right:0;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
+  z-index:1000;min-width:150px;
+}
+#lang-menu button{
+  display:block;width:100%;text-align:left;
+  background:none;border:none;color:var(--text);
+  padding:10px 14px;font-size:14px;cursor:pointer;
+  transition:background 0.15s;
+}
+#lang-menu button:hover{ background:var(--bg2); }
+
+/* ================================================================
+ * SAFETY TIPS PANEL
+ * ================================================================ */
+
+.tips-panel{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:28px 28px 32px;margin-bottom:32px;
+}
+.tips-panel-intro{ margin-bottom:22px; }
+.tips-panel-intro h3{
+  font-family:'Oswald',sans-serif;font-size:21px;font-weight:600;
+  color:var(--hz-fire);margin:0 0 6px;text-transform:uppercase;letter-spacing:0.04em;
+}
+.tips-panel-intro p{ color:var(--muted);font-size:15px;margin:0; }
+
+.tips-grid{
+  list-style:none;padding:0;margin:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:13px;
+}
+.tips-grid li{
+  background:var(--bg2);border-left:3px solid var(--ember);
+  border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.55;color:var(--text);
+}
+
+/* ================================================================
+ * FIRE SIGHTING REPORT PANEL
+ * ================================================================ */
+
+.report-panel{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:24px 28px 28px;margin-bottom:32px;
+}
+.report-intro-row{ margin-bottom:20px; }
+.report-title{
+  font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.04em;
+  color:var(--hz-fire);margin:0 0 4px;
+}
+.report-sub{ color:var(--muted);font-size:14px;margin:0; }
+
+.report-form{ display:flex;flex-direction:column;gap:16px;max-width:560px; }
+.report-field{ display:flex;flex-direction:column;gap:6px; }
+.report-field label{
+  font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.05em;
+}
+.report-select,.report-textarea{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;
+  font-size:15px;padding:10px 12px;width:100%;transition:border-color 0.15s;
+}
+.report-select:focus,.report-textarea:focus{ outline:none;border-color:var(--ember); }
+.report-textarea{ resize:vertical; }
+
+.report-submit-btn{
+  align-self:flex-start;background:var(--ember);border:none;border-radius:999px;
+  color:#fff;cursor:pointer;font-size:15px;font-weight:700;padding:10px 22px;
+  transition:opacity 0.15s;
+}
+.report-submit-btn:hover{ opacity:0.85; }
+
+.report-output{
+  margin-top:20px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:10px;padding:16px 18px;max-width:560px;
+}
+.report-output-text{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text);
+  white-space:pre-wrap;margin:0 0 12px;
+}
+.report-output-actions{ display:flex;align-items:center;gap:12px;flex-wrap:wrap; }
+.report-copy-btn{
+  background:var(--card);border:1px solid var(--border);border-radius:999px;
+  color:var(--text);cursor:pointer;font-size:14px;padding:6px 14px;transition:background 0.15s;
+}
+.report-copy-btn:hover{ background:var(--border); }
+.report-official-links{ display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted); }
+.report-official-links a{ color:var(--ember);text-decoration:none;font-weight:600; }
+.report-official-links a:hover{ text-decoration:underline; }
+
+.report-history{ margin-top:20px;max-width:560px; }
+.report-history-head{
+  font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;
+}
+.report-history-item{
+  display:flex;align-items:baseline;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--border);
+  font-size:13px;flex-wrap:wrap;
+}
+.report-history-badge{
+  background:var(--ember);color:#fff;border-radius:999px;
+  padding:2px 8px;font-size:12px;font-weight:700;
+}
+.report-history-loc{ flex:1;color:var(--text); }
+.report-history-time{ color:var(--muted);font-size:12px;white-space:nowrap; }
