@@ -94,7 +94,7 @@ function updateSaveBtn(){
   const btn = document.getElementById('save-btn');
   if(!btn) return;
   const saved = isCurrentLocationSaved();
-  btn.textContent = saved ? '✓ Saved' : '🔖 Save';
+  btn.textContent = saved ? t('saved_btn') : t('save_btn');
   btn.classList.toggle('saved', saved);
 }
 
@@ -214,7 +214,7 @@ function refreshUnitDependentUI(){
   }
   if(lastWeather){
     document.getElementById('heat-foot').textContent =
-      `Actual ${fmtTemp(lastWeather.temp)} · humidity ${Math.round(lastWeather.humidity)}% · source: Open-Meteo`;
+      tf('heat_source', {temp: fmtTemp(lastWeather.temp), hum: Math.round(lastWeather.humidity)});
   }
 }
 
@@ -230,6 +230,7 @@ const current = {
   heatLevel: null, heatFeelsC: null, actualTempC: null, humidity: null, windKmh: null,
 };
 let lastWeather = null; // cached raw weather payload, used to re-render on unit toggle
+let lastAqiData = null; // cached AQI payload, used to re-render on language change
 
 const state = {
   loading: document.getElementById('state-loading'),
@@ -256,7 +257,7 @@ async function api(path){
 function requestLocation(){
   showState('loading');
   if(!navigator.geolocation){
-    document.getElementById('error-text').textContent = "This browser doesn't support location services.";
+    document.getElementById('error-text').textContent = t('loc_no_geo');
     showState('error');
     return;
   }
@@ -267,11 +268,11 @@ function requestLocation(){
 
 function onLocationError(err){
   const messages = {
-    1: "Location permission was denied. Please allow location access to see your wildfire risk.",
-    2: "We couldn't determine your position. Check your connection and try again.",
-    3: "Location request timed out. Try again."
+    1: t('loc_err_denied'),
+    2: t('loc_err_unavail'),
+    3: t('loc_err_timeout'),
   };
-  document.getElementById('error-text').textContent = messages[err.code] || "Something went wrong getting your location.";
+  document.getElementById('error-text').textContent = messages[err.code] || t('loc_err_default');
   showState('error');
 }
 
@@ -313,6 +314,7 @@ async function loadLocation(lat, lon, knownDisplayName){
   satHistory = [];
   firesExpanded = false;
   lastWeather = null;
+  lastAqiData = null;
   updateHero();
 
   initMap();
@@ -439,7 +441,7 @@ function toggleMapExpand(){
   const panel = document.getElementById('map-panel');
   const btn = document.getElementById('map-expand-btn');
   const expanded = panel.classList.toggle('expanded');
-  btn.textContent = expanded ? '✕ Close' : '⤢ Expand';
+  btn.textContent = expanded ? t('map_close') : t('map_expand');
   if(map) setTimeout(() => { map.invalidateSize(); map.setMinZoom(1); }, 50);
 }
 
@@ -448,7 +450,7 @@ function collapseMap(){
   if(!panel.classList.contains('expanded')) return;
   panel.classList.remove('expanded');
   const btn = document.getElementById('map-expand-btn');
-  if(btn) btn.textContent = '⤢ Expand';
+  if(btn) btn.textContent = t('map_expand');
   if(map) setTimeout(() => { map.invalidateSize(); map.setMinZoom(1); }, 50);
 }
 
@@ -600,11 +602,11 @@ async function loadWeatherAndRisk(){
 /** NWS-style heat caution thresholds, converted from °F to °C, applied to
  * feels-like (apparent) temperature. */
 function heatCategory(feelsC){
-  if(feelsC >= 51.7) return { level:3, label:'Extreme Danger', desc:'Heat stroke is likely — avoid outdoor exposure entirely.' };
-  if(feelsC >= 39.4) return { level:3, label:'Danger', desc:'High risk of heat-related illness — avoid strenuous outdoor activity.' };
-  if(feelsC >= 32.2) return { level:2, label:'Extreme Caution', desc:'Caution — hydrate and take breaks in the shade.' };
-  if(feelsC >= 26.7) return { level:1, label:'Caution', desc:'Fatigue is possible with prolonged exposure or activity.' };
-  return { level:0, label:'Comfortable', desc:'Heat is not a significant concern right now.' };
+  if(feelsC >= 51.7) return { level:3, label:t('heat_cat_4_label'), desc:t('heat_cat_4_desc') };
+  if(feelsC >= 39.4) return { level:3, label:t('heat_cat_3_label'), desc:t('heat_cat_3_desc') };
+  if(feelsC >= 32.2) return { level:2, label:t('heat_cat_2_label'), desc:t('heat_cat_2_desc') };
+  if(feelsC >= 26.7) return { level:1, label:t('heat_cat_1_label'), desc:t('heat_cat_1_desc') };
+  return { level:0, label:t('heat_cat_0_label'), desc:t('heat_cat_0_desc') };
 }
 
 function renderHeat(weather){
@@ -617,7 +619,7 @@ function renderHeat(weather){
   if(heatUnitEl) heatUnitEl.textContent = `°${unit} feels-like`;
   document.getElementById('heat-desc').textContent = cat.desc;
   document.getElementById('heat-foot').textContent =
-    `Actual ${fmtTemp(weather.temp)} · humidity ${Math.round(weather.humidity)}% · source: Open-Meteo`;
+    tf('heat_source', {temp: fmtTemp(weather.temp), hum: Math.round(weather.humidity)});
 
   const levelEl = document.getElementById('heat-level');
   levelEl.querySelector('.dot').style.background = LEVEL_COLORS[cat.level];
@@ -1011,24 +1013,24 @@ function renderRisk(fwiResult, weather){
 /* ---------------- Air Quality (dual source, both server-proxied) ---------------- */
 
 async function loadAirQuality(){
-  document.getElementById('aqi-desc').textContent = 'Loading air quality data…';
+  document.getElementById('aqi-desc').textContent = t('aqi_loading');
   try{
     const data = await api(`/api/airquality?lat=${userLat}&lon=${userLon}&source=${aqiSource}`);
     if(data.scale === 'us-aqi'){
-      renderAQI_US(data.aqi, data.pm2_5, 'Open-Meteo (CAMS)');
+      renderAQI_US(data.aqi, data.pm2_5);
     } else {
       renderAQI_OWM(data.aqi, data.components);
     }
   }catch(e){
     console.error(e);
-    document.getElementById('aqi-desc').textContent = 'Air quality data unavailable right now.';
+    document.getElementById('aqi-desc').textContent = t('aqi_unavailable');
     document.getElementById('aqi-num').textContent = '—';
-    document.getElementById('aqi-foot').textContent = 'Source: unavailable';
+    document.getElementById('aqi-foot').textContent = t('aqi_foot_unavail');
     const airLevelEl = document.getElementById('air-level');
     airLevelEl.querySelector('.dot').style.background = 'var(--muted)';
     document.getElementById('air-level-word').textContent = '—';
     document.getElementById('card-air').style.borderTopColor = 'var(--border)';
-    document.getElementById('scale-note').textContent = 'US EPA AQI · data unavailable';
+    document.getElementById('scale-note').textContent = t('aqi_scale_unavail');
     document.getElementById('scale-pointer').style.left = '0%';
 
     current.aqiLevel = null;
@@ -1039,21 +1041,21 @@ async function loadAirQuality(){
 }
 
 function usAqiCategory(aqi){
-  if(aqi <= 50) return { label:'GOOD', short:'Good', level:0, hex:'#2ecc71', desc:'Air quality is satisfactory.' };
-  if(aqi <= 100) return { label:'MODERATE', short:'Moderate', level:1, hex:'#f1c40f', desc:'Acceptable, but a concern for unusually sensitive people.' };
-  if(aqi <= 150) return { label:'UNHEALTHY (SENSITIVE)', short:'Sensitive', level:2, hex:'#e67e22', desc:'Sensitive groups may experience health effects.' };
-  if(aqi <= 200) return { label:'UNHEALTHY', short:'Unhealthy', level:3, hex:'#e74c3c', desc:'Everyone may begin to experience health effects.' };
-  if(aqi <= 300) return { label:'VERY UNHEALTHY', short:'Very Unhealthy', level:3, hex:'#9b59b6', desc:'Health alert — everyone may experience serious effects.' };
-  return { label:'HAZARDOUS', short:'Hazardous', level:3, hex:'#6c3483', desc:'Emergency conditions — entire population at risk.' };
+  if(aqi <= 50)  return { label:t('aqi_us_0_label'), short:t('aqi_us_0_short'), level:0, hex:'#2ecc71', desc:t('aqi_us_0_desc') };
+  if(aqi <= 100) return { label:t('aqi_us_1_label'), short:t('aqi_us_1_short'), level:1, hex:'#f1c40f', desc:t('aqi_us_1_desc') };
+  if(aqi <= 150) return { label:t('aqi_us_2_label'), short:t('aqi_us_2_short'), level:2, hex:'#e67e22', desc:t('aqi_us_2_desc') };
+  if(aqi <= 200) return { label:t('aqi_us_3_label'), short:t('aqi_us_3_short'), level:3, hex:'#e74c3c', desc:t('aqi_us_3_desc') };
+  if(aqi <= 300) return { label:t('aqi_us_4_label'), short:t('aqi_us_4_short'), level:3, hex:'#9b59b6', desc:t('aqi_us_4_desc') };
+  return { label:t('aqi_us_5_label'), short:t('aqi_us_5_short'), level:3, hex:'#6c3483', desc:t('aqi_us_5_desc') };
 }
 
 function owmAqiCategory(level){
   const map = {
-    1: { label:'GOOD', short:'Good', level:0, hex:'#2ecc71', desc:'Air quality is good.' },
-    2: { label:'FAIR', short:'Fair', level:0, hex:'#2ecc71', desc:'Air quality is acceptable.' },
-    3: { label:'MODERATE', short:'Moderate', level:1, hex:'#f1c40f', desc:'Sensitive groups may notice effects.' },
-    4: { label:'POOR', short:'Poor', level:2, hex:'#e67e22', desc:'Health effects may be experienced by most people.' },
-    5: { label:'VERY POOR', short:'Very Poor', level:3, hex:'#e74c3c', desc:'Health warning of emergency conditions.' },
+    1: { label:t('aqi_owm_1_label'), short:t('aqi_owm_1_short'), level:0, hex:'#2ecc71', desc:t('aqi_owm_1_desc') },
+    2: { label:t('aqi_owm_2_label'), short:t('aqi_owm_2_short'), level:0, hex:'#2ecc71', desc:t('aqi_owm_2_desc') },
+    3: { label:t('aqi_owm_3_label'), short:t('aqi_owm_3_short'), level:1, hex:'#f1c40f', desc:t('aqi_owm_3_desc') },
+    4: { label:t('aqi_owm_4_label'), short:t('aqi_owm_4_short'), level:2, hex:'#e67e22', desc:t('aqi_owm_4_desc') },
+    5: { label:t('aqi_owm_5_label'), short:t('aqi_owm_5_short'), level:3, hex:'#e74c3c', desc:t('aqi_owm_5_desc') },
   };
   return map[level] || map[1];
 }
@@ -1081,17 +1083,18 @@ function updateAqiCard(numText, cat, descText, footText, approxUsAqi){
 
   const pct = Math.max(0, Math.min(100, (approxUsAqi / 300) * 100));
   document.getElementById('scale-pointer').style.left = `${pct}%`;
-  document.getElementById('scale-note').innerHTML = `US EPA AQI · currently <b>${approxUsAqi} (${cat.short})</b>`;
+  document.getElementById('scale-note').textContent = tf('aqi_scale_note', {aqi: approxUsAqi, short: cat.short});
 
   updateHero();
   renderAdvice();
 }
 
-function renderAQI_US(aqi, pm25, sourceLabel){
+function renderAQI_US(aqi, pm25){
+  lastAqiData = {type:'us', aqi, pm25};
   const cat = usAqiCategory(aqi);
-  const pmText = pm25 != null ? ` PM2.5 is ${Math.round(pm25)} µg/m³.` : '';
+  const pmText = pm25 != null ? tf('aqi_pm25', {val: Math.round(pm25)}) : '';
   clearOwmPollutants();
-  updateAqiCard(aqi, cat, `${cat.desc}${pmText}`, `Dominant pollutant: PM2.5 · source: ${sourceLabel}`, aqi);
+  updateAqiCard(aqi, cat, `${cat.desc}${pmText}`, t('aqi_foot_cams'), aqi);
   updateHazards('aqi', aqi > 150 ? [{
     level: aqi > 200 ? 'severe' : 'warn', icon:'😷',
     title: aqi > 200 ? 'Unhealthy Air Quality' : 'Air Quality Advisory',
@@ -1100,10 +1103,11 @@ function renderAQI_US(aqi, pm25, sourceLabel){
 }
 
 function renderAQI_OWM(level, components){
+  lastAqiData = {type:'owm', level, components};
   const cat = owmAqiCategory(level);
   const pm25 = components?.pm2_5;
-  const pmText = pm25 != null ? ` PM2.5 is ${pm25.toFixed(1)} µg/m³.` : '';
-  updateAqiCard(level, cat, `${cat.desc}${pmText}`, `Dominant pollutant: PM2.5 · source: OpenWeatherMap (1–5 scale)`, owmToApproxUsAqi(level));
+  const pmText = pm25 != null ? tf('aqi_pm25', {val: pm25.toFixed(1)}) : '';
+  updateAqiCard(level, cat, `${cat.desc}${pmText}`, t('aqi_foot_owm'), owmToApproxUsAqi(level));
   updateHazards('aqi', level >= 4 ? [{
     level: level === 5 ? 'severe' : 'warn', icon:'😷',
     title: level === 5 ? 'Unhealthy Air Quality' : 'Air Quality Advisory',
@@ -1144,6 +1148,12 @@ function renderOwmPollutants(components){
 function clearOwmPollutants(){
   const box = document.getElementById('owm-pollutants');
   if(box){ box.classList.add('hidden'); box.innerHTML = ''; }
+}
+
+function rerenderAqi(){
+  if(!lastAqiData) return;
+  if(lastAqiData.type === 'us') renderAQI_US(lastAqiData.aqi, lastAqiData.pm25);
+  else renderAQI_OWM(lastAqiData.level, lastAqiData.components);
 }
 
 /* ---------------- Fires (NASA FIRMS, via Worker) ---------------- */
@@ -1862,6 +1872,42 @@ const TRANSLATIONS = {
     report_notes_label:'Notes (optional)',
     report_notes_placeholder:'Direction, distance estimate, wind conditions…',
     report_generate_btn:'Generate Report',report_copy_btn:'📋 Copy',report_to:'Report to:',
+    // Heat categories
+    heat_cat_4_label:'Extreme Danger',heat_cat_4_desc:'Heat stroke is likely — avoid outdoor exposure entirely.',
+    heat_cat_3_label:'Danger',heat_cat_3_desc:'High risk of heat-related illness — avoid strenuous outdoor activity.',
+    heat_cat_2_label:'Extreme Caution',heat_cat_2_desc:'Caution — hydrate and take breaks in the shade.',
+    heat_cat_1_label:'Caution',heat_cat_1_desc:'Fatigue is possible with prolonged exposure or activity.',
+    heat_cat_0_label:'Comfortable',heat_cat_0_desc:'Heat is not a significant concern right now.',
+    heat_source:'Actual {temp} · humidity {hum}% · source: Open-Meteo',
+    // AQI US categories
+    aqi_us_0_label:'GOOD',aqi_us_0_short:'Good',aqi_us_0_desc:'Air quality is satisfactory.',
+    aqi_us_1_label:'MODERATE',aqi_us_1_short:'Moderate',aqi_us_1_desc:'Acceptable, but a concern for unusually sensitive people.',
+    aqi_us_2_label:'UNHEALTHY (SENSITIVE)',aqi_us_2_short:'Sensitive',aqi_us_2_desc:'Sensitive groups may experience health effects.',
+    aqi_us_3_label:'UNHEALTHY',aqi_us_3_short:'Unhealthy',aqi_us_3_desc:'Everyone may begin to experience health effects.',
+    aqi_us_4_label:'VERY UNHEALTHY',aqi_us_4_short:'Very Unhealthy',aqi_us_4_desc:'Health alert — everyone may experience serious effects.',
+    aqi_us_5_label:'HAZARDOUS',aqi_us_5_short:'Hazardous',aqi_us_5_desc:'Emergency conditions — entire population at risk.',
+    // AQI OWM categories
+    aqi_owm_1_label:'GOOD',aqi_owm_1_short:'Good',aqi_owm_1_desc:'Air quality is good.',
+    aqi_owm_2_label:'FAIR',aqi_owm_2_short:'Fair',aqi_owm_2_desc:'Air quality is acceptable.',
+    aqi_owm_3_label:'MODERATE',aqi_owm_3_short:'Moderate',aqi_owm_3_desc:'Sensitive groups may notice effects.',
+    aqi_owm_4_label:'POOR',aqi_owm_4_short:'Poor',aqi_owm_4_desc:'Health effects may be experienced by most people.',
+    aqi_owm_5_label:'VERY POOR',aqi_owm_5_short:'Very Poor',aqi_owm_5_desc:'Health warning of emergency conditions.',
+    // AQI UI
+    aqi_loading:'Loading air quality data…',
+    aqi_unavailable:'Air quality data unavailable right now.',
+    aqi_foot_cams:'Dominant pollutant: PM2.5 · source: Open-Meteo (CAMS)',
+    aqi_foot_owm:'Dominant pollutant: PM2.5 · source: OpenWeatherMap (1–5 scale)',
+    aqi_foot_unavail:'Source: unavailable',
+    aqi_scale_note:'US EPA AQI · currently {aqi} ({short})',
+    aqi_scale_unavail:'US EPA AQI · data unavailable',
+    aqi_pm25:' PM2.5 is {val} µg/m³.',
+    // Location errors
+    loc_no_geo:"This browser doesn't support location services.",
+    loc_err_denied:'Location permission was denied. Please allow location access to see your wildfire risk.',
+    loc_err_unavail:"We couldn't determine your position. Check your connection and try again.",
+    loc_err_timeout:'Location request timed out. Try again.',
+    loc_err_default:'Something went wrong getting your location.',
+    map_close:'✕ Close',
   },
   es:{
     risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
@@ -1972,6 +2018,37 @@ const TRANSLATIONS = {
     report_notes_label:'Notas (opcional)',
     report_notes_placeholder:'Dirección, estimado de distancia, condiciones de viento…',
     report_generate_btn:'Generar Reporte',report_copy_btn:'📋 Copiar',report_to:'Reportar a:',
+    heat_cat_4_label:'Peligro extremo',heat_cat_4_desc:'El golpe de calor es probable — evita toda exposición al exterior.',
+    heat_cat_3_label:'Peligro',heat_cat_3_desc:'Alto riesgo de enfermedad por calor — evita actividades físicas intensas al exterior.',
+    heat_cat_2_label:'Precaución extrema',heat_cat_2_desc:'Precaución — hidrátate y toma descansos a la sombra.',
+    heat_cat_1_label:'Precaución',heat_cat_1_desc:'La fatiga es posible con exposición o actividad prolongada.',
+    heat_cat_0_label:'Confortable',heat_cat_0_desc:'El calor no es una preocupación significativa ahora.',
+    heat_source:'Real {temp} · humedad {hum}% · fuente: Open-Meteo',
+    aqi_us_0_label:'BUENO',aqi_us_0_short:'Bueno',aqi_us_0_desc:'La calidad del aire es satisfactoria.',
+    aqi_us_1_label:'MODERADO',aqi_us_1_short:'Moderado',aqi_us_1_desc:'Aceptable, pero puede ser un problema para personas sensibles.',
+    aqi_us_2_label:'NO SALUDABLE (SENSIBLES)',aqi_us_2_short:'Sensible',aqi_us_2_desc:'Los grupos sensibles pueden experimentar efectos en la salud.',
+    aqi_us_3_label:'NO SALUDABLE',aqi_us_3_short:'No saludable',aqi_us_3_desc:'Todos pueden comenzar a experimentar efectos en la salud.',
+    aqi_us_4_label:'MUY NO SALUDABLE',aqi_us_4_short:'Muy no saludable',aqi_us_4_desc:'Alerta de salud — todos pueden experimentar efectos graves.',
+    aqi_us_5_label:'PELIGROSO',aqi_us_5_short:'Peligroso',aqi_us_5_desc:'Condiciones de emergencia — toda la población en riesgo.',
+    aqi_owm_1_label:'BUENO',aqi_owm_1_short:'Bueno',aqi_owm_1_desc:'La calidad del aire es buena.',
+    aqi_owm_2_label:'ACEPTABLE',aqi_owm_2_short:'Aceptable',aqi_owm_2_desc:'La calidad del aire es aceptable.',
+    aqi_owm_3_label:'MODERADO',aqi_owm_3_short:'Moderado',aqi_owm_3_desc:'Los grupos sensibles pueden notar efectos.',
+    aqi_owm_4_label:'MALO',aqi_owm_4_short:'Malo',aqi_owm_4_desc:'La mayoría de las personas pueden experimentar efectos en la salud.',
+    aqi_owm_5_label:'MUY MALO',aqi_owm_5_short:'Muy malo',aqi_owm_5_desc:'Alerta de salud de emergencia.',
+    aqi_loading:'Cargando datos de calidad del aire…',
+    aqi_unavailable:'Datos de calidad del aire no disponibles.',
+    aqi_foot_cams:'Contaminante dominante: PM2.5 · fuente: Open-Meteo (CAMS)',
+    aqi_foot_owm:'Contaminante dominante: PM2.5 · fuente: OpenWeatherMap (escala 1–5)',
+    aqi_foot_unavail:'Fuente: no disponible',
+    aqi_scale_note:'US EPA AQI · actualmente {aqi} ({short})',
+    aqi_scale_unavail:'US EPA AQI · datos no disponibles',
+    aqi_pm25:' PM2.5 es {val} µg/m³.',
+    loc_no_geo:'Este navegador no admite servicios de ubicación.',
+    loc_err_denied:'Se denegó el permiso de ubicación. Permite el acceso a la ubicación para ver tu riesgo de incendio.',
+    loc_err_unavail:'No pudimos determinar tu posición. Verifica tu conexión e inténtalo de nuevo.',
+    loc_err_timeout:'La solicitud de ubicación agotó el tiempo de espera. Inténtalo de nuevo.',
+    loc_err_default:'Algo salió mal al obtener tu ubicación.',
+    map_close:'✕ Cerrar',
   },
   fr:{
     risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
@@ -2082,6 +2159,37 @@ const TRANSLATIONS = {
     report_notes_label:'Notes (facultatif)',
     report_notes_placeholder:'Direction, estimation de la distance, conditions de vent…',
     report_generate_btn:'Générer le rapport',report_copy_btn:'📋 Copier',report_to:'Signaler à :',
+    heat_cat_4_label:'Danger extrême',heat_cat_4_desc:"Le coup de chaleur est probable — évitez toute exposition extérieure.",
+    heat_cat_3_label:'Danger',heat_cat_3_desc:"Risque élevé de maladie liée à la chaleur — évitez l'activité physique intense en extérieur.",
+    heat_cat_2_label:'Vigilance extrême',heat_cat_2_desc:"Vigilance — hydratez-vous et faites des pauses à l'ombre.",
+    heat_cat_1_label:'Vigilance',heat_cat_1_desc:"La fatigue est possible avec une exposition ou une activité prolongée.",
+    heat_cat_0_label:'Confortable',heat_cat_0_desc:"La chaleur n'est pas une préoccupation majeure pour le moment.",
+    heat_source:'Réel {temp} · humidité {hum}% · source : Open-Meteo',
+    aqi_us_0_label:'BON',aqi_us_0_short:'Bon',aqi_us_0_desc:"La qualité de l'air est satisfaisante.",
+    aqi_us_1_label:'MODÉRÉ',aqi_us_1_short:'Modéré',aqi_us_1_desc:"Acceptable, mais préoccupant pour les personnes sensibles.",
+    aqi_us_2_label:'MAUVAIS (SENSIBLES)',aqi_us_2_short:'Sensible',aqi_us_2_desc:"Les groupes sensibles peuvent ressentir des effets sur la santé.",
+    aqi_us_3_label:'MAUVAIS',aqi_us_3_short:'Mauvais',aqi_us_3_desc:"Tout le monde peut commencer à ressentir des effets sur la santé.",
+    aqi_us_4_label:'TRÈS MAUVAIS',aqi_us_4_short:'Très mauvais',aqi_us_4_desc:"Alerte santé — des effets graves possibles pour tous.",
+    aqi_us_5_label:'DANGEREUX',aqi_us_5_short:'Dangereux',aqi_us_5_desc:"Conditions d'urgence — toute la population est à risque.",
+    aqi_owm_1_label:'BON',aqi_owm_1_short:'Bon',aqi_owm_1_desc:"La qualité de l'air est bonne.",
+    aqi_owm_2_label:'CORRECT',aqi_owm_2_short:'Correct',aqi_owm_2_desc:"La qualité de l'air est acceptable.",
+    aqi_owm_3_label:'MODÉRÉ',aqi_owm_3_short:'Modéré',aqi_owm_3_desc:"Les groupes sensibles peuvent remarquer des effets.",
+    aqi_owm_4_label:'MAUVAIS',aqi_owm_4_short:'Mauvais',aqi_owm_4_desc:"La plupart des gens peuvent ressentir des effets sur la santé.",
+    aqi_owm_5_label:'TRÈS MAUVAIS',aqi_owm_5_short:'Très mauvais',aqi_owm_5_desc:"Alerte sanitaire d'urgence.",
+    aqi_loading:"Chargement des données de qualité de l'air…",
+    aqi_unavailable:"Données de qualité de l'air non disponibles.",
+    aqi_foot_cams:'Polluant dominant : PM2.5 · source : Open-Meteo (CAMS)',
+    aqi_foot_owm:'Polluant dominant : PM2.5 · source : OpenWeatherMap (échelle 1–5)',
+    aqi_foot_unavail:'Source : indisponible',
+    aqi_scale_note:'US EPA AQI · actuellement {aqi} ({short})',
+    aqi_scale_unavail:'US EPA AQI · données indisponibles',
+    aqi_pm25:' PM2.5 est {val} µg/m³.',
+    loc_no_geo:"Ce navigateur ne prend pas en charge les services de localisation.",
+    loc_err_denied:"La permission de localisation a été refusée. Veuillez autoriser l'accès à la localisation.",
+    loc_err_unavail:"Nous n'avons pas pu déterminer votre position. Vérifiez votre connexion et réessayez.",
+    loc_err_timeout:"La demande de localisation a expiré. Réessayez.",
+    loc_err_default:"Une erreur s'est produite lors de la récupération de votre position.",
+    map_close:'✕ Fermer',
   },
   de:{
     risk_intelligence:'Risikoanalyse',satellite_title:'Satelliten-Feueranalyse',
@@ -2192,6 +2300,37 @@ const TRANSLATIONS = {
     report_notes_label:'Notizen (optional)',
     report_notes_placeholder:'Richtung, Entfernungsschätzung, Windbedingungen…',
     report_generate_btn:'Bericht erstellen',report_copy_btn:'📋 Kopieren',report_to:'Melden an:',
+    heat_cat_4_label:'Extreme Gefahr',heat_cat_4_desc:'Hitzschlag ist wahrscheinlich — meiden Sie den Außenbereich vollständig.',
+    heat_cat_3_label:'Gefahr',heat_cat_3_desc:'Hohes Risiko für hitzebedingte Erkrankungen — vermeiden Sie anstrengende Außenaktivitäten.',
+    heat_cat_2_label:'Äußerste Vorsicht',heat_cat_2_desc:'Vorsicht — trinken Sie viel und machen Sie Pausen im Schatten.',
+    heat_cat_1_label:'Vorsicht',heat_cat_1_desc:'Ermüdung ist bei längerem Aufenthalt oder Aktivität möglich.',
+    heat_cat_0_label:'Angenehm',heat_cat_0_desc:'Hitze ist derzeit kein wesentliches Problem.',
+    heat_source:'Tatsächlich {temp} · Luftfeuchtigkeit {hum}% · Quelle: Open-Meteo',
+    aqi_us_0_label:'GUT',aqi_us_0_short:'Gut',aqi_us_0_desc:'Die Luftqualität ist zufriedenstellend.',
+    aqi_us_1_label:'MÄSSIG',aqi_us_1_short:'Mäßig',aqi_us_1_desc:'Akzeptabel, aber ein Problem für besonders empfindliche Personen.',
+    aqi_us_2_label:'UNGESUND (EMPFINDLICH)',aqi_us_2_short:'Empfindlich',aqi_us_2_desc:'Empfindliche Gruppen können Gesundheitsauswirkungen erfahren.',
+    aqi_us_3_label:'UNGESUND',aqi_us_3_short:'Ungesund',aqi_us_3_desc:'Alle können beginnen, Gesundheitsauswirkungen zu spüren.',
+    aqi_us_4_label:'SEHR UNGESUND',aqi_us_4_short:'Sehr ungesund',aqi_us_4_desc:'Gesundheitswarnung — ernsthafte Auswirkungen für alle möglich.',
+    aqi_us_5_label:'GEFÄHRLICH',aqi_us_5_short:'Gefährlich',aqi_us_5_desc:'Notfallbedingungen — gesamte Bevölkerung gefährdet.',
+    aqi_owm_1_label:'GUT',aqi_owm_1_short:'Gut',aqi_owm_1_desc:'Die Luftqualität ist gut.',
+    aqi_owm_2_label:'FAIR',aqi_owm_2_short:'Fair',aqi_owm_2_desc:'Die Luftqualität ist akzeptabel.',
+    aqi_owm_3_label:'MÄSSIG',aqi_owm_3_short:'Mäßig',aqi_owm_3_desc:'Empfindliche Gruppen können Auswirkungen bemerken.',
+    aqi_owm_4_label:'SCHLECHT',aqi_owm_4_short:'Schlecht',aqi_owm_4_desc:'Gesundheitliche Auswirkungen können bei den meisten Menschen auftreten.',
+    aqi_owm_5_label:'SEHR SCHLECHT',aqi_owm_5_short:'Sehr schlecht',aqi_owm_5_desc:'Gesundheitswarnung wegen Notfallbedingungen.',
+    aqi_loading:'Luftqualitätsdaten werden geladen…',
+    aqi_unavailable:'Luftqualitätsdaten derzeit nicht verfügbar.',
+    aqi_foot_cams:'Dominanter Schadstoff: PM2.5 · Quelle: Open-Meteo (CAMS)',
+    aqi_foot_owm:'Dominanter Schadstoff: PM2.5 · Quelle: OpenWeatherMap (Skala 1–5)',
+    aqi_foot_unavail:'Quelle: nicht verfügbar',
+    aqi_scale_note:'US EPA AQI · aktuell {aqi} ({short})',
+    aqi_scale_unavail:'US EPA AQI · Daten nicht verfügbar',
+    aqi_pm25:' PM2.5 beträgt {val} µg/m³.',
+    loc_no_geo:'Dieser Browser unterstützt keine Standortdienste.',
+    loc_err_denied:'Standortberechtigung wurde verweigert. Bitte erlauben Sie den Standortzugriff.',
+    loc_err_unavail:'Wir konnten Ihren Standort nicht ermitteln. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.',
+    loc_err_timeout:'Die Standortanfrage ist abgelaufen. Versuchen Sie es erneut.',
+    loc_err_default:'Beim Abrufen Ihres Standorts ist etwas schiefgelaufen.',
+    map_close:'✕ Schließen',
   },
   zh:{
     risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
@@ -2302,6 +2441,37 @@ const TRANSLATIONS = {
     report_notes_label:'备注（可选）',
     report_notes_placeholder:'方向、距离估计、风况…',
     report_generate_btn:'生成报告',report_copy_btn:'📋 复制',report_to:'报告给：',
+    heat_cat_4_label:'极端危险',heat_cat_4_desc:'极可能中暑 — 完全避免户外暴露。',
+    heat_cat_3_label:'危险',heat_cat_3_desc:'高度中暑风险 — 避免剧烈户外活动。',
+    heat_cat_2_label:'极度谨慎',heat_cat_2_desc:'谨慎 — 多补水并在阴凉处休息。',
+    heat_cat_1_label:'谨慎',heat_cat_1_desc:'长时间暴露或活动可能导致疲劳。',
+    heat_cat_0_label:'舒适',heat_cat_0_desc:'目前热度不是主要问题。',
+    heat_source:'实际 {temp} · 湿度 {hum}% · 来源：Open-Meteo',
+    aqi_us_0_label:'优',aqi_us_0_short:'优',aqi_us_0_desc:'空气质量令人满意。',
+    aqi_us_1_label:'良',aqi_us_1_short:'良',aqi_us_1_desc:'可接受，但对特别敏感人群有影响。',
+    aqi_us_2_label:'轻度污染（敏感群体）',aqi_us_2_short:'敏感',aqi_us_2_desc:'敏感群体可能出现健康问题。',
+    aqi_us_3_label:'中度污染',aqi_us_3_short:'中度',aqi_us_3_desc:'所有人可能开始出现健康影响。',
+    aqi_us_4_label:'重度污染',aqi_us_4_short:'重度',aqi_us_4_desc:'健康警报 — 所有人可能出现严重影响。',
+    aqi_us_5_label:'严重污染',aqi_us_5_short:'严重',aqi_us_5_desc:'紧急状态 — 全体人口面临风险。',
+    aqi_owm_1_label:'优',aqi_owm_1_short:'优',aqi_owm_1_desc:'空气质量良好。',
+    aqi_owm_2_label:'良',aqi_owm_2_short:'良',aqi_owm_2_desc:'空气质量可接受。',
+    aqi_owm_3_label:'一般',aqi_owm_3_short:'一般',aqi_owm_3_desc:'敏感群体可能有所影响。',
+    aqi_owm_4_label:'差',aqi_owm_4_short:'差',aqi_owm_4_desc:'大多数人可能感受到健康影响。',
+    aqi_owm_5_label:'极差',aqi_owm_5_short:'极差',aqi_owm_5_desc:'紧急健康警报。',
+    aqi_loading:'正在加载空气质量数据…',
+    aqi_unavailable:'空气质量数据暂时不可用。',
+    aqi_foot_cams:'主要污染物：PM2.5 · 来源：Open-Meteo (CAMS)',
+    aqi_foot_owm:'主要污染物：PM2.5 · 来源：OpenWeatherMap（1–5级）',
+    aqi_foot_unavail:'来源：不可用',
+    aqi_scale_note:'美国EPA AQI · 当前 {aqi} ({short})',
+    aqi_scale_unavail:'美国EPA AQI · 数据不可用',
+    aqi_pm25:' PM2.5为 {val} µg/m³。',
+    loc_no_geo:'此浏览器不支持位置服务。',
+    loc_err_denied:'位置权限被拒绝。请允许访问位置以查看您的野火风险。',
+    loc_err_unavail:'无法确定您的位置。请检查网络连接后重试。',
+    loc_err_timeout:'位置请求超时。请重试。',
+    loc_err_default:'获取位置时出现错误。',
+    map_close:'✕ 关闭',
   },
   pt:{
     risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
@@ -2412,6 +2582,37 @@ const TRANSLATIONS = {
     report_notes_label:'Notas (opcional)',
     report_notes_placeholder:'Direção, estimativa de distância, condições de vento…',
     report_generate_btn:'Gerar Relatório',report_copy_btn:'📋 Copiar',report_to:'Reportar para:',
+    heat_cat_4_label:'Perigo Extremo',heat_cat_4_desc:'Insolação é provável — evite qualquer exposição ao exterior.',
+    heat_cat_3_label:'Perigo',heat_cat_3_desc:'Alto risco de doenças relacionadas ao calor — evite atividades físicas intensas ao ar livre.',
+    heat_cat_2_label:'Extrema Cautela',heat_cat_2_desc:'Cautela — hidrate-se e faça pausas à sombra.',
+    heat_cat_1_label:'Cautela',heat_cat_1_desc:'A fadiga é possível com exposição prolongada ou atividade intensa.',
+    heat_cat_0_label:'Confortável',heat_cat_0_desc:'O calor não é uma preocupação significativa no momento.',
+    heat_source:'Real {temp} · umidade {hum}% · fonte: Open-Meteo',
+    aqi_us_0_label:'BOM',aqi_us_0_short:'Bom',aqi_us_0_desc:'A qualidade do ar é satisfatória.',
+    aqi_us_1_label:'MODERADO',aqi_us_1_short:'Moderado',aqi_us_1_desc:'Aceitável, mas preocupante para pessoas incomumente sensíveis.',
+    aqi_us_2_label:'PREJUDICIAL (SENSÍVEIS)',aqi_us_2_short:'Sensível',aqi_us_2_desc:'Grupos sensíveis podem sofrer efeitos à saúde.',
+    aqi_us_3_label:'PREJUDICIAL',aqi_us_3_short:'Prejudicial',aqi_us_3_desc:'Todos podem começar a sentir efeitos à saúde.',
+    aqi_us_4_label:'MUITO PREJUDICIAL',aqi_us_4_short:'Muito prejudicial',aqi_us_4_desc:'Alerta de saúde — efeitos graves possíveis para todos.',
+    aqi_us_5_label:'PERIGOSO',aqi_us_5_short:'Perigoso',aqi_us_5_desc:'Condições de emergência — toda a população em risco.',
+    aqi_owm_1_label:'BOM',aqi_owm_1_short:'Bom',aqi_owm_1_desc:'A qualidade do ar é boa.',
+    aqi_owm_2_label:'RAZOÁVEL',aqi_owm_2_short:'Razoável',aqi_owm_2_desc:'A qualidade do ar é aceitável.',
+    aqi_owm_3_label:'MODERADO',aqi_owm_3_short:'Moderado',aqi_owm_3_desc:'Grupos sensíveis podem notar efeitos.',
+    aqi_owm_4_label:'RUIM',aqi_owm_4_short:'Ruim',aqi_owm_4_desc:'A maioria das pessoas pode sentir efeitos à saúde.',
+    aqi_owm_5_label:'MUITO RUIM',aqi_owm_5_short:'Muito ruim',aqi_owm_5_desc:'Alerta de saúde em condições de emergência.',
+    aqi_loading:'Carregando dados de qualidade do ar…',
+    aqi_unavailable:'Dados de qualidade do ar não disponíveis.',
+    aqi_foot_cams:'Poluente dominante: PM2.5 · fonte: Open-Meteo (CAMS)',
+    aqi_foot_owm:'Poluente dominante: PM2.5 · fonte: OpenWeatherMap (escala 1–5)',
+    aqi_foot_unavail:'Fonte: indisponível',
+    aqi_scale_note:'US EPA AQI · atualmente {aqi} ({short})',
+    aqi_scale_unavail:'US EPA AQI · dados indisponíveis',
+    aqi_pm25:' PM2.5 é {val} µg/m³.',
+    loc_no_geo:'Este navegador não suporta serviços de localização.',
+    loc_err_denied:'Permissão de localização negada. Permita o acesso à localização para ver seu risco de incêndio.',
+    loc_err_unavail:'Não conseguimos determinar sua posição. Verifique sua conexão e tente novamente.',
+    loc_err_timeout:'A solicitação de localização expirou. Tente novamente.',
+    loc_err_default:'Algo deu errado ao obter sua localização.',
+    map_close:'✕ Fechar',
   },
   ja:{
     risk_intelligence:'リスク情報',satellite_title:'衛星火災解析',
@@ -2522,6 +2723,37 @@ const TRANSLATIONS = {
     report_notes_label:'メモ（任意）',
     report_notes_placeholder:'方向、距離の目安、風の状況…',
     report_generate_btn:'レポートを生成',report_copy_btn:'📋 コピー',report_to:'報告先：',
+    heat_cat_4_label:'極度の危険',heat_cat_4_desc:'熱中症の危険性が高い — 屋外への露出を完全に避けてください。',
+    heat_cat_3_label:'危険',heat_cat_3_desc:'熱関連疾患のリスクが高い — 激しい屋外活動を避けてください。',
+    heat_cat_2_label:'厳重注意',heat_cat_2_desc:'注意 — 水分補給し、日陰で休憩してください。',
+    heat_cat_1_label:'注意',heat_cat_1_desc:'長時間の露出や活動で疲労する可能性があります。',
+    heat_cat_0_label:'快適',heat_cat_0_desc:'現在、熱中症の心配はありません。',
+    heat_source:'実際 {temp} · 湿度 {hum}% · ソース：Open-Meteo',
+    aqi_us_0_label:'良好',aqi_us_0_short:'良好',aqi_us_0_desc:'大気質は満足のいくものです。',
+    aqi_us_1_label:'普通',aqi_us_1_short:'普通',aqi_us_1_desc:'許容範囲内ですが、特に敏感な人には問題になる場合があります。',
+    aqi_us_2_label:'敏感なグループに悪い',aqi_us_2_short:'敏感',aqi_us_2_desc:'敏感なグループは健康に影響を受ける可能性があります。',
+    aqi_us_3_label:'悪い',aqi_us_3_short:'悪い',aqi_us_3_desc:'誰もが健康への影響を感じ始める可能性があります。',
+    aqi_us_4_label:'非常に悪い',aqi_us_4_short:'非常に悪い',aqi_us_4_desc:'健康警報 — 全員が深刻な影響を受ける可能性があります。',
+    aqi_us_5_label:'危険',aqi_us_5_short:'危険',aqi_us_5_desc:'緊急事態 — 全人口が危険にさらされています。',
+    aqi_owm_1_label:'良好',aqi_owm_1_short:'良好',aqi_owm_1_desc:'大気質は良好です。',
+    aqi_owm_2_label:'まあまあ',aqi_owm_2_short:'まあまあ',aqi_owm_2_desc:'大気質は許容範囲内です。',
+    aqi_owm_3_label:'普通',aqi_owm_3_short:'普通',aqi_owm_3_desc:'敏感なグループは影響を感じる可能性があります。',
+    aqi_owm_4_label:'悪い',aqi_owm_4_short:'悪い',aqi_owm_4_desc:'大多数の人が健康への影響を感じる可能性があります。',
+    aqi_owm_5_label:'非常に悪い',aqi_owm_5_short:'非常に悪い',aqi_owm_5_desc:'緊急事態の健康警報。',
+    aqi_loading:'大気質データを読み込み中…',
+    aqi_unavailable:'大気質データを現在利用できません。',
+    aqi_foot_cams:'主要汚染物質：PM2.5 · ソース：Open-Meteo (CAMS)',
+    aqi_foot_owm:'主要汚染物質：PM2.5 · ソース：OpenWeatherMap（1–5スケール）',
+    aqi_foot_unavail:'ソース：利用不可',
+    aqi_scale_note:'US EPA AQI · 現在 {aqi} ({short})',
+    aqi_scale_unavail:'US EPA AQI · データ利用不可',
+    aqi_pm25:'PM2.5は {val} µg/m³です。',
+    loc_no_geo:'このブラウザは位置情報サービスに対応していません。',
+    loc_err_denied:'位置情報の許可が拒否されました。山火事リスクを確認するには位置情報へのアクセスを許可してください。',
+    loc_err_unavail:'位置を特定できませんでした。接続を確認して再試行してください。',
+    loc_err_timeout:'位置情報リクエストがタイムアウトしました。再試行してください。',
+    loc_err_default:'位置情報の取得中にエラーが発生しました。',
+    map_close:'✕ 閉じる',
   },
   it:{
     risk_intelligence:'Intelligence del Rischio',satellite_title:'Analisi Satellitare Incendi',
@@ -2632,6 +2864,37 @@ const TRANSLATIONS = {
     report_notes_label:'Note (facoltativo)',
     report_notes_placeholder:'Direzione, distanza stimata, condizioni del vento…',
     report_generate_btn:'Genera Report',report_copy_btn:'📋 Copia',report_to:'Segnala a:',
+    heat_cat_4_label:'Pericolo estremo',heat_cat_4_desc:"Il colpo di calore è probabile — evitare completamente l'esposizione esterna.",
+    heat_cat_3_label:'Pericolo',heat_cat_3_desc:"Alto rischio di malattie da calore — evitare attività fisiche intense all'aperto.",
+    heat_cat_2_label:'Estrema cautela',heat_cat_2_desc:"Cautela — idratarsi e fare pause all'ombra.",
+    heat_cat_1_label:'Cautela',heat_cat_1_desc:'La stanchezza è possibile con esposizione prolungata o attività intensa.',
+    heat_cat_0_label:'Confortevole',heat_cat_0_desc:'Il calore non è un problema significativo al momento.',
+    heat_source:'Reale {temp} · umidità {hum}% · fonte: Open-Meteo',
+    aqi_us_0_label:'BUONA',aqi_us_0_short:'Buona',aqi_us_0_desc:"La qualità dell'aria è soddisfacente.",
+    aqi_us_1_label:'MODERATA',aqi_us_1_short:'Moderata',aqi_us_1_desc:"Accettabile, ma preoccupante per persone particolarmente sensibili.",
+    aqi_us_2_label:'NON SALUBRE (SENSIBILI)',aqi_us_2_short:'Sensibile',aqi_us_2_desc:"I gruppi sensibili possono avvertire effetti sulla salute.",
+    aqi_us_3_label:'NON SALUBRE',aqi_us_3_short:'Non salubre',aqi_us_3_desc:"Tutti possono iniziare ad avvertire effetti sulla salute.",
+    aqi_us_4_label:'MOLTO INSALUBRE',aqi_us_4_short:'Molto insalubre',aqi_us_4_desc:"Allerta salute — effetti gravi possibili per tutti.",
+    aqi_us_5_label:'PERICOLOSA',aqi_us_5_short:'Pericolosa',aqi_us_5_desc:"Condizioni di emergenza — tutta la popolazione a rischio.",
+    aqi_owm_1_label:'BUONA',aqi_owm_1_short:'Buona',aqi_owm_1_desc:"La qualità dell'aria è buona.",
+    aqi_owm_2_label:'DISCRETA',aqi_owm_2_short:'Discreta',aqi_owm_2_desc:"La qualità dell'aria è accettabile.",
+    aqi_owm_3_label:'MODERATA',aqi_owm_3_short:'Moderata',aqi_owm_3_desc:"I gruppi sensibili possono notare effetti.",
+    aqi_owm_4_label:'SCARSA',aqi_owm_4_short:'Scarsa',aqi_owm_4_desc:"La maggior parte delle persone può avvertire effetti sulla salute.",
+    aqi_owm_5_label:'MOLTO SCARSA',aqi_owm_5_short:'Molto scarsa',aqi_owm_5_desc:"Allerta sanitaria per condizioni di emergenza.",
+    aqi_loading:"Caricamento dati qualità dell'aria…",
+    aqi_unavailable:"Dati sulla qualità dell'aria non disponibili al momento.",
+    aqi_foot_cams:'Inquinante dominante: PM2.5 · fonte: Open-Meteo (CAMS)',
+    aqi_foot_owm:'Inquinante dominante: PM2.5 · fonte: OpenWeatherMap (scala 1–5)',
+    aqi_foot_unavail:'Fonte: non disponibile',
+    aqi_scale_note:'US EPA AQI · attualmente {aqi} ({short})',
+    aqi_scale_unavail:'US EPA AQI · dati non disponibili',
+    aqi_pm25:' PM2.5 è {val} µg/m³.',
+    loc_no_geo:'Questo browser non supporta i servizi di localizzazione.',
+    loc_err_denied:"Il permesso di localizzazione è stato negato. Consenti l'accesso alla posizione per vedere il tuo rischio incendi.",
+    loc_err_unavail:'Non è stato possibile determinare la tua posizione. Controlla la connessione e riprova.',
+    loc_err_timeout:'La richiesta di posizione è scaduta. Riprova.',
+    loc_err_default:'Si è verificato un errore durante il recupero della tua posizione.',
+    map_close:'✕ Chiudi',
   },
   ko:{
     risk_intelligence:'위험 정보',satellite_title:'위성 화재 분석',
@@ -2742,6 +3005,37 @@ const TRANSLATIONS = {
     report_notes_label:'메모 (선택)',
     report_notes_placeholder:'방향, 거리 추정, 바람 조건…',
     report_generate_btn:'보고서 생성',report_copy_btn:'📋 복사',report_to:'신고처:',
+    heat_cat_4_label:'극도의 위험',heat_cat_4_desc:'열사병 가능성이 높습니다 — 야외 노출을 완전히 피하세요.',
+    heat_cat_3_label:'위험',heat_cat_3_desc:'열 관련 질환의 위험이 높습니다 — 격렬한 야외 활동을 피하세요.',
+    heat_cat_2_label:'극도의 주의',heat_cat_2_desc:'주의 — 수분을 충분히 섭취하고 그늘에서 쉬세요.',
+    heat_cat_1_label:'주의',heat_cat_1_desc:'장시간 노출이나 활동으로 피로감이 생길 수 있습니다.',
+    heat_cat_0_label:'쾌적',heat_cat_0_desc:'현재 더위는 중요한 우려 사항이 아닙니다.',
+    heat_source:'실제 {temp} · 습도 {hum}% · 출처: Open-Meteo',
+    aqi_us_0_label:'좋음',aqi_us_0_short:'좋음',aqi_us_0_desc:'대기질이 만족스럽습니다.',
+    aqi_us_1_label:'보통',aqi_us_1_short:'보통',aqi_us_1_desc:'허용 가능하나 특히 민감한 사람에게는 문제가 될 수 있습니다.',
+    aqi_us_2_label:'민감군에 나쁨',aqi_us_2_short:'민감',aqi_us_2_desc:'민감한 그룹은 건강에 영향을 받을 수 있습니다.',
+    aqi_us_3_label:'나쁨',aqi_us_3_short:'나쁨',aqi_us_3_desc:'모든 사람이 건강 영향을 받기 시작할 수 있습니다.',
+    aqi_us_4_label:'매우 나쁨',aqi_us_4_short:'매우 나쁨',aqi_us_4_desc:'건강 경보 — 모든 사람에게 심각한 영향이 나타날 수 있습니다.',
+    aqi_us_5_label:'위험',aqi_us_5_short:'위험',aqi_us_5_desc:'비상 상황 — 전체 인구가 위험에 처해 있습니다.',
+    aqi_owm_1_label:'좋음',aqi_owm_1_short:'좋음',aqi_owm_1_desc:'대기질이 좋습니다.',
+    aqi_owm_2_label:'보통',aqi_owm_2_short:'보통',aqi_owm_2_desc:'대기질이 허용 가능합니다.',
+    aqi_owm_3_label:'보통',aqi_owm_3_short:'보통',aqi_owm_3_desc:'민감한 그룹은 영향을 느낄 수 있습니다.',
+    aqi_owm_4_label:'나쁨',aqi_owm_4_short:'나쁨',aqi_owm_4_desc:'대부분의 사람들이 건강 영향을 느낄 수 있습니다.',
+    aqi_owm_5_label:'매우 나쁨',aqi_owm_5_short:'매우 나쁨',aqi_owm_5_desc:'긴급 건강 경보.',
+    aqi_loading:'대기질 데이터를 불러오는 중…',
+    aqi_unavailable:'대기질 데이터를 현재 이용할 수 없습니다.',
+    aqi_foot_cams:'주요 오염 물질: PM2.5 · 출처: Open-Meteo (CAMS)',
+    aqi_foot_owm:'주요 오염 물질: PM2.5 · 출처: OpenWeatherMap (1–5 척도)',
+    aqi_foot_unavail:'출처: 이용 불가',
+    aqi_scale_note:'미국 EPA AQI · 현재 {aqi} ({short})',
+    aqi_scale_unavail:'미국 EPA AQI · 데이터 이용 불가',
+    aqi_pm25:' PM2.5는 {val} µg/m³입니다.',
+    loc_no_geo:'이 브라우저는 위치 서비스를 지원하지 않습니다.',
+    loc_err_denied:'위치 권한이 거부되었습니다. 산불 위험을 확인하려면 위치 접근을 허용하세요.',
+    loc_err_unavail:'위치를 확인할 수 없습니다. 연결 상태를 확인하고 다시 시도하세요.',
+    loc_err_timeout:'위치 요청이 시간 초과되었습니다. 다시 시도하세요.',
+    loc_err_default:'위치를 가져오는 중 오류가 발생했습니다.',
+    map_close:'✕ 닫기',
   },
 };
 
@@ -2784,10 +3078,13 @@ function setLang(lang){
   localStorage.setItem(LANG_KEY, lang);
   applyI18n();
   // Re-render dynamic sections so their text updates immediately.
+  if(lastWeather) renderHeat(lastWeather);
+  rerenderAqi();
   updateHero();
   renderAdvice();
   renderSatelliteCard();
   renderFiresCard();
+  updateSaveBtn();
   // Re-apply the active tips phase title/sub.
   const activeTab = document.querySelector('.tips-tab.active');
   if(activeTab){
