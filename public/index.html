@@ -197,12 +197,12 @@
         <div class="sat-trend" id="sat-trend">—</div>
       </div>
       <div class="sat-grid">
-        <div class="sat-cell" data-tip="Fire Radiative Power — total energy release across all nearby detections, in megawatts (MW). A satellite-derived proxy for fire intensity. Higher = more energetic burning."><div class="sat-val" id="sat-frp-total">--</div><div class="sat-lbl">Total FRP (MW)</div></div>
-        <div class="sat-cell" data-tip="Number of distinct fires — raw detection points within ~2 km of each other are grouped into one cluster, so repeated satellite passes over the same fire don't inflate the count."><div class="sat-val" id="sat-clusters">--</div><div class="sat-lbl">Active clusters</div></div>
-        <div class="sat-cell" data-tip="Change in total FRP between this satellite pass and the previous one this session. A rising percentage means the fire area is releasing more energy — intensifying, not just persistent."><div class="sat-val" id="sat-growth">--</div><div class="sat-lbl">Growth vs last pass</div></div>
-        <div class="sat-cell" data-tip="Average detection confidence across all fire pixels. VIIRS reports High / Nominal / Low — low-confidence pixels may be sun glint, industrial heat, or very small fires."><div class="sat-val" id="sat-confidence">--</div><div class="sat-lbl">Avg. confidence</div></div>
+        <div class="sat-cell" data-i18n-tip="sat_tip_frp" data-tip="Fire Radiative Power — total energy release across all nearby detections, in megawatts (MW). A satellite-derived proxy for fire intensity. Higher = more energetic burning."><div class="sat-val" id="sat-frp-total">--</div><div class="sat-lbl" data-i18n="sat_lbl_frp">Total FRP (MW)</div></div>
+        <div class="sat-cell" data-i18n-tip="sat_tip_clusters" data-tip="Number of distinct fires — raw detection points within ~2 km of each other are grouped into one cluster, so repeated satellite passes over the same fire don't inflate the count."><div class="sat-val" id="sat-clusters">--</div><div class="sat-lbl" data-i18n="sat_lbl_clusters">Active clusters</div></div>
+        <div class="sat-cell" data-i18n-tip="sat_tip_growth" data-tip="Change in total FRP between this satellite pass and the previous one this session. A rising percentage means the fire area is releasing more energy — intensifying, not just persistent."><div class="sat-val" id="sat-growth">--</div><div class="sat-lbl" data-i18n="sat_lbl_growth">Growth vs last pass</div></div>
+        <div class="sat-cell" data-i18n-tip="sat_tip_confidence" data-tip="Average detection confidence across all fire pixels. VIIRS reports High / Nominal / Low — low-confidence pixels may be sun glint, industrial heat, or very small fires."><div class="sat-val" id="sat-confidence">--</div><div class="sat-lbl" data-i18n="sat_lbl_confidence">Avg. confidence</div></div>
       </div>
-      <div class="sat-note">
+      <div class="sat-note" data-i18n="sat_note">
         Satellite passes detect thermal anomalies (active fire pixels), not smoke, imagery texture, or burn
         scars. Detections within ~2km are grouped into clusters so repeated passes over one fire don't read
         as several. FRP (Fire Radiative Power) approximates energy release; rising total FRP across

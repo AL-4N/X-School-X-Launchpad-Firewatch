@@ -34,7 +34,7 @@ function shareLocation(){
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.getElementById('share-btn');
     const orig = btn.textContent;
-    btn.textContent = '✓ Copied!';
+    btn.textContent = t('share_copied');
     btn.style.color = 'var(--green)';
     btn.style.borderColor = 'var(--green)';
     setTimeout(() => {
@@ -356,7 +356,7 @@ async function runLocSearch(q){
 function renderLocSearchResults(){
   const box = document.getElementById('loc-search-results');
   if(!lastSearchResults.length){
-    box.innerHTML = '<div class="loc-result-row">No matching places found</div>';
+    box.innerHTML = `<div class="loc-result-row">${t('search_no_results')}</div>`;
     box.classList.remove('hidden');
     return;
   }
@@ -584,8 +584,8 @@ async function loadWeatherAndRisk(){
       document.getElementById(id).textContent = '—';
     });
     document.getElementById('heat-big').textContent = '—';
-    document.getElementById('heat-desc').textContent = 'Weather data unavailable right now.';
-    document.getElementById('heat-foot').textContent = 'Source: Open-Meteo';
+    document.getElementById('heat-desc').textContent = t('weather_unavailable');
+    document.getElementById('heat-foot').textContent = t('weather_foot_unavail');
     const heatLevelEl = document.getElementById('heat-level');
     heatLevelEl.querySelector('.dot').style.background = 'var(--muted)';
     document.getElementById('heat-level-word').textContent = '—';
@@ -635,14 +635,14 @@ function renderHeat(weather){
 function checkSevereWeather({temp, wind}){
   const alerts = [];
   if(wind >= 50){
-    alerts.push({ level:'severe', icon:'🌪', title:'High Wind Warning', text:'Sustained winds this strong can down trees and rapidly spread any fire.' });
+    alerts.push({ level:'severe', icon:'🌪', title:t('hazard_wind_severe_title'), text:t('hazard_wind_severe_text') });
   } else if(wind >= 35){
-    alerts.push({ level:'warn', icon:'💨', title:'Strong Wind Advisory', text:'Elevated winds may cause difficult outdoor conditions.' });
+    alerts.push({ level:'warn', icon:'💨', title:t('hazard_wind_warn_title'), text:t('hazard_wind_warn_text') });
   }
   if(temp >= 40){
-    alerts.push({ level:'severe', icon:'🌡', title:'Extreme Heat Warning', text:'Dangerous heat levels — limit outdoor exposure and stay hydrated.' });
+    alerts.push({ level:'severe', icon:'🌡', title:t('hazard_heat_severe_title'), text:t('hazard_heat_severe_text') });
   } else if(temp >= 35){
-    alerts.push({ level:'warn', icon:'🌡', title:'Heat Advisory', text:'High temperatures increase health and fire risks.' });
+    alerts.push({ level:'warn', icon:'🌡', title:t('hazard_heat_warn_title'), text:t('hazard_heat_warn_text') });
   }
   updateHazards('weather', alerts);
 }
@@ -710,7 +710,7 @@ function updateHero(){
   document.getElementById('hero-place').textContent = place;
   const now = new Date();
   document.getElementById('hero-updated').textContent =
-    `Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} · local`;
+    tf('hero_updated', {time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
 }
 
 /* ---------------- "What should I do?" advice engine ---------------- */
@@ -913,7 +913,7 @@ function renderCompositeScore(){
     scoreEl.innerHTML = '--<small>/100</small>';
     fillEl.style.width = '0%';
     fillEl.style.background = 'var(--ink-soft, #999)';
-    breakdownEl.innerHTML = '<div class="empty-note">Waiting for enough data to compute a composite score…</div>';
+    breakdownEl.innerHTML = `<div class="empty-note">${t('composite_waiting')}</div>`;
     return;
   }
 
@@ -954,7 +954,7 @@ function renderRisk(fwiResult, weather){
   const badge = document.getElementById('cat-badge');
   badge.textContent = danger.class.toUpperCase();
   badge.style.background = danger.hex;
-  badge.dataset.tip = `FWI danger class (Canadian FWI System) — Low (0–5), Moderate (5–10), High (10–17), Very High (17–21), Extreme (21–28), Catastrophic (28+). Current FWI: ${indices.fwi}.`;
+  badge.dataset.tip = tf('fwi_tip', {fwi: indices.fwi});
 
   document.getElementById('fwi-ffmc').textContent = codes.ffmc;
   document.getElementById('fwi-dmc').textContent = codes.dmc;
@@ -962,21 +962,22 @@ function renderRisk(fwiResult, weather){
   document.getElementById('fwi-isi').textContent = indices.isi;
   document.getElementById('fwi-bui').textContent = indices.bui;
 
+  const windUnit = unit === 'F' ? 'mph' : 'km/h';
   const factors = [];
-  if(weather.wind >= 30) factors.push({icon:'💨', text:`Wind at ${fmtWind(weather.wind)} ${unit === 'F' ? 'mph' : 'km/h'} is a major driver of the Initial Spread Index`});
-  else if(weather.wind >= 15) factors.push({icon:'💨', text:`Moderate wind (${fmtWind(weather.wind)} ${unit === 'F' ? 'mph' : 'km/h'}) is contributing to spread potential`});
-  else factors.push({icon:'✓', text:'Low wind speeds are limiting spread potential'});
+  if(weather.wind >= 30) factors.push({icon:'💨', text:tf('factor_wind_high', {speed: fmtWind(weather.wind), unit: windUnit})});
+  else if(weather.wind >= 15) factors.push({icon:'💨', text:tf('factor_wind_mod', {speed: fmtWind(weather.wind), unit: windUnit})});
+  else factors.push({icon:'✓', text:t('factor_wind_low')});
 
-  if(weather.humidity <= 30) factors.push({icon:'🏜', text:`Low humidity (${Math.round(weather.humidity)}%) is drying fine surface fuels quickly`});
-  else if(weather.humidity >= 60) factors.push({icon:'✓', text:'Higher humidity is slowing fine fuel drying'});
+  if(weather.humidity <= 30) factors.push({icon:'🏜', text:tf('factor_humidity_low', {hum: Math.round(weather.humidity)})});
+  else if(weather.humidity >= 60) factors.push({icon:'✓', text:t('factor_humidity_ok')});
 
-  if(weather.rain7d <= 2) factors.push({icon:'☀️', text:'Little rain in the past week is allowing deeper fuel layers to dry out (reflected in DMC/DC)'});
-  else if(weather.rain7d >= 15) factors.push({icon:'✓', text:'Recent rainfall is keeping deeper fuel layers moist'});
+  if(weather.rain7d <= 2) factors.push({icon:'☀️', text:t('factor_rain_dry')});
+  else if(weather.rain7d >= 15) factors.push({icon:'✓', text:t('factor_rain_ok')});
 
-  if(weather.temp >= 30) factors.push({icon:'🌡', text:`High temperature (${fmtTemp(weather.temp)}) is accelerating fuel drying`});
+  if(weather.temp >= 30) factors.push({icon:'🌡', text:tf('factor_temp_high', {temp: fmtTemp(weather.temp)})});
 
   if(satAnalytics && satAnalytics.frpTrendPct != null && satAnalytics.frpTrendPct >= 25){
-    factors.push({icon:'🛰', text:`Satellite passes show fire radiative power up ${Math.round(satAnalytics.frpTrendPct)}% since the last pass — an intensifying, not just persistent, fire`});
+    factors.push({icon:'🛰', text:tf('factor_sat_up', {pct: Math.round(satAnalytics.frpTrendPct)})});
   }
 
   const list = document.getElementById('factors-list');
@@ -992,9 +993,7 @@ function renderRisk(fwiResult, weather){
   if(danger.level >= 4){
     concernBox.classList.remove('hidden');
     document.getElementById('concern-text').textContent =
-      danger.level >= 5
-        ? 'The Initial Spread Index and fuel buildup both indicate potential for fast-moving, intense fire behavior.'
-        : 'Conditions favor increased fire spread rate — the Buildup Index shows meaningful fuel available to burn.';
+      danger.level >= 5 ? t('concern_extreme') : t('concern_high');
   } else {
     concernBox.classList.add('hidden');
   }
@@ -1002,7 +1001,7 @@ function renderRisk(fwiResult, weather){
   document.getElementById('cold-start-note').classList.toggle('hidden', !isColdStart);
 
   const now = new Date();
-  document.getElementById('updated-text').textContent = `Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+  document.getElementById('updated-text').textContent = tf('risk_updated', {time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
 
   renderCompositeScore();
   recomputeFireLevel();
@@ -1097,8 +1096,8 @@ function renderAQI_US(aqi, pm25){
   updateAqiCard(aqi, cat, `${cat.desc}${pmText}`, t('aqi_foot_cams'), aqi);
   updateHazards('aqi', aqi > 150 ? [{
     level: aqi > 200 ? 'severe' : 'warn', icon:'😷',
-    title: aqi > 200 ? 'Unhealthy Air Quality' : 'Air Quality Advisory',
-    text: 'Poor air quality may indicate nearby smoke or pollution — consider limiting outdoor exposure.'
+    title: aqi > 200 ? t('hazard_aqi_severe_title') : t('hazard_aqi_warn_title'),
+    text: t('hazard_aqi_text'),
   }] : []);
 }
 
@@ -1110,8 +1109,8 @@ function renderAQI_OWM(level, components){
   updateAqiCard(level, cat, `${cat.desc}${pmText}`, t('aqi_foot_owm'), owmToApproxUsAqi(level));
   updateHazards('aqi', level >= 4 ? [{
     level: level === 5 ? 'severe' : 'warn', icon:'😷',
-    title: level === 5 ? 'Unhealthy Air Quality' : 'Air Quality Advisory',
-    text: 'Poor air quality may indicate nearby smoke or pollution — consider limiting outdoor exposure.'
+    title: level === 5 ? t('hazard_aqi_severe_title') : t('hazard_aqi_warn_title'),
+    text: t('hazard_aqi_text'),
   }] : []);
 
   // Render individual pollutant breakdown when OWM source is active.
@@ -1220,7 +1219,7 @@ function recomputeFireLevel(){
   if(!levelEl) return;
   levelEl.querySelector('.dot').style.background = LEVEL_COLORS[level];
   const fireWordEl = document.getElementById('fire-level-word');
-  fireWordEl.textContent = ['Low','Elevated','High','Severe'][level];
+  fireWordEl.textContent = [t('fire_level_0'),t('fire_level_1'),t('fire_level_2'),t('fire_level_3')][level];
   fireWordEl.style.color = LEVEL_COLORS[level];
   document.getElementById('card-fire').style.borderTopColor = LEVEL_COLORS[level];
 }
@@ -1262,10 +1261,10 @@ async function loadFires(){
     console.error('Fire data load failed', e);
     document.getElementById('fire-big').textContent = '—';
     document.getElementById('fire-big-unit').textContent = '';
-    document.getElementById('fire-desc').textContent = 'Fire detection data temporarily unavailable';
-    document.getElementById('fire-foot').textContent = 'Source: unavailable';
+    document.getElementById('fire-desc').textContent = t('fire_unavailable');
+    document.getElementById('fire-foot').textContent = t('aqi_foot_unavail');
     document.getElementById('fires-detail-list').innerHTML =
-      '<div class="empty-note">Couldn\'t reach NASA FIRMS — try again shortly.</div>';
+      `<div class="empty-note">${t('fire_firms_unavail')}</div>`;
     const fireLevelEl = document.getElementById('fire-level');
     fireLevelEl.querySelector('.dot').style.background = 'var(--muted)';
     document.getElementById('fire-level-word').textContent = '—';
@@ -1322,11 +1321,11 @@ function renderFiresList(sorted){
   const shown = firesExpanded ? sorted : sorted.slice(0, PREVIEW);
 
   const CONF_TIPS = {
-    low: 'Low confidence — possibly sun glint, industrial heat, or a very small/cool source. Treat with caution.',
-    nominal: 'Nominal confidence — a typical VIIRS detection; likely a real fire but some uncertainty remains.',
-    high: 'High confidence — a strong, clear thermal anomaly very likely to be an active fire.',
+    low: t('conf_low_tip'),
+    nominal: t('conf_nominal_tip'),
+    high: t('conf_high_tip'),
   };
-  const FRP_TIP = 'FRP (Fire Radiative Power) — satellite-measured energy release in megawatts. Approximates fire intensity: higher MW = more energetic burning.';
+  const FRP_TIP = t('conf_frp_tip');
 
   list.innerHTML = '';
   shown.forEach((f, i) => {
@@ -1334,7 +1333,7 @@ function renderFiresList(sorted){
     const distColor = miles <= 10 ? '#e67e22' : miles <= 25 ? '#f1c40f' : '#2ecc71';
     const frpColor = f.frp >= 100 ? '#e74c3c' : f.frp >= 30 ? '#e67e22' : '#ff5e2a';
     const confLabel = confidenceLabel(f.confidence);
-    const confTip = CONF_TIPS[confLabel] || 'Detection confidence reported by the VIIRS satellite sensor.';
+    const confTip = CONF_TIPS[confLabel] || t('conf_default_tip');
     const row = document.createElement('div');
     row.className = 'quake-row';
     row.innerHTML = `
@@ -1531,7 +1530,7 @@ function renderSatelliteCard(){
 
   if(futureNoteEl){
     futureNoteEl.innerHTML = clusterCount > 0
-      ? '<b>Coming soon:</b> true pixel-level imagery analysis (Sentinel-2/Landsat burn-severity index, smoke plume segmentation) requires a backend imagery pipeline — see the satellite-imagery-backend-spec doc for what that would add beyond these point-detection analytics.'
+      ? t('sat_coming_soon')
       : '';
   }
 }
@@ -1613,7 +1612,7 @@ function toggleGlobalIncidentsOnMap(){
       L.circleMarker([inc.lat, inc.lon], {
         radius: 5, color: inc.isClosed ? '#a4948a' : '#ff5e2a',
         fillColor: inc.isClosed ? '#a4948a' : '#ff5e2a', fillOpacity:0.75, weight:1
-      }).bindPopup(`<b>${inc.title}</b><br>${new Date(inc.date).toLocaleDateString()}${inc.isClosed ? ' · past' : ' · active'}`)
+      }).bindPopup(`<b>${inc.title}</b><br>${new Date(inc.date).toLocaleDateString()}${inc.isClosed ? ` ${t('incident_past')}` : ` ${t('incident_active')}`}`)
         .addTo(incidentLayer);
     });
     if(globalIncidents.length){
@@ -1643,7 +1642,7 @@ async function loadForecast(){
     const data = await api(`/api/forecast?lat=${userLat}&lon=${userLon}`);
     const days = data.days || [];
     if(!days.length){
-      row.innerHTML = '<div class="empty-note">No forecast data available for this location.</div>';
+      row.innerHTML = `<div class="empty-note">${t('forecast_empty')}</div>`;
       return;
     }
     row.innerHTML = '';
@@ -1671,7 +1670,7 @@ async function loadForecast(){
     });
   }catch(e){
     console.error('Forecast load failed', e);
-    if(row) row.innerHTML = '<div class="empty-note">Fire weather outlook temporarily unavailable.</div>';
+    if(row) row.innerHTML = `<div class="empty-note">${t('forecast_unavail')}</div>`;
   }
 }
 
@@ -1908,6 +1907,62 @@ const TRANSLATIONS = {
     loc_err_timeout:'Location request timed out. Try again.',
     loc_err_default:'Something went wrong getting your location.',
     map_close:'✕ Close',
+    // Satellite
+    sat_note:"Satellite passes detect thermal anomalies (active fire pixels), not smoke, imagery texture, or burn scars. Detections within ~2km are grouped into clusters so repeated passes over one fire don't read as several. FRP (Fire Radiative Power) approximates energy release; rising total FRP across consecutive passes over the same area indicates an intensifying, not just persistent, fire.",
+    sat_coming_soon:'<b>Coming soon:</b> true pixel-level imagery analysis (Sentinel-2/Landsat burn-severity index, smoke plume segmentation) requires a backend imagery pipeline.',
+    sat_tip_frp:'Fire Radiative Power — total energy release across all nearby detections, in megawatts (MW). A satellite-derived proxy for fire intensity. Higher = more energetic burning.',
+    sat_tip_clusters:"Number of distinct fires — raw detection points within ~2 km of each other are grouped into one cluster, so repeated satellite passes over the same fire don't inflate the count.",
+    sat_tip_growth:'Change in total FRP between this satellite pass and the previous one this session. A rising percentage means the fire area is releasing more energy — intensifying, not just persistent.',
+    sat_tip_confidence:'Average detection confidence across all fire pixels. VIIRS reports High / Nominal / Low — low-confidence pixels may be sun glint, industrial heat, or very small fires.',
+    sat_lbl_frp:'Total FRP (MW)',sat_lbl_clusters:'Active clusters',sat_lbl_growth:'Growth vs last pass',sat_lbl_confidence:'Avg. confidence',
+    // Fire level words
+    fire_level_0:'Low',fire_level_1:'Elevated',fire_level_2:'High',fire_level_3:'Severe',
+    // Weather/fire/forecast error states
+    weather_unavailable:'Weather data unavailable right now.',
+    weather_foot_unavail:'Source: Open-Meteo',
+    fire_unavailable:'Fire detection data temporarily unavailable',
+    fire_firms_unavail:"Couldn't reach NASA FIRMS — try again shortly.",
+    forecast_empty:'No forecast data available for this location.',
+    forecast_unavail:'Fire weather outlook temporarily unavailable.',
+    // Composite / risk card
+    composite_waiting:'Waiting for enough data to compute a composite score…',
+    fwi_tip:'FWI danger class (Canadian FWI System) — Low (0–5), Moderate (5–10), High (10–17), Very High (17–21), Extreme (21–28), Catastrophic (28+). Current FWI: {fwi}.',
+    concern_extreme:'The Initial Spread Index and fuel buildup both indicate potential for fast-moving, intense fire behavior.',
+    concern_high:'Conditions favor increased fire spread rate — the Buildup Index shows meaningful fuel available to burn.',
+    // Risk factors
+    factor_wind_high:'Wind at {speed} {unit} is a major driver of the Initial Spread Index',
+    factor_wind_mod:'Moderate wind ({speed} {unit}) is contributing to spread potential',
+    factor_wind_low:'Low wind speeds are limiting spread potential',
+    factor_humidity_low:'Low humidity ({hum}%) is drying fine surface fuels quickly',
+    factor_humidity_ok:'Higher humidity is slowing fine fuel drying',
+    factor_rain_dry:'Little rain in the past week is allowing deeper fuel layers to dry out (reflected in DMC/DC)',
+    factor_rain_ok:'Recent rainfall is keeping deeper fuel layers moist',
+    factor_temp_high:'High temperature ({temp}) is accelerating fuel drying',
+    factor_sat_up:'Satellite passes show fire radiative power up {pct}% since the last pass — an intensifying, not just persistent, fire',
+    // Hazard chips
+    hazard_wind_severe_title:'High Wind Warning',hazard_wind_severe_text:'Sustained winds this strong can down trees and rapidly spread any fire.',
+    hazard_wind_warn_title:'Strong Wind Advisory',hazard_wind_warn_text:'Elevated winds may cause difficult outdoor conditions.',
+    hazard_heat_severe_title:'Extreme Heat Warning',hazard_heat_severe_text:'Dangerous heat levels — limit outdoor exposure and stay hydrated.',
+    hazard_heat_warn_title:'Heat Advisory',hazard_heat_warn_text:'High temperatures increase health and fire risks.',
+    hazard_aqi_severe_title:'Unhealthy Air Quality',hazard_aqi_warn_title:'Air Quality Advisory',
+    hazard_aqi_text:'Poor air quality may indicate nearby smoke or pollution — consider limiting outdoor exposure.',
+    // UI feedback
+    share_copied:'✓ Copied!',search_no_results:'No matching places found',
+    hero_updated:'Updated {time} · local',risk_updated:'Updated {time}',
+    // Fire detection tooltips
+    conf_low_tip:'Low confidence — possibly sun glint, industrial heat, or a very small/cool source. Treat with caution.',
+    conf_nominal_tip:'Nominal confidence — a typical VIIRS detection; likely a real fire but some uncertainty remains.',
+    conf_high_tip:'High confidence — a strong, clear thermal anomaly very likely to be an active fire.',
+    conf_frp_tip:'FRP (Fire Radiative Power) — satellite-measured energy release in megawatts. Approximates fire intensity: higher MW = more energetic burning.',
+    conf_default_tip:'Detection confidence reported by the VIIRS satellite sensor.',
+    // Incident popup
+    incident_active:'active',incident_past:'past',
+    // Report generation
+    report_header:'🔥 FIRE SIGHTING REPORT',
+    report_location_lbl:'Location',report_time_lbl:'Time',report_observed_lbl:'Observed',
+    report_notes_lbl_rpt:'Notes',report_footer_txt:'Reported via Firewatch',
+    report_hist_head:'Your past reports ({n})',
+    report_hist_smoke:'Smoke',report_hist_flames:'Flames',report_hist_glow:'Glow',report_hist_other:'Other',
   },
   es:{
     risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
@@ -2049,6 +2104,52 @@ const TRANSLATIONS = {
     loc_err_timeout:'La solicitud de ubicación agotó el tiempo de espera. Inténtalo de nuevo.',
     loc_err_default:'Algo salió mal al obtener tu ubicación.',
     map_close:'✕ Cerrar',
+    sat_note:"Los pases satelitales detectan anomalías térmicas (píxeles de fuego activo), no humo, textura de imagen ni cicatrices de quemaduras. Las detecciones dentro de ~2km se agrupan en clústeres para que los pases repetidos sobre el mismo incendio no se cuenten varias veces. El FRP aproxima la liberación de energía; un FRP total creciente entre pases consecutivos sobre la misma área indica un incendio que se intensifica, no solo persiste.",
+    sat_coming_soon:'<b>Próximamente:</b> el análisis de imagen a nivel de píxel requiere un pipeline de imágenes de backend.',
+    sat_tip_frp:'Potencia Radiativa del Fuego — liberación total de energía en megavatios (MW). Mayor = quema más energética.',
+    sat_tip_clusters:'Número de focos distintos — puntos agrupados dentro de ~2 km para que los pases repetidos no inflen el conteo.',
+    sat_tip_growth:'Cambio en FRP total entre este pase y el anterior. Un porcentaje creciente indica que el área se intensifica.',
+    sat_tip_confidence:'Confianza de detección promedio. VIIRS reporta Alta / Nominal / Baja — baja confianza puede ser destellos solares o fuentes industriales.',
+    sat_lbl_frp:'FRP total (MW)',sat_lbl_clusters:'Clústeres activos',sat_lbl_growth:'Crecimiento vs último pase',sat_lbl_confidence:'Confianza promedio',
+    fire_level_0:'Bajo',fire_level_1:'Elevado',fire_level_2:'Alto',fire_level_3:'Severo',
+    weather_unavailable:'Datos meteorológicos no disponibles ahora.',
+    weather_foot_unavail:'Fuente: Open-Meteo',
+    fire_unavailable:'Datos de detección de incendios temporalmente no disponibles',
+    fire_firms_unavail:'No se pudo conectar con NASA FIRMS — intenta de nuevo en breve.',
+    forecast_empty:'No hay datos de pronóstico disponibles para esta ubicación.',
+    forecast_unavail:'La previsión meteorológica de incendios no está disponible temporalmente.',
+    composite_waiting:'Esperando suficientes datos para calcular una puntuación compuesta…',
+    fwi_tip:'Clase de peligro FWI (Sistema canadiense FWI) — Bajo (0–5), Moderado (5–10), Alto (10–17), Muy alto (17–21), Extremo (21–28), Catastrófico (28+). FWI actual: {fwi}.',
+    concern_extreme:'El Índice de Propagación Inicial y la acumulación de combustible indican potencial para un comportamiento de fuego intenso y de rápida propagación.',
+    concern_high:'Las condiciones favorecen una mayor tasa de propagación del fuego — el Índice de Acumulación muestra combustible disponible.',
+    factor_wind_high:'Viento a {speed} {unit} es un factor principal del Índice de Propagación Inicial',
+    factor_wind_mod:'Viento moderado ({speed} {unit}) está contribuyendo al potencial de propagación',
+    factor_wind_low:'Las bajas velocidades de viento limitan el potencial de propagación',
+    factor_humidity_low:'Baja humedad ({hum}%) está secando rápidamente los combustibles superficiales finos',
+    factor_humidity_ok:'Mayor humedad está retrasando el secado de los combustibles finos',
+    factor_rain_dry:'Poca lluvia en la última semana está permitiendo que las capas de combustible más profundas se sequen',
+    factor_rain_ok:'Las lluvias recientes están manteniendo húmedas las capas de combustible más profundas',
+    factor_temp_high:'Alta temperatura ({temp}) está acelerando el secado de combustibles',
+    factor_sat_up:'Los pases satelitales muestran un aumento del {pct}% en la potencia radiativa del fuego desde el último pase — un incendio que se intensifica',
+    hazard_wind_severe_title:'Advertencia de viento fuerte',hazard_wind_severe_text:'Los vientos sostenidos de esta intensidad pueden derribar árboles y propagar cualquier incendio rápidamente.',
+    hazard_wind_warn_title:'Aviso de viento fuerte',hazard_wind_warn_text:'Los vientos elevados pueden causar condiciones exteriores difíciles.',
+    hazard_heat_severe_title:'Advertencia de calor extremo',hazard_heat_severe_text:'Niveles de calor peligrosos — limita la exposición al exterior y mantente hidratado.',
+    hazard_heat_warn_title:'Aviso de calor',hazard_heat_warn_text:'Las altas temperaturas aumentan los riesgos de salud e incendio.',
+    hazard_aqi_severe_title:'Calidad del aire insalubre',hazard_aqi_warn_title:'Aviso de calidad del aire',
+    hazard_aqi_text:'La mala calidad del aire puede indicar humo o contaminación cercana — considera limitar la exposición exterior.',
+    share_copied:'✓ Copiado!',search_no_results:'No se encontraron lugares',
+    hero_updated:'Actualizado {time} · local',risk_updated:'Actualizado {time}',
+    conf_low_tip:'Baja confianza — posiblemente destello solar, calor industrial o fuente muy pequeña. Tratar con cautela.',
+    conf_nominal_tip:'Confianza nominal — una detección VIIRS típica; probablemente un incendio real pero con cierta incertidumbre.',
+    conf_high_tip:'Alta confianza — una fuerte anomalía térmica muy probablemente sea un incendio activo.',
+    conf_frp_tip:'FRP (Potencia Radiativa del Fuego) — liberación de energía medida por satélite en megavatios. Mayor MW = quema más intensa.',
+    conf_default_tip:'Confianza de detección reportada por el sensor satelital VIIRS.',
+    incident_active:'activo',incident_past:'pasado',
+    report_header:'🔥 INFORME DE AVISTAMIENTO DE INCENDIO',
+    report_location_lbl:'Ubicación',report_time_lbl:'Hora',report_observed_lbl:'Observado',
+    report_notes_lbl_rpt:'Notas',report_footer_txt:'Reportado vía Firewatch',
+    report_hist_head:'Tus informes anteriores ({n})',
+    report_hist_smoke:'Humo',report_hist_flames:'Llamas',report_hist_glow:'Resplandor',report_hist_other:'Otro',
   },
   fr:{
     risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
@@ -2190,6 +2291,52 @@ const TRANSLATIONS = {
     loc_err_timeout:"La demande de localisation a expiré. Réessayez.",
     loc_err_default:"Une erreur s'est produite lors de la récupération de votre position.",
     map_close:'✕ Fermer',
+    sat_note:"Les passages satellites détectent les anomalies thermiques (pixels de feu actifs), pas la fumée, la texture d'image ou les cicatrices de brûlures. Les détections à moins de ~2 km sont regroupées en clusters. Le FRP approxime le dégagement d'énergie ; un FRP total croissant entre passages consécutifs sur la même zone indique un feu qui s'intensifie.",
+    sat_coming_soon:"<b>Bientôt disponible :</b> l'analyse d'image au niveau des pixels nécessite un pipeline d'imagerie backend.",
+    sat_tip_frp:"Puissance Radiative du Feu — énergie totale libérée par toutes les détections proches, en mégawatts (MW). Plus élevé = combustion plus énergétique.",
+    sat_tip_clusters:"Nombre de foyers distincts — points regroupés dans ~2 km pour que les passages répétés n'augmentent pas le compte.",
+    sat_tip_growth:"Variation du FRP total entre ce passage satellite et le précédent. Un pourcentage croissant indique une intensification.",
+    sat_tip_confidence:"Confiance de détection moyenne. VIIRS signale Haute / Nominale / Faible — faible confiance peut être reflet solaire ou chaleur industrielle.",
+    sat_lbl_frp:'FRP total (MW)',sat_lbl_clusters:'Clusters actifs',sat_lbl_growth:'Croissance vs dernier passage',sat_lbl_confidence:'Confiance moy.',
+    fire_level_0:'Faible',fire_level_1:'Élevé',fire_level_2:'Haut',fire_level_3:'Sévère',
+    weather_unavailable:'Données météo indisponibles pour le moment.',
+    weather_foot_unavail:'Source : Open-Meteo',
+    fire_unavailable:'Données de détection des incendies temporairement indisponibles',
+    fire_firms_unavail:'Impossible de joindre NASA FIRMS — réessayez dans un moment.',
+    forecast_empty:'Aucune donnée de prévision disponible pour cet emplacement.',
+    forecast_unavail:'Les prévisions météo-feux sont temporairement indisponibles.',
+    composite_waiting:"En attente de suffisamment de données pour calculer un score composite…",
+    fwi_tip:'Classe de danger FWI (Système canadien FWI) — Faible (0–5), Modéré (5–10), Élevé (10–17), Très élevé (17–21), Extrême (21–28), Catastrophique (28+). FWI actuel : {fwi}.',
+    concern_extreme:"L'Indice de Propagation Initial et la accumulation de combustible indiquent un potentiel de comportement de feu intense et rapide.",
+    concern_high:"Les conditions favorisent un taux de propagation accru — l'Indice de Mise en Charge montre du combustible disponible.",
+    factor_wind_high:'Le vent à {speed} {unit} est un facteur majeur de l\'Indice de Propagation Initial',
+    factor_wind_mod:'Un vent modéré ({speed} {unit}) contribue au potentiel de propagation',
+    factor_wind_low:'Les faibles vitesses de vent limitent le potentiel de propagation',
+    factor_humidity_low:'Faible humidité ({hum}%) — les combustibles de surface fins sèchent rapidement',
+    factor_humidity_ok:'Une humidité plus élevée ralentit le séchage des combustibles fins',
+    factor_rain_dry:'Peu de pluie la semaine dernière — les couches de combustible plus profondes sèchent (DMC/DC)',
+    factor_rain_ok:'Les pluies récentes maintiennent les couches de combustible profondes humides',
+    factor_temp_high:'Température élevée ({temp}) — accélère le séchage des combustibles',
+    factor_sat_up:'Les passages satellites montrent une augmentation de {pct}% de la puissance radiative du feu depuis le dernier passage',
+    hazard_wind_severe_title:'Alerte vent violent',hazard_wind_severe_text:'Des vents soutenus aussi forts peuvent abattre des arbres et propager rapidement un incendie.',
+    hazard_wind_warn_title:'Avis de vent fort',hazard_wind_warn_text:'Des vents élevés peuvent créer des conditions difficiles en extérieur.',
+    hazard_heat_severe_title:'Alerte canicule extrême',hazard_heat_severe_text:'Niveaux de chaleur dangereux — limitez l\'exposition extérieure et hydratez-vous.',
+    hazard_heat_warn_title:'Avis de chaleur',hazard_heat_warn_text:'Les températures élevées augmentent les risques pour la santé et les incendies.',
+    hazard_aqi_severe_title:"Qualité de l'air mauvaise",hazard_aqi_warn_title:"Avis sur la qualité de l'air",
+    hazard_aqi_text:"Une mauvaise qualité de l'air peut indiquer de la fumée ou de la pollution proche — envisagez de limiter l'exposition extérieure.",
+    share_copied:'✓ Copié !',search_no_results:'Aucun lieu trouvé',
+    hero_updated:'Mis à jour {time} · local',risk_updated:'Mis à jour {time}',
+    conf_low_tip:'Faible confiance — peut-être un reflet solaire, chaleur industrielle ou source très petite. À traiter avec prudence.',
+    conf_nominal_tip:'Confiance nominale — une détection VIIRS typique ; probablement un vrai feu mais avec une certaine incertitude.',
+    conf_high_tip:'Haute confiance — une forte anomalie thermique très probablement un incendie actif.',
+    conf_frp_tip:'FRP (Puissance Radiative du Feu) — énergie mesurée par satellite en mégawatts. Plus élevé = combustion plus intense.',
+    conf_default_tip:'Confiance de détection rapportée par le capteur satellite VIIRS.',
+    incident_active:'actif',incident_past:'passé',
+    report_header:"🔥 RAPPORT D'OBSERVATION D'INCENDIE",
+    report_location_lbl:'Lieu',report_time_lbl:'Heure',report_observed_lbl:'Observé',
+    report_notes_lbl_rpt:'Notes',report_footer_txt:'Signalé via Firewatch',
+    report_hist_head:'Vos rapports précédents ({n})',
+    report_hist_smoke:'Fumée',report_hist_flames:'Flammes',report_hist_glow:'Lueur',report_hist_other:'Autre',
   },
   de:{
     risk_intelligence:'Risikoanalyse',satellite_title:'Satelliten-Feueranalyse',
@@ -2331,6 +2478,52 @@ const TRANSLATIONS = {
     loc_err_timeout:'Die Standortanfrage ist abgelaufen. Versuchen Sie es erneut.',
     loc_err_default:'Beim Abrufen Ihres Standorts ist etwas schiefgelaufen.',
     map_close:'✕ Schließen',
+    sat_note:'Satellitenpässe erkennen thermische Anomalien (aktive Feuerpixel), nicht Rauch, Bildtextur oder Brandnarben. Erkennungen innerhalb von ~2 km werden zu Clustern gruppiert. FRP approximiert die Energiefreisetzung; ein steigender FRP zeigt ein sich verstärkendes Feuer an.',
+    sat_coming_soon:'<b>Demnächst:</b> Pixelgenaue Bildanalyse erfordert eine Backend-Imaging-Pipeline.',
+    sat_tip_frp:'Feuer-Strahlungsleistung — gesamte Energiefreisetzung aller nahen Erkennungen in Megawatt (MW). Höher = intensiveres Brennen.',
+    sat_tip_clusters:'Anzahl der Brandherde — Erkennungspunkte innerhalb von ~2 km werden zu einem Cluster gruppiert.',
+    sat_tip_growth:'Änderung der Gesamt-FRP zwischen diesem und dem vorherigen Satelliten-Pass. Steigender Prozentsatz = Intensivierung.',
+    sat_tip_confidence:'Durchschnittliche Erkennungszuverlässigkeit. VIIRS meldet Hoch / Nominal / Niedrig — niedrige Zuverlässigkeit kann Sonnenreflexion oder Industriewärme sein.',
+    sat_lbl_frp:'Gesamt-FRP (MW)',sat_lbl_clusters:'Aktive Cluster',sat_lbl_growth:'Wachstum vs letzter Pass',sat_lbl_confidence:'Ø Zuverlässigkeit',
+    fire_level_0:'Niedrig',fire_level_1:'Erhöht',fire_level_2:'Hoch',fire_level_3:'Schwer',
+    weather_unavailable:'Wetterdaten derzeit nicht verfügbar.',
+    weather_foot_unavail:'Quelle: Open-Meteo',
+    fire_unavailable:'Feuerdaten vorübergehend nicht verfügbar',
+    fire_firms_unavail:'NASA FIRMS nicht erreichbar — versuche es bald erneut.',
+    forecast_empty:'Keine Prognosedaten für diesen Standort verfügbar.',
+    forecast_unavail:'Feuerwettervorhersage vorübergehend nicht verfügbar.',
+    composite_waiting:'Warte auf genügend Daten für einen zusammengesetzten Score…',
+    fwi_tip:'FWI-Gefahrenklasse (Kanadisches FWI-System) — Niedrig (0–5), Mäßig (5–10), Hoch (10–17), Sehr hoch (17–21), Extrem (21–28), Katastrophal (28+). Aktueller FWI: {fwi}.',
+    concern_extreme:'Der Anfangsausbreitungsindex und der Brennstoffaufbau weisen auf potenziell schnelles, intensives Feuerverhalten hin.',
+    concern_high:'Die Bedingungen begünstigen eine erhöhte Feuerausbreitungsrate — der Aufbauindex zeigt verfügbaren Brennstoff.',
+    factor_wind_high:'Wind bei {speed} {unit} ist ein Haupttreiber des Anfangsausbreitungsindex',
+    factor_wind_mod:'Mäßiger Wind ({speed} {unit}) trägt zum Ausbreitungspotenzial bei',
+    factor_wind_low:'Niedrige Windgeschwindigkeiten begrenzen das Ausbreitungspotenzial',
+    factor_humidity_low:'Niedrige Luftfeuchtigkeit ({hum}%) trocknet feines Oberflächenbrennstoff schnell aus',
+    factor_humidity_ok:'Höhere Luftfeuchtigkeit verlangsamt das Trocknen von feinem Brennstoff',
+    factor_rain_dry:'Wenig Regen letzte Woche — tiefere Brennstoffschichten trocknen aus (DMC/DC)',
+    factor_rain_ok:'Jüngste Niederschläge halten tiefere Brennstoffschichten feucht',
+    factor_temp_high:'Hohe Temperatur ({temp}) beschleunigt das Austrocknen von Brennstoff',
+    factor_sat_up:'Satellitenpässe zeigen um {pct}% gestiegene Feuerstrahlungsleistung seit dem letzten Pass',
+    hazard_wind_severe_title:'Starkwindwarnung',hazard_wind_severe_text:'Anhaltende Winde dieser Stärke können Bäume umwerfen und Feuer schnell ausbreiten.',
+    hazard_wind_warn_title:'Windhinweis',hazard_wind_warn_text:'Erhöhte Winde können schwierige Außenbedingungen verursachen.',
+    hazard_heat_severe_title:'Extreme Hitzewarnung',hazard_heat_severe_text:'Gefährliche Hitzewerte — Außenaufenthalt begrenzen und hydratisiert bleiben.',
+    hazard_heat_warn_title:'Hitzehinweis',hazard_heat_warn_text:'Hohe Temperaturen erhöhen Gesundheits- und Brandrisiken.',
+    hazard_aqi_severe_title:'Ungesunde Luftqualität',hazard_aqi_warn_title:'Luftqualitätshinweis',
+    hazard_aqi_text:'Schlechte Luftqualität kann auf nahen Rauch oder Verschmutzung hinweisen — Außenaufenthalt einschränken.',
+    share_copied:'✓ Kopiert!',search_no_results:'Keine Orte gefunden',
+    hero_updated:'Aktualisiert {time} · lokal',risk_updated:'Aktualisiert {time}',
+    conf_low_tip:'Geringe Zuverlässigkeit — möglicherweise Sonnenreflexion, Industriewärme oder sehr kleine Quelle.',
+    conf_nominal_tip:'Nominale Zuverlässigkeit — typische VIIRS-Erkennung; wahrscheinlich echtes Feuer, aber mit Unsicherheit.',
+    conf_high_tip:'Hohe Zuverlässigkeit — starke thermische Anomalie, sehr wahrscheinlich ein aktives Feuer.',
+    conf_frp_tip:'FRP (Feuer-Strahlungsleistung) — satellitengemessene Energiefreisetzung in Megawatt. Höher = intensiveres Brennen.',
+    conf_default_tip:'Erkennungszuverlässigkeit des VIIRS-Satellitensensors.',
+    incident_active:'aktiv',incident_past:'vergangen',
+    report_header:'🔥 FEUERBEOBACHTUNGSBERICHT',
+    report_location_lbl:'Standort',report_time_lbl:'Zeit',report_observed_lbl:'Beobachtet',
+    report_notes_lbl_rpt:'Notizen',report_footer_txt:'Gemeldet via Firewatch',
+    report_hist_head:'Ihre früheren Berichte ({n})',
+    report_hist_smoke:'Rauch',report_hist_flames:'Flammen',report_hist_glow:'Leuchten',report_hist_other:'Sonstiges',
   },
   zh:{
     risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
@@ -2472,6 +2665,52 @@ const TRANSLATIONS = {
     loc_err_timeout:'位置请求超时。请重试。',
     loc_err_default:'获取位置时出现错误。',
     map_close:'✕ 关闭',
+    sat_note:'卫星过境检测热异常（活跃火像素），而非烟雾或燃烧痕迹。~2公里内的探测点被合并为集群，以避免重复计数。FRP（火辐射功率）近似表示能量释放；FRP总值上升表明火势在加剧。',
+    sat_coming_soon:'<b>即将推出：</b>像素级图像分析需要后端图像处理管道。',
+    sat_tip_frp:'火辐射功率 — 所有附近探测点的总能量释放（兆瓦）。更高 = 燃烧更强烈。',
+    sat_tip_clusters:'独立火点数量 — ~2公里内的探测点合并为一个集群，避免重复计数。',
+    sat_tip_growth:'本次与上次卫星过境之间的FRP总量变化。百分比上升表示火势在加剧。',
+    sat_tip_confidence:'所有火像素的平均探测置信度。VIIRS报告高/标准/低 — 低置信度可能是阳光反射或工业热源。',
+    sat_lbl_frp:'总FRP (MW)',sat_lbl_clusters:'活跃集群',sat_lbl_growth:'较上次过境增长',sat_lbl_confidence:'平均置信度',
+    fire_level_0:'低',fire_level_1:'偏高',fire_level_2:'高',fire_level_3:'严重',
+    weather_unavailable:'气象数据暂时不可用。',
+    weather_foot_unavail:'来源：Open-Meteo',
+    fire_unavailable:'火灾探测数据暂时不可用',
+    fire_firms_unavail:'无法连接NASA FIRMS — 请稍后重试。',
+    forecast_empty:'此位置暂无预报数据。',
+    forecast_unavail:'火险天气预报暂时不可用。',
+    composite_waiting:'等待足够数据以计算综合得分…',
+    fwi_tip:'FWI危险等级（加拿大FWI系统）— 低(0–5)、中(5–10)、高(10–17)、很高(17–21)、极高(21–28)、灾难性(28+)。当前FWI：{fwi}。',
+    concern_extreme:'初始蔓延指数和燃料积累均表明可能发生快速、强烈的火行为。',
+    concern_high:'条件有利于提高火蔓延速率 — 积累指数显示有可燃燃料。',
+    factor_wind_high:'风速{speed}{unit}是初始蔓延指数的主要驱动因素',
+    factor_wind_mod:'中等风速（{speed}{unit}）正在促进蔓延潜力',
+    factor_wind_low:'低风速正在限制蔓延潜力',
+    factor_humidity_low:'低湿度（{hum}%）正在迅速干燥细小地表燃料',
+    factor_humidity_ok:'较高湿度正在减缓细小燃料的干燥',
+    factor_rain_dry:'上周雨量少 — 更深层燃料正在干燥（DMC/DC）',
+    factor_rain_ok:'近期降雨使深层燃料保持湿润',
+    factor_temp_high:'高温（{temp}）正在加速燃料干燥',
+    factor_sat_up:'卫星过境显示自上次过境以来火辐射功率上升{pct}% — 火势在加剧',
+    hazard_wind_severe_title:'大风警告',hazard_wind_severe_text:'如此强度的持续风速可能推倒树木并迅速蔓延火势。',
+    hazard_wind_warn_title:'强风提示',hazard_wind_warn_text:'风力增大可能造成户外活动困难。',
+    hazard_heat_severe_title:'极端高温警告',hazard_heat_severe_text:'危险高温 — 限制户外活动并保持水分。',
+    hazard_heat_warn_title:'高温提示',hazard_heat_warn_text:'高温会增加健康和火灾风险。',
+    hazard_aqi_severe_title:'空气质量不健康',hazard_aqi_warn_title:'空气质量提示',
+    hazard_aqi_text:'空气质量差可能表明附近有烟雾或污染 — 考虑减少户外活动。',
+    share_copied:'✓ 已复制！',search_no_results:'未找到匹配地点',
+    hero_updated:'更新于 {time} · 本地时间',risk_updated:'更新于 {time}',
+    conf_low_tip:'低置信度 — 可能是阳光反射、工业热源或极小的热源。谨慎对待。',
+    conf_nominal_tip:'标准置信度 — 典型的VIIRS探测；可能是真实火灾但存在一定不确定性。',
+    conf_high_tip:'高置信度 — 强热异常，极可能是活跃火灾。',
+    conf_frp_tip:'FRP（火辐射功率）— 卫星测量的能量释放（兆瓦）。兆瓦越高 = 燃烧越强烈。',
+    conf_default_tip:'VIIRS卫星传感器报告的探测置信度。',
+    incident_active:'活跃',incident_past:'已结束',
+    report_header:'🔥 火情目击报告',
+    report_location_lbl:'位置',report_time_lbl:'时间',report_observed_lbl:'观察到',
+    report_notes_lbl_rpt:'备注',report_footer_txt:'通过Firewatch报告',
+    report_hist_head:'您的历史报告（{n}）',
+    report_hist_smoke:'烟雾',report_hist_flames:'火焰',report_hist_glow:'光晕',report_hist_other:'其他',
   },
   pt:{
     risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
@@ -2613,6 +2852,52 @@ const TRANSLATIONS = {
     loc_err_timeout:'A solicitação de localização expirou. Tente novamente.',
     loc_err_default:'Algo deu errado ao obter sua localização.',
     map_close:'✕ Fechar',
+    sat_note:'As passagens de satélite detectam anomalias térmicas (pixels de fogo ativo), não fumaça ou cicatrizes de queimadas. Detecções dentro de ~2km são agrupadas em clusters. O FRP aproxima a liberação de energia; FRP total crescente em passagens consecutivas indica um incêndio que se intensifica.',
+    sat_coming_soon:'<b>Em breve:</b> a análise de imagem em nível de pixel requer um pipeline de imagens backend.',
+    sat_tip_frp:'Potência Radiativa do Fogo — liberação total de energia em megawatts (MW). Maior = queima mais intensa.',
+    sat_tip_clusters:'Número de focos distintos — pontos dentro de ~2 km agrupados em um cluster para evitar contagens duplicadas.',
+    sat_tip_growth:'Variação do FRP total entre esta passagem e a anterior. Percentual crescente = intensificação.',
+    sat_tip_confidence:'Confiança média de detecção. VIIRS reporta Alta / Nominal / Baixa — baixa confiança pode ser reflexo solar ou calor industrial.',
+    sat_lbl_frp:'FRP total (MW)',sat_lbl_clusters:'Clusters ativos',sat_lbl_growth:'Crescimento vs última passagem',sat_lbl_confidence:'Confiança média',
+    fire_level_0:'Baixo',fire_level_1:'Elevado',fire_level_2:'Alto',fire_level_3:'Severo',
+    weather_unavailable:'Dados meteorológicos indisponíveis no momento.',
+    weather_foot_unavail:'Fonte: Open-Meteo',
+    fire_unavailable:'Dados de detecção de incêndios temporariamente indisponíveis',
+    fire_firms_unavail:'Não foi possível conectar ao NASA FIRMS — tente novamente em breve.',
+    forecast_empty:'Nenhum dado de previsão disponível para este local.',
+    forecast_unavail:'Previsão meteorológica de incêndios temporariamente indisponível.',
+    composite_waiting:'Aguardando dados suficientes para calcular uma pontuação composta…',
+    fwi_tip:'Classe de perigo FWI (Sistema canadense FWI) — Baixo (0–5), Moderado (5–10), Alto (10–17), Muito alto (17–21), Extremo (21–28), Catastrófico (28+). FWI atual: {fwi}.',
+    concern_extreme:'O Índice de Propagação Inicial e o acúmulo de combustível indicam potencial para comportamento de fogo intenso e rápido.',
+    concern_high:'As condições favorecem uma taxa de propagação aumentada — o Índice de Acumulação mostra combustível disponível.',
+    factor_wind_high:'Vento a {speed} {unit} é um fator principal do Índice de Propagação Inicial',
+    factor_wind_mod:'Vento moderado ({speed} {unit}) está contribuindo para o potencial de propagação',
+    factor_wind_low:'Baixas velocidades de vento limitam o potencial de propagação',
+    factor_humidity_low:'Baixa umidade ({hum}%) está secando rapidamente os combustíveis de superfície finos',
+    factor_humidity_ok:'Maior umidade está retardando o secamento dos combustíveis finos',
+    factor_rain_dry:'Pouca chuva na última semana — camadas de combustível mais profundas estão secando (DMC/DC)',
+    factor_rain_ok:'Chuvas recentes mantêm as camadas de combustível profundas úmidas',
+    factor_temp_high:'Alta temperatura ({temp}) está acelerando o secamento do combustível',
+    factor_sat_up:'Passagens de satélite mostram aumento de {pct}% na potência radiativa do fogo desde a última passagem',
+    hazard_wind_severe_title:'Alerta de vento forte',hazard_wind_severe_text:'Ventos sustentados desta intensidade podem derrubar árvores e propagar incêndios rapidamente.',
+    hazard_wind_warn_title:'Aviso de vento forte',hazard_wind_warn_text:'Ventos elevados podem causar condições externas difíceis.',
+    hazard_heat_severe_title:'Alerta de calor extremo',hazard_heat_severe_text:'Níveis de calor perigosos — limite a exposição ao exterior e mantenha-se hidratado.',
+    hazard_heat_warn_title:'Aviso de calor',hazard_heat_warn_text:'Altas temperaturas aumentam os riscos de saúde e incêndio.',
+    hazard_aqi_severe_title:'Qualidade do ar prejudicial',hazard_aqi_warn_title:'Aviso de qualidade do ar',
+    hazard_aqi_text:'Má qualidade do ar pode indicar fumaça ou poluição próxima — considere limitar a exposição exterior.',
+    share_copied:'✓ Copiado!',search_no_results:'Nenhum lugar encontrado',
+    hero_updated:'Atualizado {time} · local',risk_updated:'Atualizado {time}',
+    conf_low_tip:'Baixa confiança — possivelmente reflexo solar, calor industrial ou fonte muito pequena. Tratar com cautela.',
+    conf_nominal_tip:'Confiança nominal — detecção VIIRS típica; provavelmente incêndio real mas com alguma incerteza.',
+    conf_high_tip:'Alta confiança — forte anomalia térmica muito provavelmente um incêndio ativo.',
+    conf_frp_tip:'FRP (Potência Radiativa do Fogo) — energia medida por satélite em megawatts. Maior MW = queima mais intensa.',
+    conf_default_tip:'Confiança de detecção reportada pelo sensor satelital VIIRS.',
+    incident_active:'ativo',incident_past:'passado',
+    report_header:'🔥 RELATÓRIO DE AVISTAMENTO DE INCÊNDIO',
+    report_location_lbl:'Local',report_time_lbl:'Hora',report_observed_lbl:'Observado',
+    report_notes_lbl_rpt:'Notas',report_footer_txt:'Relatado via Firewatch',
+    report_hist_head:'Seus relatórios anteriores ({n})',
+    report_hist_smoke:'Fumaça',report_hist_flames:'Chamas',report_hist_glow:'Brilho',report_hist_other:'Outro',
   },
   ja:{
     risk_intelligence:'リスク情報',satellite_title:'衛星火災解析',
@@ -2754,6 +3039,52 @@ const TRANSLATIONS = {
     loc_err_timeout:'位置情報リクエストがタイムアウトしました。再試行してください。',
     loc_err_default:'位置情報の取得中にエラーが発生しました。',
     map_close:'✕ 閉じる',
+    sat_note:'衛星パスは熱異常（活発な火災ピクセル）を検出します（煙や焼け跡ではありません）。~2km以内の検出はクラスターにグループ化されます。FRPはエネルギー放出を近似し、FRP合計の上昇は火災の激化を示します。',
+    sat_coming_soon:'<b>近日公開：</b>ピクセルレベルの画像分析にはバックエンドの画像パイプラインが必要です。',
+    sat_tip_frp:'火災放射電力 — 近くのすべての検出点の総エネルギー放出（MW）。高いほど燃焼が激しい。',
+    sat_tip_clusters:'独立した火災の数 — ~2km以内の検出点を1つのクラスターにグループ化し、重複カウントを防ぎます。',
+    sat_tip_growth:'このパスと前のパスのFRP合計の変化。上昇する割合は火災の激化を意味します。',
+    sat_tip_confidence:'すべての火災ピクセルの平均検出信頼度。VIIRS：高/通常/低 — 低信頼度は太陽の反射や工業熱の可能性があります。',
+    sat_lbl_frp:'FRP合計 (MW)',sat_lbl_clusters:'活発なクラスター',sat_lbl_growth:'前パス比成長',sat_lbl_confidence:'平均信頼度',
+    fire_level_0:'低',fire_level_1:'やや高',fire_level_2:'高',fire_level_3:'深刻',
+    weather_unavailable:'気象データは現在利用できません。',
+    weather_foot_unavail:'ソース：Open-Meteo',
+    fire_unavailable:'火災検出データは一時的に利用できません',
+    fire_firms_unavail:'NASA FIRMSに接続できませんでした — しばらくしてから再試行してください。',
+    forecast_empty:'このロケーションの予報データはありません。',
+    forecast_unavail:'火災気象予報は一時的に利用できません。',
+    composite_waiting:'複合スコアを計算するためのデータを待っています…',
+    fwi_tip:'FWI危険クラス（カナダFWIシステム）— 低(0–5)、中(5–10)、高(10–17)、非常に高い(17–21)、極端(21–28)、壊滅的(28+)。現在のFWI：{fwi}。',
+    concern_extreme:'初期延焼指数と燃料蓄積は、急速で激しい火災行動の可能性を示しています。',
+    concern_high:'条件は増加した延焼速度を支持しています — 蓄積指数は燃焼可能な燃料を示しています。',
+    factor_wind_high:'風速{speed}{unit}は初期延焼指数の主要な要因です',
+    factor_wind_mod:'中程度の風（{speed}{unit}）が延焼ポテンシャルに貢献しています',
+    factor_wind_low:'低風速が延焼ポテンシャルを制限しています',
+    factor_humidity_low:'低湿度（{hum}%）が細かい表面燃料を急速に乾燥させています',
+    factor_humidity_ok:'高めの湿度が細かい燃料の乾燥を遅らせています',
+    factor_rain_dry:'先週の降水量が少なく、深い燃料層が乾燥しています（DMC/DC）',
+    factor_rain_ok:'最近の降水量が深い燃料層を湿潤に保っています',
+    factor_temp_high:'高温（{temp}）が燃料の乾燥を加速させています',
+    factor_sat_up:'衛星パスで前回のパスから火災放射電力が{pct}%上昇 — 激化している火災',
+    hazard_wind_severe_title:'強風警報',hazard_wind_severe_text:'このような強い持続風は木を倒し、火災を急速に広げる可能性があります。',
+    hazard_wind_warn_title:'強風注意報',hazard_wind_warn_text:'強風により屋外での活動が困難になる可能性があります。',
+    hazard_heat_severe_title:'猛暑警報',hazard_heat_severe_text:'危険な暑さ — 屋外への露出を制限し、水分を補給してください。',
+    hazard_heat_warn_title:'高温注意報',hazard_heat_warn_text:'高温は健康と火災のリスクを高めます。',
+    hazard_aqi_severe_title:'大気質：不健康',hazard_aqi_warn_title:'大気質注意報',
+    hazard_aqi_text:'大気質の悪化は近くの煙や汚染を示している可能性があります — 屋外活動を制限してください。',
+    share_copied:'✓ コピーしました！',search_no_results:'一致する場所が見つかりません',
+    hero_updated:'{time} 更新 · ローカル',risk_updated:'{time} 更新',
+    conf_low_tip:'低信頼度 — 太陽反射、工業熱、または非常に小さな熱源の可能性があります。注意して対処してください。',
+    conf_nominal_tip:'通常信頼度 — 典型的なVIIRS検出。実際の火災である可能性が高いですが、不確実性が残ります。',
+    conf_high_tip:'高信頼度 — 強い熱異常で、活発な火災である可能性が非常に高い。',
+    conf_frp_tip:'FRP（火災放射電力）— 衛星で測定されたエネルギー放出（MW）。高いMW = より激しい燃焼。',
+    conf_default_tip:'VIIRSセンサーが報告する検出信頼度。',
+    incident_active:'活発',incident_past:'過去',
+    report_header:'🔥  火災目撃レポート',
+    report_location_lbl:'場所',report_time_lbl:'時刻',report_observed_lbl:'観察内容',
+    report_notes_lbl_rpt:'メモ',report_footer_txt:'Firewatchで報告',
+    report_hist_head:'過去のレポート（{n}件）',
+    report_hist_smoke:'煙',report_hist_flames:'炎',report_hist_glow:'光',report_hist_other:'その他',
   },
   it:{
     risk_intelligence:'Intelligence del Rischio',satellite_title:'Analisi Satellitare Incendi',
@@ -2895,6 +3226,52 @@ const TRANSLATIONS = {
     loc_err_timeout:'La richiesta di posizione è scaduta. Riprova.',
     loc_err_default:'Si è verificato un errore durante il recupero della tua posizione.',
     map_close:'✕ Chiudi',
+    sat_note:"I passaggi satellitari rilevano anomalie termiche (pixel di fuoco attivi), non fumo o cicatrici da ustioni. I rilevamenti entro ~2 km vengono raggruppati in cluster. L'FRP approssima il rilascio di energia; un FRP totale crescente indica un incendio che si intensifica.",
+    sat_coming_soon:"<b>Prossimamente:</b> l'analisi delle immagini a livello di pixel richiede una pipeline di imaging backend.",
+    sat_tip_frp:"Potenza Radiativa del Fuoco — rilascio totale di energia di tutti i rilevamenti vicini, in megawatt (MW). Più alto = combustione più intensa.",
+    sat_tip_clusters:"Numero di focolai distinti — punti raggruppati entro ~2 km in un cluster per evitare conteggi duplicati.",
+    sat_tip_growth:"Variazione dell'FRP totale tra questo passaggio e il precedente. Una percentuale crescente indica un'intensificazione.",
+    sat_tip_confidence:"Confidenza media di rilevamento. VIIRS: Alta / Nominale / Bassa — bassa confidenza può essere riflesso solare o calore industriale.",
+    sat_lbl_frp:'FRP totale (MW)',sat_lbl_clusters:'Cluster attivi',sat_lbl_growth:'Crescita vs ultimo passaggio',sat_lbl_confidence:'Confidenza media',
+    fire_level_0:'Basso',fire_level_1:'Elevato',fire_level_2:'Alto',fire_level_3:'Grave',
+    weather_unavailable:'Dati meteorologici non disponibili al momento.',
+    weather_foot_unavail:'Fonte: Open-Meteo',
+    fire_unavailable:'Dati di rilevamento incendi temporaneamente non disponibili',
+    fire_firms_unavail:'Impossibile raggiungere NASA FIRMS — riprova tra poco.',
+    forecast_empty:'Nessun dato di previsione disponibile per questa posizione.',
+    forecast_unavail:'Previsioni meteorologiche incendi temporaneamente non disponibili.',
+    composite_waiting:'In attesa di dati sufficienti per calcolare un punteggio composito…',
+    fwi_tip:'Classe di pericolo FWI (Sistema canadese FWI) — Basso (0–5), Moderato (5–10), Alto (10–17), Molto alto (17–21), Estremo (21–28), Catastrofico (28+). FWI attuale: {fwi}.',
+    concern_extreme:"L'Indice di Propagazione Iniziale e l'accumulo di combustibile indicano potenziale per un comportamento del fuoco intenso e rapido.",
+    concern_high:"Le condizioni favoriscono un aumento del tasso di propagazione — l'Indice di Accumulo mostra combustibile disponibile.",
+    factor_wind_high:"Vento a {speed} {unit} è un fattore principale dell'Indice di Propagazione Iniziale",
+    factor_wind_mod:'Vento moderato ({speed} {unit}) sta contribuendo al potenziale di propagazione',
+    factor_wind_low:'Basse velocità del vento limitano il potenziale di propagazione',
+    factor_humidity_low:"Bassa umidità ({hum}%) sta essiccando rapidamente i combustibili superficiali fini",
+    factor_humidity_ok:"Un'umidità più alta sta rallentando l'essiccamento dei combustibili fini",
+    factor_rain_dry:"Poca pioggia la settimana scorsa — gli strati di combustibile più profondi si stanno seccando (DMC/DC)",
+    factor_rain_ok:'Le piogge recenti mantengono umidi gli strati di combustibile profondi',
+    factor_temp_high:"Alta temperatura ({temp}) sta accelerando l'essiccamento del combustibile",
+    factor_sat_up:"I passaggi satellitari mostrano un aumento del {pct}% della potenza radiativa del fuoco dall'ultimo passaggio",
+    hazard_wind_severe_title:'Allerta vento forte',hazard_wind_severe_text:"Venti sostenuti così forti possono abbattere alberi e propagare rapidamente qualsiasi incendio.",
+    hazard_wind_warn_title:'Avviso vento forte',hazard_wind_warn_text:'Venti elevati possono creare condizioni esterne difficili.',
+    hazard_heat_severe_title:'Allerta caldo estremo',hazard_heat_severe_text:"Livelli di calore pericolosi — limitare l'esposizione esterna e mantenersi idratati.",
+    hazard_heat_warn_title:'Avviso caldo',hazard_heat_warn_text:'Le alte temperature aumentano i rischi per la salute e gli incendi.',
+    hazard_aqi_severe_title:'Qualità aria: non salubre',hazard_aqi_warn_title:'Avviso qualità aria',
+    hazard_aqi_text:"Scarsa qualità dell'aria può indicare fumo o inquinamento vicino — considerare di limitare l'esposizione esterna.",
+    share_copied:'✓ Copiato!',search_no_results:'Nessun luogo trovato',
+    hero_updated:'Aggiornato {time} · locale',risk_updated:'Aggiornato {time}',
+    conf_low_tip:"Bassa confidenza — possibile riflesso solare, calore industriale o sorgente molto piccola. Trattare con cautela.",
+    conf_nominal_tip:'Confidenza nominale — rilevamento VIIRS tipico; probabilmente un incendio reale ma con incertezza.',
+    conf_high_tip:'Alta confidenza — forte anomalia termica molto probabilmente un incendio attivo.',
+    conf_frp_tip:"FRP (Potenza Radiativa del Fuoco) — energia misurata via satellite in megawatt. MW più alto = combustione più intensa.",
+    conf_default_tip:'Confidenza di rilevamento del sensore satellitare VIIRS.',
+    incident_active:'attivo',incident_past:'passato',
+    report_header:'🔥 AVVISTAMENTO INCENDIO',
+    report_location_lbl:'Luogo',report_time_lbl:'Ora',report_observed_lbl:'Osservato',
+    report_notes_lbl_rpt:'Note',report_footer_txt:'Segnalato via Firewatch',
+    report_hist_head:'I tuoi rapporti precedenti ({n})',
+    report_hist_smoke:'Fumo',report_hist_flames:'Fiamme',report_hist_glow:'Bagliore',report_hist_other:'Altro',
   },
   ko:{
     risk_intelligence:'위험 정보',satellite_title:'위성 화재 분석',
@@ -3036,6 +3413,52 @@ const TRANSLATIONS = {
     loc_err_timeout:'위치 요청이 시간 초과되었습니다. 다시 시도하세요.',
     loc_err_default:'위치를 가져오는 중 오류가 발생했습니다.',
     map_close:'✕ 닫기',
+    sat_note:'위성 패스는 열 이상(활성 화재 픽셀)을 감지합니다(연기나 화상 흉터가 아님). ~2km 이내의 감지는 클러스터로 그룹화됩니다. FRP는 에너지 방출을 근사화하며, FRP 합계 상승은 화재가 강화됨을 나타냅니다.',
+    sat_coming_soon:'<b>출시 예정:</b> 픽셀 수준의 이미지 분석은 백엔드 이미징 파이프라인이 필요합니다.',
+    sat_tip_frp:'화재 복사 전력 — 모든 근처 감지점의 총 에너지 방출(MW). 높을수록 = 더 강렬한 연소.',
+    sat_tip_clusters:'독립적인 화재 수 — ~2km 이내의 감지점을 하나의 클러스터로 그룹화하여 중복 계산을 방지합니다.',
+    sat_tip_growth:'이번 위성 패스와 이전 패스 간의 총 FRP 변화. 증가율 상승 = 화재 강화.',
+    sat_tip_confidence:'모든 화재 픽셀의 평균 감지 신뢰도. VIIRS: 높음/표준/낮음 — 낮은 신뢰도는 태양 반사 또는 산업 열일 수 있습니다.',
+    sat_lbl_frp:'총 FRP (MW)',sat_lbl_clusters:'활성 클러스터',sat_lbl_growth:'마지막 패스 대비 성장',sat_lbl_confidence:'평균 신뢰도',
+    fire_level_0:'낮음',fire_level_1:'상승',fire_level_2:'높음',fire_level_3:'심각',
+    weather_unavailable:'기상 데이터를 현재 이용할 수 없습니다.',
+    weather_foot_unavail:'출처: Open-Meteo',
+    fire_unavailable:'화재 감지 데이터를 일시적으로 이용할 수 없습니다',
+    fire_firms_unavail:'NASA FIRMS에 연결할 수 없습니다 — 잠시 후 다시 시도하세요.',
+    forecast_empty:'이 위치의 예보 데이터가 없습니다.',
+    forecast_unavail:'화재 날씨 예보를 일시적으로 이용할 수 없습니다.',
+    composite_waiting:'복합 점수를 계산하기 위한 데이터를 기다리는 중…',
+    fwi_tip:'FWI 위험 등급(캐나다 FWI 시스템) — 낮음(0–5), 보통(5–10), 높음(10–17), 매우 높음(17–21), 극단(21–28), 재앙적(28+). 현재 FWI: {fwi}.',
+    concern_extreme:'초기 확산 지수와 연료 축적이 빠르고 강렬한 화재 행동 가능성을 나타냅니다.',
+    concern_high:'조건이 증가된 화재 확산 속도를 지지합니다 — 축적 지수가 가용 연료를 보여줍니다.',
+    factor_wind_high:'풍속 {speed}{unit}은 초기 확산 지수의 주요 원인입니다',
+    factor_wind_mod:'중간 바람({speed}{unit})이 확산 잠재력에 기여하고 있습니다',
+    factor_wind_low:'낮은 풍속이 확산 잠재력을 제한하고 있습니다',
+    factor_humidity_low:'낮은 습도({hum}%)가 세밀한 표면 연료를 빠르게 건조시키고 있습니다',
+    factor_humidity_ok:'높은 습도가 세밀한 연료 건조를 늦추고 있습니다',
+    factor_rain_dry:'지난 주 강수량이 적어 깊은 연료 층이 건조되고 있습니다(DMC/DC)',
+    factor_rain_ok:'최근 강수량이 깊은 연료 층을 습윤하게 유지합니다',
+    factor_temp_high:'고온({temp})이 연료 건조를 가속화하고 있습니다',
+    factor_sat_up:'위성 패스에서 지난 패스 이후 화재 복사 전력이 {pct}% 상승 — 강화 중인 화재',
+    hazard_wind_severe_title:'강풍 경보',hazard_wind_severe_text:'이 정도의 지속 바람은 나무를 쓰러뜨리고 화재를 빠르게 확산시킬 수 있습니다.',
+    hazard_wind_warn_title:'강풍 주의보',hazard_wind_warn_text:'강한 바람으로 야외 활동이 어려울 수 있습니다.',
+    hazard_heat_severe_title:'극단적 폭염 경보',hazard_heat_severe_text:'위험한 열 수준 — 야외 노출을 제한하고 수분을 보충하세요.',
+    hazard_heat_warn_title:'폭염 주의보',hazard_heat_warn_text:'고온은 건강 및 화재 위험을 높입니다.',
+    hazard_aqi_severe_title:'대기질: 나쁨',hazard_aqi_warn_title:'대기질 주의보',
+    hazard_aqi_text:'대기질 악화는 근처의 연기 또는 오염을 나타낼 수 있습니다 — 야외 노출을 제한하는 것을 고려하세요.',
+    share_copied:'✓ 복사됨!',search_no_results:'일치하는 장소를 찾을 수 없습니다',
+    hero_updated:'{time} 업데이트 · 현지시간',risk_updated:'{time} 업데이트',
+    conf_low_tip:'낮은 신뢰도 — 태양 반사, 산업 열 또는 매우 작은 열원일 수 있습니다. 주의하여 처리하세요.',
+    conf_nominal_tip:'표준 신뢰도 — 일반적인 VIIRS 감지. 실제 화재일 가능성이 높지만 불확실성이 있습니다.',
+    conf_high_tip:'높은 신뢰도 — 강한 열 이상, 활성 화재일 가능성이 매우 높습니다.',
+    conf_frp_tip:'FRP(화재 복사 전력) — 위성 측정 에너지 방출(MW). 더 높은 MW = 더 강렬한 연소.',
+    conf_default_tip:'VIIRS 위성 센서에서 보고한 감지 신뢰도.',
+    incident_active:'활성',incident_past:'과거',
+    report_header:'🔥 화재 목격 보고서',
+    report_location_lbl:'위치',report_time_lbl:'시간',report_observed_lbl:'관찰 내용',
+    report_notes_lbl_rpt:'메모',report_footer_txt:'Firewatch를 통해 신고됨',
+    report_hist_head:'이전 보고서 ({n}개)',
+    report_hist_smoke:'연기',report_hist_flames:'불꽃',report_hist_glow:'빛남',report_hist_other:'기타',
   },
 };
 
@@ -3056,6 +3479,10 @@ function applyI18n(){
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const v = t(el.dataset.i18nPlaceholder);
     if(v) el.placeholder = v;
+  });
+  document.querySelectorAll('[data-i18n-tip]').forEach(el => {
+    const v = t(el.dataset.i18nTip);
+    if(v) el.dataset.tip = v;
   });
   document.documentElement.lang = currentLang;
   const d = document.getElementById('lang-current');
@@ -3142,15 +3569,15 @@ function submitReport(e){
                 (userLat != null ? `${userLat.toFixed(4)}, ${userLon.toFixed(4)}` : 'Unknown location');
   const timestamp = new Date().toLocaleString();
 
-  const TYPE_LABELS = { smoke:'Smoke column or haze', flame:'Active flames visible', glow:'Unusual orange glow at night', other:'Other unusual activity' };
+  const TYPE_LABELS = { smoke:t('report_smoke'), flame:t('report_flame'), glow:t('report_glow'), other:t('report_other') };
   const lines = [
-    '🔥 FIRE SIGHTING REPORT',
-    `Location : ${loc}`,
-    `Time     : ${timestamp}`,
-    `Observed : ${TYPE_LABELS[type] || type}`,
+    t('report_header'),
+    `${t('report_location_lbl')} : ${loc}`,
+    `${t('report_time_lbl')}     : ${timestamp}`,
+    `${t('report_observed_lbl')} : ${TYPE_LABELS[type] || type}`,
   ];
-  if(notes) lines.push(`Notes    : ${notes}`);
-  lines.push('Reported via Firewatch');
+  if(notes) lines.push(`${t('report_notes_lbl_rpt')}    : ${notes}`);
+  lines.push(t('report_footer_txt'));
   const text = lines.join('\n');
 
   const outputEl = document.getElementById('report-output');
@@ -3175,7 +3602,7 @@ function copyReport(){
   const text = document.getElementById('report-output-text')?.textContent || '';
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.querySelector('.report-copy-btn');
-    if(btn){ const o = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(()=>{ btn.textContent = o; }, 2000); }
+    if(btn){ const o = btn.textContent; btn.textContent = t('share_copied'); setTimeout(()=>{ btn.textContent = o; }, 2000); }
   }).catch(() => window.prompt('Copy this report:', text));
 }
 
@@ -3185,8 +3612,8 @@ function renderReportHistory(){
   let reports = [];
   try { reports = JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]'); } catch {}
   if(!reports.length){ el.innerHTML = ''; return; }
-  const LABELS = { smoke:'Smoke', flame:'Flames', glow:'Glow', other:'Other' };
-  el.innerHTML = `<div class="report-history-head">Your past reports (${reports.length})</div>` +
+  const LABELS = { smoke:t('report_hist_smoke'), flame:t('report_hist_flames'), glow:t('report_hist_glow'), other:t('report_hist_other') };
+  el.innerHTML = `<div class="report-history-head">${tf('report_hist_head', {n: reports.length})}</div>` +
     reports.map(r =>
       `<div class="report-history-item">
         <span class="report-history-badge">${LABELS[r.type]||r.type}</span>
