@@ -20,6 +20,20 @@ const FIRMS_BASE = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv';
 // times, so a fire visible in MODIS may not yet appear in any VIIRS feed.
 const LOCAL_SOURCES = ['VIIRS_SNPP_NRT', 'VIIRS_NOAA20_NRT', 'VIIRS_NOAA21_NRT', 'MODIS_NRT'];
 
+/**
+ * Compute a bounding box in degrees around a point given a radius in km.
+ * ~1 degree latitude ≈ 111km; longitude degrees shrink with cos(latitude).
+ * The cos is clamped to 0.15 to avoid division-by-zero near the poles.
+ */
+export function tileToBBox(lat, lon, radiusKm){
+  const dLat = radiusKm / 111;
+  const dLon = radiusKm / (111 * Math.max(0.15, Math.cos(lat * Math.PI / 180)));
+  return {
+    west: lon - dLon, east: lon + dLon,
+    south: lat - dLat, north: lat + dLat,
+  };
+}
+
 /** Local fires within `radiusKm` of a point, last 24h.
  * Queries all three VIIRS satellites in parallel and deduplicates. */
 export async function fetchLocalFires(lat, lon, env, radiusKm = 65){
@@ -27,9 +41,7 @@ export async function fetchLocalFires(lat, lon, env, radiusKm = 65){
   if(!key) throw new Error('Fire detection is not configured on this server (missing FIRMS_MAP_KEY)');
 
   // ~1 degree latitude ≈ 111km; longitude degrees shrink with cos(latitude).
-  const dLat = radiusKm / 111;
-  const dLon = radiusKm / (111 * Math.max(0.15, Math.cos(lat * Math.PI / 180)));
-  const west = lon - dLon, east = lon + dLon, south = lat - dLat, north = lat + dLat;
+  const { west, east, south, north } = tileToBBox(lat, lon, radiusKm);
   const bbox = `${west.toFixed(4)},${south.toFixed(4)},${east.toFixed(4)},${north.toFixed(4)}`;
 
   // Fetch all four satellites simultaneously over 2 days (not 1) to
@@ -116,15 +128,21 @@ function rowToFire(row){
   };
 }
 
-function parseFirmsCsv(csv){
+export function parseFirmsCsv(csv){
   const lines = csv.trim().split(/\r?\n/);
-  if(lines.length < 2) return [];
+  if(lines.length === 0 || (lines.length === 1 && lines[0] === '')) return [];
 
+  // Always validate the header first — FIRMS returns plain-text error messages
+  // (e.g. "Invalid MAP_KEY") on bad requests, which would pass a naive length
+  // check but contain no CSV header. We must throw rather than silently return [].
   const header = lines[0].split(',').map(h => h.trim());
   if(!header.includes('latitude') || !header.includes('longitude')){
     // FIRMS returns a plain-text error instead of CSV on bad requests.
     throw new Error(`FIRMS returned unexpected response: ${lines[0].slice(0, 200)}`);
   }
+
+  // Valid header but no data rows → empty result (not an error).
+  if(lines.length < 2) return [];
 
   return lines.slice(1).filter(Boolean).map(line => {
     const cells = line.split(',');
@@ -134,7 +152,7 @@ function parseFirmsCsv(csv){
   });
 }
 
-function haversineKm(lat1, lon1, lat2, lon2){
+export function haversineKm(lat1, lon1, lat2, lon2){
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;

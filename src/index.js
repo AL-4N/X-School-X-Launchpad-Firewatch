@@ -31,7 +31,7 @@ function errorResponse(err, status = 502){
   return json({ error: message }, { status });
 }
 
-function requireLatLon(url){
+export function requireLatLon(url){
   const lat = parseFloat(url.searchParams.get('lat'));
   const lon = parseFloat(url.searchParams.get('lon'));
   if(!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180){

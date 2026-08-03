@@ -182,7 +182,7 @@ function fmtWind(kmh){
 }
 
 function windUnitLabel(){
-  return unit === 'F' ? 'Wind mph' : 'Wind km/h';
+  return unit === 'F' ? t('wind_unit_mph') : t('wind_unit_kmh');
 }
 
 function setUnit(u){
@@ -210,7 +210,7 @@ function refreshUnitDependentUI(){
 
   if(current.heatFeelsC != null){
     document.getElementById('heat-big').textContent = fmtTemp(current.heatFeelsC).replace(`°${unit}`, '');
-    document.getElementById('heat-big-unit').textContent = `°${unit} feels-like`;
+    document.getElementById('heat-big-unit').textContent = `°${unit} ${t('feels_like')}`;
   }
   if(lastWeather){
     document.getElementById('heat-foot').textContent =
@@ -574,7 +574,7 @@ async function loadWeatherAndRisk(){
     checkSevereWeather(weather);
   }catch(e){
     console.error(e);
-    document.getElementById('place-name').textContent += ' (weather unavailable)';
+    document.getElementById('place-name').textContent += ` ${t('weather_unavail_suffix')}`;
 
     // Without this, a failed fetch for a NEW location leaves the Heat card,
     // weather grid, and hero verdict silently showing the PREVIOUS location's
@@ -616,7 +616,7 @@ function renderHeat(weather){
 
   document.getElementById('heat-big').textContent = Math.round(unit === 'F' ? cToF(weather.feelsLike) : weather.feelsLike);
   const heatUnitEl = document.getElementById('heat-big-unit');
-  if(heatUnitEl) heatUnitEl.textContent = `°${unit} feels-like`;
+  if(heatUnitEl) heatUnitEl.textContent = `°${unit} ${t('feels_like')}`;
   document.getElementById('heat-desc').textContent = cat.desc;
   document.getElementById('heat-foot').textContent =
     tf('heat_source', {temp: fmtTemp(weather.temp), hum: Math.round(weather.humidity)});
@@ -1176,20 +1176,21 @@ function bearingCompass(lat1, lon1, lat2, lon2){
 
 /** FIRMS acq_date is YYYY-MM-DD and acq_time is a 4-digit HHMM, both UTC. */
 function timeAgoFromFirms(dateStr, timeStr){
-  if(!dateStr) return 'recently';
-  const t = (timeStr || '0000').padStart(4, '0');
-  const iso = `${dateStr}T${t.slice(0,2)}:${t.slice(2)}:00Z`;
+  if(!dateStr) return t('time_recently');
+  const tStr = (timeStr || '0000').padStart(4, '0');
+  const iso = `${dateStr}T${tStr.slice(0,2)}:${tStr.slice(2)}:00Z`;
   const detected = new Date(iso);
   const mins = Math.round((Date.now() - detected.getTime()) / 60000);
-  if(mins < 60) return `${Math.max(mins,0)} min ago`;
+  if(mins < 60) return tf('time_min_ago', {n: Math.max(mins,0)});
   const hrs = Math.round(mins / 60);
-  if(hrs < 24) return `${hrs} hr ago`;
-  return `${Math.round(hrs/24)} day${hrs>=48?'s':''} ago`;
+  if(hrs < 24) return tf('time_hr_ago', {n: hrs});
+  const days = Math.round(hrs/24);
+  return tf('time_day_ago', {n: days, s: days !== 1 ? 's' : ''});
 }
 
 function confidenceLabel(code){
-  const map = { l:'low', n:'nominal', h:'high' };
-  return map[(code || '').toLowerCase()] || (code || 'unknown');
+  const map = { l: t('conf_level_low'), n: t('conf_level_nominal'), h: t('conf_level_high') };
+  return map[(code || '').toLowerCase()] || (code || t('conf_level_unknown'));
 }
 
 /** Combines the new composite score with real-time fire proximity so the
@@ -1243,7 +1244,7 @@ async function loadFires(){
       L.circle([f.lat, f.lon], {
         radius: r, color: '#c0392b', weight: 1,
         fillColor: '#ff5e2a', fillOpacity: 0.75,
-      }).bindPopup(`<b>Fire detection</b><br>Confidence: ${confidenceLabel(f.confidence)}${f.frp != null ? '<br>FRP: ' + Math.round(f.frp) + ' MW' : ''}`)
+      }).bindPopup(`<b>${t('fire_popup_title')}</b><br>${t('fire_popup_conf')}: ${confidenceLabel(f.confidence)}${f.frp != null ? '<br>' + t('fire_popup_frp') + ': ' + Math.round(f.frp) + ' MW' : ''}`)
         .addTo(fireLayer);
     });
 
@@ -1383,7 +1384,7 @@ function renderFiresCard(){
   const nearest = lastFires[0]; // lastFires is always sorted by distance from loadFires()
   const miles = Math.round(nearest.distKm * 0.621371);
   big.textContent = miles;
-  unitEl.textContent = ` mi ${nearest.dir}`;
+  unitEl.textContent = ` ${t('unit_mi')} ${nearest.dir}`;
   desc.textContent = miles <= 10 ? t('fire_close')
     : miles <= 25 ? t('fire_moderate') : t('fire_far');
 
@@ -1571,7 +1572,7 @@ async function loadGlobalIncidents(){
 function renderIncidentsList(){
   const list = document.getElementById('incidents-list');
   if(!globalIncidents.length){
-    list.innerHTML = '<div class="empty-note">No global wildfire incidents tracked in the past 30 days.</div>';
+    list.innerHTML = `<div class="empty-note">${t('incidents_none')}</div>`;
     return;
   }
   list.innerHTML = '';
@@ -1963,6 +1964,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'Notes',report_footer_txt:'Reported via Firewatch',
     report_hist_head:'Your past reports ({n})',
     report_hist_smoke:'Smoke',report_hist_flames:'Flames',report_hist_glow:'Glow',report_hist_other:'Other',
+    feels_like:'feels-like',
+    weather_unavail_suffix:'(weather unavailable)',
+    wind_unit_mph:'Wind mph',
+    wind_unit_kmh:'Wind km/h',
+    time_recently:'recently',
+    time_min_ago:'{n} min ago',
+    time_hr_ago:'{n} hr ago',
+    time_day_ago:'{n} day{s} ago',
+    conf_level_low:'low',
+    conf_level_nominal:'nominal',
+    conf_level_high:'high',
+    conf_level_unknown:'unknown',
+    fire_popup_title:'Fire detection',
+    fire_popup_conf:'Confidence',
+    fire_popup_frp:'FRP',
+    unit_mi:'mi',
+    tip_fwi_label:'Fire Weather Index — the top-level output of the Canadian FWI System. Ranges from 0 (low danger) to 30+ (extreme/catastrophic). Combines ISI (initial fire spread rate) and BUI (total fuel available to burn).',
+    tip_ffmc:'Fine Fuel Moisture Code — moisture of surface litter and fine grasses. Higher = drier = more flammable. Scale 0–101.',
+    tip_dmc:'Duff Moisture Code — moisture of loosely compacted organic layers a few cm deep. Tracks week-scale drought.',
+    tip_dc:'Drought Code — deep soil and organic layer moisture reflecting months of drought. Takes weeks of heavy rain to recover.',
+    tip_isi:'Initial Spread Index — predicted fire spread rate, combining FFMC (fuel dryness) and wind speed.',
+    tip_bui:'Buildup Index — total fuel available to burn, combining DMC and DC. High BUI means deep fuels are dry and ready to sustain a fire.',
+    tip_aqi:'Air Quality Index (US EPA scale) — 0–50 Good, 51–100 Moderate, 101–150 Unhealthy for sensitive groups, 151–200 Unhealthy, 201–300 Very Unhealthy, 301+ Hazardous.',
   },
   es:{
     risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
@@ -2150,6 +2174,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'Notas',report_footer_txt:'Reportado vía Firewatch',
     report_hist_head:'Tus informes anteriores ({n})',
     report_hist_smoke:'Humo',report_hist_flames:'Llamas',report_hist_glow:'Resplandor',report_hist_other:'Otro',
+    feels_like:'sensación térmica',
+    weather_unavail_suffix:'(clima no disponible)',
+    wind_unit_mph:'Viento mph',
+    wind_unit_kmh:'Viento km/h',
+    time_recently:'recientemente',
+    time_min_ago:'hace {n} min',
+    time_hr_ago:'hace {n} h',
+    time_day_ago:'hace {n} día{s}',
+    conf_level_low:'baja',
+    conf_level_nominal:'nominal',
+    conf_level_high:'alta',
+    conf_level_unknown:'desconocida',
+    fire_popup_title:'Detección de incendio',
+    fire_popup_conf:'Confianza',
+    fire_popup_frp:'FRP',
+    unit_mi:'mi',
+    tip_fwi_label:'Índice FWI — índice principal del sistema canadiense FWI. Rango 0 (bajo peligro) a 30+ (extremo). Combina ISI y BUI.',
+    tip_ffmc:'Código de humedad de combustibles finos — humedad de hojarasca y pastos. Mayor = más seco = más inflamable. Escala 0–101.',
+    tip_dmc:'Código de humedad de mantillo — humedad de capas orgánicas superficiales. Rastrea la sequía semanal.',
+    tip_dc:'Código de sequía — humedad de suelo profundo que refleja meses de sequía.',
+    tip_isi:'Índice de propagación inicial — velocidad de propagación del fuego, combinando FFMC y viento.',
+    tip_bui:'Índice de acumulación — combustible total disponible, combinando DMC y DC.',
+    tip_aqi:'Índice de calidad del aire (escala US EPA) — 0–50 Bueno, 51–100 Moderado, 101–150 Dañino grupos sensibles, 151–200 Dañino, 201–300 Muy dañino, 301+ Peligroso.',
   },
   fr:{
     risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
@@ -2337,6 +2384,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'Notes',report_footer_txt:'Signalé via Firewatch',
     report_hist_head:'Vos rapports précédents ({n})',
     report_hist_smoke:'Fumée',report_hist_flames:'Flammes',report_hist_glow:'Lueur',report_hist_other:'Autre',
+    feels_like:'ressenti',
+    weather_unavail_suffix:'(météo indisponible)',
+    wind_unit_mph:'Vent mph',
+    wind_unit_kmh:'Vent km/h',
+    time_recently:'récemment',
+    time_min_ago:'il y a {n} min',
+    time_hr_ago:'il y a {n} h',
+    time_day_ago:'il y a {n} jour{s}',
+    conf_level_low:'faible',
+    conf_level_nominal:'nominale',
+    conf_level_high:'élevée',
+    conf_level_unknown:'inconnue',
+    fire_popup_title:'Détection de feu',
+    fire_popup_conf:'Confiance',
+    fire_popup_frp:'FRP',
+    unit_mi:'mi',
+    tip_fwi_label:'Indice FWI — résultat principal du système canadien FWI. Plage 0 (danger faible) à 30+ (extrême). Combine ISI et BUI.',
+    tip_ffmc:'Code humidité combustibles fins — humidité de la litière et des herbes fines. Plus élevé = plus sec = plus inflammable. Échelle 0–101.',
+    tip_dmc:'Code humidité humus — humidité des couches organiques peu profondes. Suit la sécheresse hebdomadaire.',
+    tip_dc:'Code sécheresse — humidité profonde du sol reflétant des mois de sécheresse.',
+    tip_isi:'Indice de propagation initiale — vitesse de propagation du feu, combinant FFMC et vitesse du vent.',
+    tip_bui:"Indice d'accumulation — carburant total disponible, combinant DMC et DC.",
+    tip_aqi:"Indice de qualité de l'air (échelle US EPA) — 0–50 Bon, 51–100 Modéré, 101–150 Malsain groupes sensibles, 151–200 Malsain, 201–300 Très malsain, 301+ Dangereux.",
   },
   de:{
     risk_intelligence:'Risikoanalyse',satellite_title:'Satelliten-Feueranalyse',
@@ -2524,6 +2594,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'Notizen',report_footer_txt:'Gemeldet via Firewatch',
     report_hist_head:'Ihre früheren Berichte ({n})',
     report_hist_smoke:'Rauch',report_hist_flames:'Flammen',report_hist_glow:'Leuchten',report_hist_other:'Sonstiges',
+    feels_like:'gefühlt',
+    weather_unavail_suffix:'(Wetter nicht verfügbar)',
+    wind_unit_mph:'Wind mph',
+    wind_unit_kmh:'Wind km/h',
+    time_recently:'kürzlich',
+    time_min_ago:'vor {n} Min.',
+    time_hr_ago:'vor {n} Std.',
+    time_day_ago:'vor {n} Tag{s}',
+    conf_level_low:'gering',
+    conf_level_nominal:'nominal',
+    conf_level_high:'hoch',
+    conf_level_unknown:'unbekannt',
+    fire_popup_title:'Branderkennung',
+    fire_popup_conf:'Zuverlässigkeit',
+    fire_popup_frp:'FRP',
+    unit_mi:'mi',
+    tip_fwi_label:'Feuerwetterindex — Hauptergebnis des kanadischen FWI-Systems. Bereich 0 (geringes Risiko) bis 30+ (extrem). Kombiniert ISI und BUI.',
+    tip_ffmc:'Feinbrennstoff-Feuchtigkeitscode — Feuchtigkeit von Streu und feinen Gräsern. Höher = trockener = brennbarer. Skala 0–101.',
+    tip_dmc:'Humus-Feuchtigkeitscode — Feuchtigkeit lockerer organischer Schichten. Erfasst wöchentliche Dürre.',
+    tip_dc:'Dürre-Code — Tiefenbodenfeuchte, die monatelange Dürre widerspiegelt.',
+    tip_isi:'Erstausbreitungsindex — vorhergesagte Feuerausbreitungsrate, kombiniert FFMC und Wind.',
+    tip_bui:'Aufbauindex — verfügbarer Gesamtbrennstoff, kombiniert DMC und DC.',
+    tip_aqi:'Luftqualitätsindex (US-EPA-Skala) — 0–50 Gut, 51–100 Mäßig, 101–150 Ungesund (empfindliche Gruppen), 151–200 Ungesund, 201–300 Sehr ungesund, 301+ Gefährlich.',
   },
   zh:{
     risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
@@ -2711,6 +2804,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'备注',report_footer_txt:'通过Firewatch报告',
     report_hist_head:'您的历史报告（{n}）',
     report_hist_smoke:'烟雾',report_hist_flames:'火焰',report_hist_glow:'光晕',report_hist_other:'其他',
+    feels_like:'体感',
+    weather_unavail_suffix:'（天气不可用）',
+    wind_unit_mph:'风速 mph',
+    wind_unit_kmh:'风速 km/h',
+    time_recently:'最近',
+    time_min_ago:'{n}分钟前',
+    time_hr_ago:'{n}小时前',
+    time_day_ago:'{n}天前',
+    conf_level_low:'低',
+    conf_level_nominal:'一般',
+    conf_level_high:'高',
+    conf_level_unknown:'未知',
+    fire_popup_title:'火灾探测',
+    fire_popup_conf:'置信度',
+    fire_popup_frp:'FRP',
+    unit_mi:'英里',
+    tip_fwi_label:'火险指数（FWI）— 加拿大FWI系统的综合输出，范围0（低危）到30+（极端）。结合了ISI和BUI。',
+    tip_ffmc:'细燃料湿度码（FFMC）— 表层凋落物和细草的湿度。越高=越干=越易燃。量程0–101。',
+    tip_dmc:'枯枝落叶湿度码（DMC）— 浅层有机物湿度，追踪周尺度干旱。',
+    tip_dc:'干旱码（DC）— 深层土壤湿度，反映数月干旱程度。',
+    tip_isi:'初始蔓延指数（ISI）— 结合FFMC和风速预测火势蔓延速度。',
+    tip_bui:'累积指数（BUI）— 结合DMC和DC估算可燃燃料总量。',
+    tip_aqi:'空气质量指数（美国EPA标准）— 0–50优，51–100良，101–150对敏感人群不健康，151–200不健康，201–300非常不健康，301+危险。',
   },
   pt:{
     risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
@@ -2898,6 +3014,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'Notas',report_footer_txt:'Relatado via Firewatch',
     report_hist_head:'Seus relatórios anteriores ({n})',
     report_hist_smoke:'Fumaça',report_hist_flames:'Chamas',report_hist_glow:'Brilho',report_hist_other:'Outro',
+    feels_like:'sensação',
+    weather_unavail_suffix:'(clima indisponível)',
+    wind_unit_mph:'Vento mph',
+    wind_unit_kmh:'Vento km/h',
+    time_recently:'recentemente',
+    time_min_ago:'há {n} min',
+    time_hr_ago:'há {n} h',
+    time_day_ago:'há {n} dia{s}',
+    conf_level_low:'baixa',
+    conf_level_nominal:'nominal',
+    conf_level_high:'alta',
+    conf_level_unknown:'desconhecida',
+    fire_popup_title:'Detecção de incêndio',
+    fire_popup_conf:'Confiança',
+    fire_popup_frp:'FRP',
+    unit_mi:'mi',
+    tip_fwi_label:'Índice FWI — saída principal do sistema canadense FWI. Intervalo 0 (baixo risco) a 30+ (extremo). Combina ISI e BUI.',
+    tip_ffmc:'Código de Umidade de Combustíveis Finos — umidade de serapilheira e gramíneas. Maior = mais seco = mais inflamável. Escala 0–101.',
+    tip_dmc:'Código de Umidade do Húmus — umidade de camadas orgânicas rasas. Acompanha secas semanais.',
+    tip_dc:'Código de Seca — umidade profunda do solo refletindo meses de seca.',
+    tip_isi:'Índice de Propagação Inicial — velocidade de propagação do fogo, combinando FFMC e vento.',
+    tip_bui:'Índice de Acúmulo — combustível total disponível, combinando DMC e DC.',
+    tip_aqi:'Índice de Qualidade do Ar (escala US EPA) — 0–50 Bom, 51–100 Moderado, 101–150 Prejudicial grupos sensíveis, 151–200 Prejudicial, 201–300 Muito Prejudicial, 301+ Perigoso.',
   },
   ja:{
     risk_intelligence:'リスク情報',satellite_title:'衛星火災解析',
@@ -3085,6 +3224,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'メモ',report_footer_txt:'Firewatchで報告',
     report_hist_head:'過去のレポート（{n}件）',
     report_hist_smoke:'煙',report_hist_flames:'炎',report_hist_glow:'光',report_hist_other:'その他',
+    feels_like:'体感',
+    weather_unavail_suffix:'（天気情報なし）',
+    wind_unit_mph:'風速 mph',
+    wind_unit_kmh:'風速 km/h',
+    time_recently:'最近',
+    time_min_ago:'{n}分前',
+    time_hr_ago:'{n}時間前',
+    time_day_ago:'{n}日前',
+    conf_level_low:'低',
+    conf_level_nominal:'標準',
+    conf_level_high:'高',
+    conf_level_unknown:'不明',
+    fire_popup_title:'火災検出',
+    fire_popup_conf:'信頼度',
+    fire_popup_frp:'FRP',
+    unit_mi:'マイル',
+    tip_fwi_label:'FWI（火災気象指数）— カナダFWIシステムの総合出力。範囲0（低危険）〜30+（極端）。ISIとBUIを組み合わせます。',
+    tip_ffmc:'FFMC（細燃料水分コード）— 地表落葉・細草の水分量。高い=乾燥=燃えやすい。スケール0〜101。',
+    tip_dmc:'DMC（腐植質水分コード）— 浅い有機物層の水分量。週単位の乾燥を追跡。',
+    tip_dc:'DC（干ばつコード）— 数ヶ月の干ばつを反映する深層土壌水分。',
+    tip_isi:'ISI（初期延焼指数）— FFMCと風速を組み合わせた延焼速度の予測値。',
+    tip_bui:'BUI（燃料蓄積指数）— DMCとDCを組み合わせた可燃燃料総量の推定値。',
+    tip_aqi:'空気質指数（米国EPA基準）— 0〜50良好、51〜100普通、101〜150敏感グループに有害、151〜200有害、201〜300非常に有害、301+危険。',
   },
   it:{
     risk_intelligence:'Intelligence del Rischio',satellite_title:'Analisi Satellitare Incendi',
@@ -3272,6 +3434,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'Note',report_footer_txt:'Segnalato via Firewatch',
     report_hist_head:'I tuoi rapporti precedenti ({n})',
     report_hist_smoke:'Fumo',report_hist_flames:'Fiamme',report_hist_glow:'Bagliore',report_hist_other:'Altro',
+    feels_like:'percepita',
+    weather_unavail_suffix:'(meteo non disponibile)',
+    wind_unit_mph:'Vento mph',
+    wind_unit_kmh:'Vento km/h',
+    time_recently:'recentemente',
+    time_min_ago:'{n} min fa',
+    time_hr_ago:'{n} h fa',
+    time_day_ago:'{n} giorno{s} fa',
+    conf_level_low:'bassa',
+    conf_level_nominal:'nominale',
+    conf_level_high:'alta',
+    conf_level_unknown:'sconosciuta',
+    fire_popup_title:'Rilevamento incendio',
+    fire_popup_conf:'Confidenza',
+    fire_popup_frp:'FRP',
+    unit_mi:'mi',
+    tip_fwi_label:'Indice FWI — risultato principale del sistema canadese FWI. Range 0 (pericolo basso) a 30+ (estremo). Combina ISI e BUI.',
+    tip_ffmc:'Codice umidità combustibili fini — umidità di lettiera e erbe fini. Più alto = più secco = più infiammabile. Scala 0–101.',
+    tip_dmc:'Codice umidità humus — umidità degli strati organici superficiali. Traccia la siccità settimanale.',
+    tip_dc:'Codice siccità — umidità profonda del suolo che riflette mesi di siccità.',
+    tip_isi:'Indice di diffusione iniziale — velocità di propagazione del fuoco, combinando FFMC e vento.',
+    tip_bui:'Indice di accumulo — combustibile totale disponibile, combinando DMC e DC.',
+    tip_aqi:"Indice qualità dell'aria (scala US EPA) — 0–50 Buona, 51–100 Moderata, 101–150 Non salubre (sensibili), 151–200 Non salubre, 201–300 Molto non salubre, 301+ Pericolosa.",
   },
   ko:{
     risk_intelligence:'위험 정보',satellite_title:'위성 화재 분석',
@@ -3459,6 +3644,29 @@ const TRANSLATIONS = {
     report_notes_lbl_rpt:'메모',report_footer_txt:'Firewatch를 통해 신고됨',
     report_hist_head:'이전 보고서 ({n}개)',
     report_hist_smoke:'연기',report_hist_flames:'불꽃',report_hist_glow:'빛남',report_hist_other:'기타',
+    feels_like:'체감',
+    weather_unavail_suffix:'(날씨 정보 없음)',
+    wind_unit_mph:'풍속 mph',
+    wind_unit_kmh:'풍속 km/h',
+    time_recently:'최근',
+    time_min_ago:'{n}분 전',
+    time_hr_ago:'{n}시간 전',
+    time_day_ago:'{n}일 전',
+    conf_level_low:'낮음',
+    conf_level_nominal:'보통',
+    conf_level_high:'높음',
+    conf_level_unknown:'알 수 없음',
+    fire_popup_title:'화재 감지',
+    fire_popup_conf:'신뢰도',
+    fire_popup_frp:'FRP',
+    unit_mi:'마일',
+    tip_fwi_label:'FWI(화재기상지수) — 캐나다 FWI 시스템의 최종 출력. 범위 0(위험 낮음)~30+(극단). ISI와 BUI를 결합.',
+    tip_ffmc:'FFMC(세연료수분지수) — 지표 낙엽·세초의 수분량. 높을수록 건조하고 불이 붙기 쉬움. 척도 0–101.',
+    tip_dmc:'DMC(부식질수분지수) — 얕은 유기물 층의 수분량. 주 단위 가뭄 추적.',
+    tip_dc:'DC(가뭄지수) — 수개월간의 가뭄을 반영하는 심층 토양 수분.',
+    tip_isi:'ISI(초기확산지수) — FFMC와 풍속을 결합한 화재 확산 속도 예측.',
+    tip_bui:'BUI(연료축적지수) — DMC와 DC를 결합한 가용 연료 총량 추정.',
+    tip_aqi:'대기질지수(미국 EPA 기준) — 0–50 좋음, 51–100 보통, 101–150 민감군 나쁨, 151–200 나쁨, 201–300 매우 나쁨, 301+ 위험.',
   },
 };
 
