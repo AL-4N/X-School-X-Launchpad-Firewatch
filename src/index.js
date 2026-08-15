@@ -99,7 +99,8 @@ const routes = {
 
   '/api/geocode': async (url) => {
     const { lat, lon } = requireLatLon(url);
-    const data = await reverseGeocode(lat, lon);
+    const lang = url.searchParams.get('lang') || 'en';
+    const data = await reverseGeocode(lat, lon, lang);
     return json(data);
   },
 
@@ -108,7 +109,8 @@ const routes = {
     if(!q || q.trim().length < 2){
       throw Object.assign(new Error('Query param "q" (2+ chars) is required'), { status: 400 });
     }
-    const data = await forwardGeocode(q.trim());
+    const lang = url.searchParams.get('lang') || 'en';
+    const data = await forwardGeocode(q.trim(), lang);
     return json(data);
   },
 

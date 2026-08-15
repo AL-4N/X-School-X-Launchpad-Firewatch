@@ -8,8 +8,8 @@
 const OM_GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const REVERSE_GEOCODE_URL = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 
-export async function forwardGeocode(query){
-  const url = `${OM_GEOCODE_URL}?name=${encodeURIComponent(query)}&count=8&language=en&format=json`;
+export async function forwardGeocode(query, lang = 'en'){
+  const url = `${OM_GEOCODE_URL}?name=${encodeURIComponent(query)}&count=8&language=${lang}&format=json`;
   const res = await fetch(url);
   if(!res.ok) throw new Error('Geocoding search failed');
   const data = await res.json();
@@ -28,8 +28,8 @@ export async function forwardGeocode(query){
   return { results };
 }
 
-export async function reverseGeocode(lat, lon){
-  const url = `${REVERSE_GEOCODE_URL}?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+export async function reverseGeocode(lat, lon, lang = 'en'){
+  const url = `${REVERSE_GEOCODE_URL}?latitude=${lat}&longitude=${lon}&localityLanguage=${lang}`;
   const res = await fetch(url);
   if(!res.ok) throw new Error('Reverse geocoding failed');
   const data = await res.json();

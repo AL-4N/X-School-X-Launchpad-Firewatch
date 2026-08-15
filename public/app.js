@@ -152,10 +152,24 @@ function updateReadyProgress(){
 
 /* ---------------- Wind direction ---------------- */
 
+/** Maps a bearing degree to a translation key like 'dir_ne'. */
+function dirKey(deg){
+  if(deg == null) return null;
+  const keys = ['dir_n','dir_ne','dir_e','dir_se','dir_s','dir_sw','dir_w','dir_nw'];
+  return keys[Math.round(deg / 45) % 8];
+}
+
 function degreesToCompass(deg){
   if(deg == null) return '—';
-  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
-  return dirs[Math.round(deg / 45) % 8];
+  return t(dirKey(deg));
+}
+
+/** Returns the bearing in degrees (0–360) from point 1 to point 2. */
+function bearingDeg(lat1, lon1, lat2, lon2){
+  const toRad = d => d * Math.PI / 180;
+  const y = Math.sin(toRad(lon2-lon1)) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(toRad(lon2-lon1));
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
 /* ---------------- Units (°C/°F, km/h ↔ mph) ---------------- */
@@ -231,6 +245,8 @@ const current = {
 };
 let lastWeather = null; // cached raw weather payload, used to re-render on unit toggle
 let lastAqiData = null; // cached AQI payload, used to re-render on language change
+let lastFwiResult = null; // cached FWI result, used to re-render on language change
+let lastForecastDays = null; // cached forecast days, used to re-render on language change
 
 const state = {
   loading: document.getElementById('state-loading'),
@@ -315,6 +331,8 @@ async function loadLocation(lat, lon, knownDisplayName){
   firesExpanded = false;
   lastWeather = null;
   lastAqiData = null;
+  lastFwiResult = null;
+  lastForecastDays = null;
   updateHero();
 
   initMap();
@@ -345,7 +363,7 @@ function onLocSearchInput(value){
 
 async function runLocSearch(q){
   try{
-    const data = await api(`/api/geocode/search?q=${encodeURIComponent(q)}`);
+    const data = await api(`/api/geocode/search?q=${encodeURIComponent(q)}&lang=${currentLang}`);
     lastSearchResults = data.results || [];
     renderLocSearchResults();
   }catch(e){
@@ -515,7 +533,7 @@ async function onMapClick(e){
   pickMarker.bindPopup(renderPickPopup()).openPopup();
 
   try{
-    const data = await api(`/api/geocode?lat=${pickedLat}&lon=${pickedLon}`);
+    const data = await api(`/api/geocode?lat=${pickedLat}&lon=${pickedLon}&lang=${currentLang}`);
     pickedName = data.displayName;
     if(pickMarker.isPopupOpen()) pickMarker.setPopupContent(renderPickPopup());
   }catch(err){
@@ -541,7 +559,7 @@ function toggleGlobalFires(){
 
 async function loadPlaceName(){
   try{
-    const data = await api(`/api/geocode?lat=${userLat}&lon=${userLon}`);
+    const data = await api(`/api/geocode?lat=${userLat}&lon=${userLon}&lang=${currentLang}`);
     document.getElementById('place-name').textContent = data.displayName;
   }catch(e){
     document.getElementById('place-name').textContent = `${userLat.toFixed(3)}, ${userLon.toFixed(3)}`;
@@ -710,7 +728,7 @@ function updateHero(){
   document.getElementById('hero-place').textContent = place;
   const now = new Date();
   document.getElementById('hero-updated').textContent =
-    tf('hero_updated', {time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
+    tf('hero_updated', {time: now.toLocaleTimeString(uiLang(), {hour:'2-digit', minute:'2-digit'})});
 }
 
 /* ---------------- "What should I do?" advice engine ---------------- */
@@ -942,6 +960,7 @@ function renderCompositeScore(){
 /* ---------------- Risk rendering (FWI-driven) ---------------- */
 
 function renderRisk(fwiResult, weather){
+  lastFwiResult = fwiResult;
   const { codes, indices, danger, isColdStart } = fwiResult;
 
   current.fwiDangerLevel = danger.level;
@@ -952,7 +971,7 @@ function renderRisk(fwiResult, weather){
   document.getElementById('score-num').style.color = danger.hex;
 
   const badge = document.getElementById('cat-badge');
-  badge.textContent = danger.class.toUpperCase();
+  badge.textContent = t(`fwi_danger_${danger.level}`);
   badge.style.background = danger.hex;
   badge.dataset.tip = tf('fwi_tip', {fwi: indices.fwi});
 
@@ -962,7 +981,7 @@ function renderRisk(fwiResult, weather){
   document.getElementById('fwi-isi').textContent = indices.isi;
   document.getElementById('fwi-bui').textContent = indices.bui;
 
-  const windUnit = unit === 'F' ? 'mph' : 'km/h';
+  const windUnit = unit === 'F' ? t('abbr_mph') : t('abbr_kmh');
   const factors = [];
   if(weather.wind >= 30) factors.push({icon:'💨', text:tf('factor_wind_high', {speed: fmtWind(weather.wind), unit: windUnit})});
   else if(weather.wind >= 15) factors.push({icon:'💨', text:tf('factor_wind_mod', {speed: fmtWind(weather.wind), unit: windUnit})});
@@ -1001,7 +1020,7 @@ function renderRisk(fwiResult, weather){
   document.getElementById('cold-start-note').classList.toggle('hidden', !isColdStart);
 
   const now = new Date();
-  document.getElementById('updated-text').textContent = tf('risk_updated', {time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
+  document.getElementById('updated-text').textContent = tf('risk_updated', {time: now.toLocaleTimeString(uiLang(), {hour:'2-digit', minute:'2-digit'})});
 
   renderCompositeScore();
   recomputeFireLevel();
@@ -1165,14 +1184,6 @@ function haversineKm(lat1, lon1, lat2, lon2){
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function bearingCompass(lat1, lon1, lat2, lon2){
-  const toRad = d => d * Math.PI / 180;
-  const y = Math.sin(toRad(lon2-lon1)) * Math.cos(toRad(lat2));
-  const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(toRad(lon2-lon1));
-  const deg = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
-  return dirs[Math.round(deg / 45) % 8];
-}
 
 /** FIRMS acq_date is YYYY-MM-DD and acq_time is a 4-digit HHMM, both UTC. */
 function timeAgoFromFirms(dateStr, timeStr){
@@ -1234,7 +1245,7 @@ async function loadFires(){
     lastFires = data.fires.map(f => ({
       ...f,
       distKm: haversineKm(userLat, userLon, f.lat, f.lon),
-      dir: bearingCompass(userLat, userLon, f.lat, f.lon),
+      dirDeg: bearingDeg(userLat, userLon, f.lat, f.lon),
     })).sort((a, b) => a.distKm - b.distKm);
 
     // L.circle radius is in metres — matches the ~375m VIIRS pixel footprint
@@ -1250,7 +1261,7 @@ async function loadFires(){
 
     current.fireCount = lastFires.length;
     current.nearestFireMiles = lastFires.length ? lastFires[0].distKm * 0.621371 : null;
-    current.nearestFireDir = lastFires.length ? lastFires[0].dir : null;
+    current.nearestFireDir = lastFires.length ? lastFires[0].dirDeg : null;
 
     renderFiresCard();
     runSatelliteAnalytics(lastFires);
@@ -1343,7 +1354,7 @@ function renderFiresList(sorted){
         <div class="quake-place">${tf('detection_label', {n: sorted.indexOf(f)+1})}</div>
         <div class="quake-time">${t('detected_ago')} ${timeAgoFromFirms(f.date, f.time)} · <span data-tip="${confTip}">${t('confidence_label')} ${confLabel}</span>${f.frp != null ? ` · <span data-tip="${FRP_TIP}">FRP ${Math.round(f.frp)} MW</span>` : ''}</div>
       </div>
-      <div class="quake-dist" style="color:${distColor}">${miles} mi<span class="sub">${f.dir}</span></div>`;
+      <div class="quake-dist" style="color:${distColor}">${miles} ${t('unit_mi')}<span class="sub">${t(dirKey(f.dirDeg))}</span></div>`;
     list.appendChild(row);
   });
 
@@ -1384,7 +1395,7 @@ function renderFiresCard(){
   const nearest = lastFires[0]; // lastFires is always sorted by distance from loadFires()
   const miles = Math.round(nearest.distKm * 0.621371);
   big.textContent = miles;
-  unitEl.textContent = ` ${t('unit_mi')} ${nearest.dir}`;
+  unitEl.textContent = ` ${t('unit_mi')} ${t(dirKey(nearest.dirDeg))}`;
   desc.textContent = miles <= 10 ? t('fire_close')
     : miles <= 25 ? t('fire_moderate') : t('fire_far');
 
@@ -1578,7 +1589,7 @@ function renderIncidentsList(){
   list.innerHTML = '';
   globalIncidents.slice(0, 12).forEach(inc => {
     const d = new Date(inc.date);
-    const dateStr = d.toLocaleDateString([], {month:'short', day:'numeric'});
+    const dateStr = d.toLocaleDateString(uiLang(), {month:'short', day:'numeric'});
     const row = document.createElement('div');
     row.className = 'quake-row incident-row';
     row.innerHTML = `
@@ -1613,7 +1624,7 @@ function toggleGlobalIncidentsOnMap(){
       L.circleMarker([inc.lat, inc.lon], {
         radius: 5, color: inc.isClosed ? '#a4948a' : '#ff5e2a',
         fillColor: inc.isClosed ? '#a4948a' : '#ff5e2a', fillOpacity:0.75, weight:1
-      }).bindPopup(`<b>${inc.title}</b><br>${new Date(inc.date).toLocaleDateString()}${inc.isClosed ? ` ${t('incident_past')}` : ` ${t('incident_active')}`}`)
+      }).bindPopup(`<b>${inc.title}</b><br>${new Date(inc.date).toLocaleDateString(uiLang())}${inc.isClosed ? ` ${t('incident_past')}` : ` ${t('incident_active')}`}`)
         .addTo(incidentLayer);
     });
     if(globalIncidents.length){
@@ -1636,6 +1647,36 @@ function owmIconEmoji(code){
   return map[code.slice(0, 2)] || '🌤️';
 }
 
+function renderForecast(days){
+  const row = document.getElementById('forecast-row');
+  if(!row) return;
+  row.innerHTML = '';
+  days.forEach(d => {
+    const date = new Date(d.date + 'T12:00:00Z');
+    const dayName = date.toLocaleDateString(uiLang(), { weekday:'short', timeZone:'UTC' });
+    const tempStr = unit === 'F' ? `${Math.round(cToF(d.temp))}°F` : `${d.temp}°C`;
+    const windStr = unit === 'F'
+      ? `${Math.round(kmhToMph(d.wind))} ${t('abbr_mph')}`
+      : `${d.wind} ${t('abbr_kmh')}`;
+
+    const card = document.createElement('div');
+    card.className = 'forecast-day';
+    card.style.borderTopColor = d.danger.hex;
+    card.innerHTML = `
+      <div class="forecast-day-name">${dayName}</div>
+      <div class="forecast-day-icon">${owmIconEmoji(d.icon)}</div>
+      <div class="forecast-fwi">${d.fwi}</div>
+      <div class="forecast-fwi-lbl">FWI</div>
+      <div class="forecast-danger" style="background:${d.danger.hex}">${t(`fwi_danger_${d.danger.level}`)}</div>
+      <div class="forecast-stats">
+        <span>🌡 ${tempStr}</span>
+        <span>💧 ${d.humidity}%</span>
+        <span>💨 ${windStr}</span>
+      </div>`;
+    row.appendChild(card);
+  });
+}
+
 async function loadForecast(){
   const row = document.getElementById('forecast-row');
   if(!row) return;
@@ -1646,29 +1687,8 @@ async function loadForecast(){
       row.innerHTML = `<div class="empty-note">${t('forecast_empty')}</div>`;
       return;
     }
-    row.innerHTML = '';
-    days.forEach(d => {
-      const date = new Date(d.date + 'T12:00:00Z');
-      const dayName = date.toLocaleDateString([], { weekday:'short', timeZone:'UTC' });
-      const tempStr = unit === 'F' ? `${Math.round(cToF(d.temp))}°F` : `${d.temp}°C`;
-      const windStr = unit === 'F' ? `${Math.round(kmhToMph(d.wind))} mph` : `${d.wind} km/h`;
-
-      const card = document.createElement('div');
-      card.className = 'forecast-day';
-      card.style.borderTopColor = d.danger.hex;
-      card.innerHTML = `
-        <div class="forecast-day-name">${dayName}</div>
-        <div class="forecast-day-icon">${owmIconEmoji(d.icon)}</div>
-        <div class="forecast-fwi">${d.fwi}</div>
-        <div class="forecast-fwi-lbl">FWI</div>
-        <div class="forecast-danger" style="background:${d.danger.hex}">${d.danger.class}</div>
-        <div class="forecast-stats">
-          <span>🌡 ${tempStr}</span>
-          <span>💧 ${d.humidity}%</span>
-          <span>💨 ${windStr}</span>
-        </div>`;
-      row.appendChild(card);
-    });
+    lastForecastDays = days;
+    renderForecast(days);
   }catch(e){
     console.error('Forecast load failed', e);
     if(row) row.innerHTML = `<div class="empty-note">${t('forecast_unavail')}</div>`;
@@ -2029,6 +2049,13 @@ const TRANSLATIONS = {
     tip_after_4_body:"Look for cracks in the foundation, smell for gas, check that the roof isn't compromised. Have a pro assess structural integrity first.",
     tip_after_5_title:'Wildfire trauma is real.',
     tip_after_5_body:'PTSD, anxiety, and grief are common after losing a home or community. Local mental health resources and SAMHSA (1-800-662-4357) can help.',
+    // FWI danger class labels (levels 0–5)
+    fwi_danger_0:'VERY LOW',fwi_danger_1:'LOW',fwi_danger_2:'MODERATE',
+    fwi_danger_3:'HIGH',fwi_danger_4:'VERY HIGH',fwi_danger_5:'EXTREME',
+    // Compass directions
+    dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SW',dir_w:'W',dir_nw:'NW',
+    // Wind unit abbreviations
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
   es:{
     risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
@@ -2281,6 +2308,10 @@ const TRANSLATIONS = {
     tip_after_4_body:'Busca grietas en los cimientos, huele si hay gas y verifica que el techo no esté comprometido. Pide a un profesional que evalúe la integridad estructural.',
     tip_after_5_title:'El trauma por incendio es real.',
     tip_after_5_body:'El PTSD, la ansiedad y el duelo son comunes después de perder un hogar o comunidad. Los recursos de salud mental locales y SAMHSA (1-800-662-4357) pueden ayudar.',
+    fwi_danger_0:'MUY BAJO',fwi_danger_1:'BAJO',fwi_danger_2:'MODERADO',
+    fwi_danger_3:'ALTO',fwi_danger_4:'MUY ALTO',fwi_danger_5:'EXTREMO',
+    dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
   fr:{
     risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
@@ -2533,6 +2564,10 @@ const TRANSLATIONS = {
     tip_after_4_body:"Cherchez des fissures dans les fondations, reniflez s'il y a du gaz, vérifiez l'intégrité du toit. Faites évaluer la solidité par un professionnel.",
     tip_after_5_title:'Le traumatisme lié aux incendies est réel.',
     tip_after_5_body:"Le PTSD, l'anxiété et le deuil sont courants après avoir perdu une maison ou une communauté. Les ressources locales de santé mentale et le SAMHSA (1-800-662-4357) peuvent aider.",
+    fwi_danger_0:'TRÈS FAIBLE',fwi_danger_1:'FAIBLE',fwi_danger_2:'MODÉRÉ',
+    fwi_danger_3:'ÉLEVÉ',fwi_danger_4:'TRÈS ÉLEVÉ',fwi_danger_5:'EXTRÊME',
+    dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
   de:{
     risk_intelligence:'Risikoanalyse',satellite_title:'Satelliten-Feueranalyse',
@@ -2785,6 +2820,10 @@ const TRANSLATIONS = {
     tip_after_4_body:'Prüfen Sie Risse im Fundament, riechen Sie nach Gas und kontrollieren Sie das Dach. Lassen Sie die Tragfähigkeit von einem Fachmann beurteilen.',
     tip_after_5_title:'Brandtrauma ist real.',
     tip_after_5_body:'PTBS, Angst und Trauer sind nach dem Verlust eines Hauses oder einer Gemeinschaft häufig. Lokale psychische Gesundheitsdienste und SAMHSA (1-800-662-4357) können helfen.',
+    fwi_danger_0:'SEHR NIEDRIG',fwi_danger_1:'NIEDRIG',fwi_danger_2:'MÄSSIG',
+    fwi_danger_3:'HOCH',fwi_danger_4:'SEHR HOCH',fwi_danger_5:'EXTREM',
+    dir_n:'N',dir_ne:'NO',dir_e:'O',dir_se:'SO',dir_s:'S',dir_sw:'SW',dir_w:'W',dir_nw:'NW',
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
   zh:{
     risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
@@ -3037,6 +3076,10 @@ const TRANSLATIONS = {
     tip_after_4_body:'检查地基是否有裂缝，闻一闻是否有煤气味，确认屋顶未受损。请专业人员评估结构完整性。',
     tip_after_5_title:'野火创伤是真实存在的。',
     tip_after_5_body:'失去家园或社区后，PTSD、焦虑和悲伤很常见。当地心理健康资源和SAMHSA（1-800-662-4357）可以提供帮助。',
+    fwi_danger_0:'极低',fwi_danger_1:'低',fwi_danger_2:'中等',
+    fwi_danger_3:'高',fwi_danger_4:'很高',fwi_danger_5:'极高',
+    dir_n:'北',dir_ne:'东北',dir_e:'东',dir_se:'东南',dir_s:'南',dir_sw:'西南',dir_w:'西',dir_nw:'西北',
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
   pt:{
     risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
@@ -3289,6 +3332,10 @@ const TRANSLATIONS = {
     tip_after_4_body:'Verifique rachaduras na fundação, cheire se há gás, confira se o telhado está íntegro. Peça a um profissional que avalie a integridade estrutural.',
     tip_after_5_title:'O trauma por incêndio é real.',
     tip_after_5_body:'PTSD, ansiedade e luto são comuns após perder uma casa ou comunidade. Recursos locais de saúde mental e o SAMHSA (1-800-662-4357) podem ajudar.',
+    fwi_danger_0:'MUITO BAIXO',fwi_danger_1:'BAIXO',fwi_danger_2:'MODERADO',
+    fwi_danger_3:'ALTO',fwi_danger_4:'MUITO ALTO',fwi_danger_5:'EXTREMO',
+    dir_n:'N',dir_ne:'NE',dir_e:'L',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
   ja:{
     risk_intelligence:'リスク情報',satellite_title:'衛星火災解析',
@@ -3541,6 +3588,10 @@ const TRANSLATIONS = {
     tip_after_4_body:'基礎のひびを探し、ガス臭がないか確認し、屋根が損傷していないかチェックしてください。専門家に構造的な安全性を評価してもらいましょう。',
     tip_after_5_title:'山火事のトラウマは本物です。',
     tip_after_5_body:'家やコミュニティを失った後、PTSD、不安、悲嘆はよく見られます。地域のメンタルヘルスリソースとSAMHSA（1-800-662-4357）が助けになります。',
+    fwi_danger_0:'非常に低い',fwi_danger_1:'低い',fwi_danger_2:'中程度',
+    fwi_danger_3:'高い',fwi_danger_4:'非常に高い',fwi_danger_5:'極端',
+    dir_n:'北',dir_ne:'北東',dir_e:'東',dir_se:'南東',dir_s:'南',dir_sw:'南西',dir_w:'西',dir_nw:'北西',
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
   it:{
     risk_intelligence:'Intelligence del Rischio',satellite_title:'Analisi Satellitare Incendi',
@@ -3793,6 +3844,10 @@ const TRANSLATIONS = {
     tip_after_4_body:"Cerca crepe nelle fondamenta, annusa se c'è odore di gas, controlla che il tetto non sia compromesso. Fai valutare l'integrità strutturale da un professionista.",
     tip_after_5_title:'Il trauma da incendio è reale.',
     tip_after_5_body:'PTSD, ansia e dolore sono comuni dopo aver perso una casa o una comunità. Le risorse locali di salute mentale e SAMHSA (1-800-662-4357) possono aiutare.',
+    fwi_danger_0:'MOLTO BASSO',fwi_danger_1:'BASSO',fwi_danger_2:'MODERATO',
+    fwi_danger_3:'ALTO',fwi_danger_4:'MOLTO ALTO',fwi_danger_5:'ESTREMO',
+    dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
   ko:{
     risk_intelligence:'위험 정보',satellite_title:'위성 화재 분석',
@@ -4045,10 +4100,18 @@ const TRANSLATIONS = {
     tip_after_4_body:'기초에 균열이 있는지 확인하고, 가스 냄새를 맡고, 지붕이 손상되지 않았는지 확인하세요. 전문가에게 구조적 안전성 평가를 요청하세요.',
     tip_after_5_title:'산불 트라우마는 실재합니다.',
     tip_after_5_body:'집이나 공동체를 잃은 후 PTSD, 불안, 슬픔은 흔합니다. 지역 정신 건강 자원과 SAMHSA(1-800-662-4357)가 도움이 될 수 있습니다.',
+    fwi_danger_0:'매우 낮음',fwi_danger_1:'낮음',fwi_danger_2:'보통',
+    fwi_danger_3:'높음',fwi_danger_4:'매우 높음',fwi_danger_5:'극단',
+    dir_n:'북',dir_ne:'북동',dir_e:'동',dir_se:'남동',dir_s:'남',dir_sw:'남서',dir_w:'서',dir_nw:'북서',
+    abbr_kmh:'km/h',abbr_mph:'mph',
   },
 };
 
 function t(key){ return (TRANSLATIONS[currentLang]||TRANSLATIONS.en)[key] || TRANSLATIONS.en[key] || key; }
+
+/** Returns the BCP 47 locale tag to pass to Intl APIs so dates/times
+ * match the selected UI language. 'zh' alone is ambiguous — use zh-CN. */
+function uiLang(){ return currentLang === 'zh' ? 'zh-CN' : currentLang; }
 
 /** Template substitution: tf('hero_elevated', {label:'Wildfire'}) → translated string with {label} replaced. */
 function tf(key, vars){
@@ -4169,12 +4232,17 @@ function setLang(lang){
   applyI18n();
   // Re-render dynamic sections so their text updates immediately.
   if(lastWeather) renderHeat(lastWeather);
+  if(lastFwiResult && lastWeather) renderRisk(lastFwiResult, lastWeather);
   rerenderAqi();
   updateHero();
   renderAdvice();
   renderSatelliteCard();
   renderFiresCard();
+  if(lastForecastDays) renderForecast(lastForecastDays);
+  renderIncidentsList();
   updateSaveBtn();
+  // Re-geocode place name in the new language.
+  if(userLat != null) loadPlaceName();
   // Re-apply the active tips phase title/sub.
   const activeTab = document.querySelector('.tips-tab.active');
   if(activeTab){
@@ -4242,7 +4310,7 @@ function submitReport(e){
   const notes = (document.getElementById('report-notes')?.value || '').trim();
   const loc   = document.getElementById('place-name')?.textContent?.trim() ||
                 (userLat != null ? `${userLat.toFixed(4)}, ${userLon.toFixed(4)}` : 'Unknown location');
-  const timestamp = new Date().toLocaleString();
+  const timestamp = new Date().toLocaleString(uiLang());
 
   const TYPE_LABELS = { smoke:t('report_smoke'), flame:t('report_flame'), glow:t('report_glow'), other:t('report_other') };
   const lines = [
