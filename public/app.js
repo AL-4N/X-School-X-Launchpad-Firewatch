@@ -1987,6 +1987,48 @@ const TRANSLATIONS = {
     tip_isi:'Initial Spread Index — predicted fire spread rate, combining FFMC (fuel dryness) and wind speed.',
     tip_bui:'Buildup Index — total fuel available to burn, combining DMC and DC. High BUI means deep fuels are dry and ready to sustain a fire.',
     tip_aqi:'Air Quality Index (US EPA scale) — 0–50 Good, 51–100 Moderate, 101–150 Unhealthy for sensitive groups, 151–200 Unhealthy, 201–300 Very Unhealthy, 301+ Hazardous.',
+    composite_score_title:'Composite Risk Score',
+    risk_factors_title:'Risk Factors',
+    main_concern_title:'Main Concern',
+    method_note_main:'FFMC, DMC and DC track fuel moisture at increasing depths and timescales; ISI and BUI describe spread rate and fuel availability; FWI combines them into overall fire intensity potential. The composite score above blends this weather-danger signal with real satellite fire-detection proximity, intensity trend, and wind amplification into one auditable 0–100 number.',
+    cold_start_note:'This estimate uses standard start-up values rather than multi-day carried-forward moisture history, so deep-drought effects (DC) may be understated.',
+    sat_eyebrow:'Derived from NASA FIRMS (MODIS/VIIRS)',
+    tip_before_0_title:'Create defensible space.',
+    tip_before_0_body:'Clear dry brush, leaves, and debris at least 30 ft (9 m) from your home. Zone 1 (0–30 ft) should be lean, clean, and green.',
+    tip_before_1_title:'Harden your home.',
+    tip_before_1_body:'Cover roof vents with fine wire mesh. Use non-combustible materials on decks and eaves — embers land there first.',
+    tip_before_2_title:'Know your evacuation zone.',
+    tip_before_2_body:"Look up your zone at ready.gov or your county's OES site. Know two routes out — roads block fast.",
+    tip_before_3_title:'Build a go-bag.',
+    tip_before_3_body:'3-day supply of water, medications, important documents, cash, phone charger, N95 masks, and a change of clothes. Keep it by the door.',
+    tip_before_4_title:'Register for alerts.',
+    tip_before_4_body:"Sign up for your county's emergency notification system. Many evacuations happen overnight — you need a wake-up call, not a news alert.",
+    tip_before_5_title:'Back up documents digitally.',
+    tip_before_5_body:'Scan IDs, insurance, medical records, and store them in cloud storage you can access from any phone.',
+    tip_during_0_title:'Leave early — not when you see flames.',
+    tip_during_0_body:'Roads clog in minutes. Smoke can make driving impossible within hours. Go when ordered, not when scared.',
+    tip_during_1_title:'Take the bag, leave everything else.',
+    tip_during_1_body:"Once you're out, don't go back. Houses can be rebuilt. Don't risk getting trapped.",
+    tip_during_2_title:"Text, don't call.",
+    tip_during_2_body:'Texts route around congested networks. Calling ties up lines emergency services need.',
+    tip_during_3_title:'Drive with windows up, headlights on, AC on recirculate.',
+    tip_during_3_body:'This keeps smoke out and makes you visible in low visibility conditions.',
+    tip_during_4_title:"If you're trapped in a building,",
+    tip_during_4_body:'close all vents and doors, seal gaps with wet towels, turn off HVAC, and signal rescuers from a window or roof.',
+    tip_during_5_title:'Never shelter in your car in the open.',
+    tip_during_5_body:'If you must pull over, stay low below window level and cover yourself with a wool blanket. Call 911 and report your location.',
+    tip_after_0_title:'Wait for official clearance.',
+    tip_after_0_body:'Hot spots remain active for days. Carbon monoxide, unstable structures, and downed power lines are invisible killers.',
+    tip_after_1_title:'Document everything before cleaning.',
+    tip_after_1_body:'Photograph all damage thoroughly for insurance before moving or discarding anything.',
+    tip_after_2_title:'Wear N95 when cleaning ash.',
+    tip_after_2_body:'Ash from burned homes contains heavy metals, asbestos, and carcinogens — not just soot. Double-bag debris before disposal.',
+    tip_after_3_title:"Don't drink tap water without checking.",
+    tip_after_3_body:'Wildfire heat can warp plastic pipes and contaminate water mains miles from the burn area. Wait for official confirmation.',
+    tip_after_4_title:'Inspect before entering.',
+    tip_after_4_body:"Look for cracks in the foundation, smell for gas, check that the roof isn't compromised. Have a pro assess structural integrity first.",
+    tip_after_5_title:'Wildfire trauma is real.',
+    tip_after_5_body:'PTSD, anxiety, and grief are common after losing a home or community. Local mental health resources and SAMHSA (1-800-662-4357) can help.',
   },
   es:{
     risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
@@ -2197,6 +2239,48 @@ const TRANSLATIONS = {
     tip_isi:'Índice de propagación inicial — velocidad de propagación del fuego, combinando FFMC y viento.',
     tip_bui:'Índice de acumulación — combustible total disponible, combinando DMC y DC.',
     tip_aqi:'Índice de calidad del aire (escala US EPA) — 0–50 Bueno, 51–100 Moderado, 101–150 Dañino grupos sensibles, 151–200 Dañino, 201–300 Muy dañino, 301+ Peligroso.',
+    composite_score_title:'Puntuación de Riesgo Compuesto',
+    risk_factors_title:'Factores de Riesgo',
+    main_concern_title:'Preocupación Principal',
+    method_note_main:'FFMC, DMC y DC rastrean la humedad del combustible a diferentes profundidades y escalas de tiempo; ISI y BUI describen la velocidad de propagación y la disponibilidad de combustible; FWI los combina en el potencial general de intensidad de incendio. La puntuación compuesta combina esta señal de peligro meteorológico con la proximidad real de detección satelital de incendios, la tendencia de intensidad y la amplificación eólica en un número auditable de 0–100.',
+    cold_start_note:'Esta estimación utiliza valores de inicio estándar en lugar del historial de humedad acumulado de varios días, por lo que los efectos de sequía profunda (DC) pueden estar subestimados.',
+    sat_eyebrow:'Derivado de NASA FIRMS (MODIS/VIIRS)',
+    tip_before_0_title:'Crear espacio defensible.',
+    tip_before_0_body:'Despeja maleza, hojas y escombros al menos 9 m de tu casa. La Zona 1 (0–9 m) debe ser limpia, verde y despejada.',
+    tip_before_1_title:'Fortalecer tu hogar.',
+    tip_before_1_body:'Cubre las rejillas del techo con malla fina. Usa materiales no combustibles en terrazas y aleros — las brasas caen ahí primero.',
+    tip_before_2_title:'Conocer tu zona de evacuación.',
+    tip_before_2_body:'Consulta tu zona en ready.gov o en el sitio OES de tu condado. Conoce dos rutas de salida — las carreteras se bloquean rápido.',
+    tip_before_3_title:'Preparar tu bolsa de emergencia.',
+    tip_before_3_body:'Suministros para 3 días: agua, medicamentos, documentos, efectivo, cargador, mascarillas N95 y ropa. Mantenla junto a la puerta.',
+    tip_before_4_title:'Registrarse para alertas.',
+    tip_before_4_body:'Inscríbete en el sistema de notificaciones de emergencia de tu condado. Muchas evacuaciones ocurren de noche — necesitas una alerta, no una noticia.',
+    tip_before_5_title:'Respaldar documentos digitalmente.',
+    tip_before_5_body:'Escanea IDs, seguros y expedientes médicos y guárdalos en almacenamiento en la nube accesible desde cualquier teléfono.',
+    tip_during_0_title:'Sal temprano — no cuando veas llamas.',
+    tip_during_0_body:'Las carreteras se obstruyen en minutos. El humo puede hacer imposible conducir en horas. Sal cuando te lo ordenen, no cuando tengas miedo.',
+    tip_during_1_title:'Llévate la bolsa, deja todo lo demás.',
+    tip_during_1_body:'Una vez que salgas, no regreses. Las casas se pueden reconstruir. No arriesgues quedarte atrapado.',
+    tip_during_2_title:'Envía mensajes, no llames.',
+    tip_during_2_body:'Los mensajes sortean redes congestionadas. Llamar bloquea las líneas que necesitan los servicios de emergencia.',
+    tip_during_3_title:'Conduce con ventanas cerradas, luces encendidas y AC en recirculación.',
+    tip_during_3_body:'Esto mantiene el humo fuera y te hace visible en condiciones de baja visibilidad.',
+    tip_during_4_title:'Si estás atrapado en un edificio,',
+    tip_during_4_body:'cierra todas las rejillas y puertas, sella las grietas con toallas mojadas, apaga el HVAC y señaliza a los rescatistas desde una ventana o el techo.',
+    tip_during_5_title:'Nunca te refugies en tu auto al descubierto.',
+    tip_during_5_body:'Si debes detenerte, mantente bajo del nivel de las ventanas y cúbrete con una manta de lana. Llama al 911 e informa tu ubicación.',
+    tip_after_0_title:'Espera la autorización oficial.',
+    tip_after_0_body:'Los puntos calientes pueden estar activos por días. El monóxido de carbono, las estructuras inestables y los cables caídos son peligros invisibles.',
+    tip_after_1_title:'Documenta todo antes de limpiar.',
+    tip_after_1_body:'Fotografía todos los daños exhaustivamente para el seguro antes de mover o desechar nada.',
+    tip_after_2_title:'Usa N95 al limpiar cenizas.',
+    tip_after_2_body:'Las cenizas de hogares quemados contienen metales pesados, asbesto y carcinógenos — no solo hollín. Empaca los escombros en doble bolsa.',
+    tip_after_3_title:'No bebas agua del grifo sin verificar.',
+    tip_after_3_body:'El calor del incendio puede deformar tuberías plásticas y contaminar las cañerías kilómetros del área quemada. Espera confirmación oficial.',
+    tip_after_4_title:'Inspecciona antes de entrar.',
+    tip_after_4_body:'Busca grietas en los cimientos, huele si hay gas y verifica que el techo no esté comprometido. Pide a un profesional que evalúe la integridad estructural.',
+    tip_after_5_title:'El trauma por incendio es real.',
+    tip_after_5_body:'El PTSD, la ansiedad y el duelo son comunes después de perder un hogar o comunidad. Los recursos de salud mental locales y SAMHSA (1-800-662-4357) pueden ayudar.',
   },
   fr:{
     risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
@@ -2407,6 +2491,48 @@ const TRANSLATIONS = {
     tip_isi:'Indice de propagation initiale — vitesse de propagation du feu, combinant FFMC et vitesse du vent.',
     tip_bui:"Indice d'accumulation — carburant total disponible, combinant DMC et DC.",
     tip_aqi:"Indice de qualité de l'air (échelle US EPA) — 0–50 Bon, 51–100 Modéré, 101–150 Malsain groupes sensibles, 151–200 Malsain, 201–300 Très malsain, 301+ Dangereux.",
+    composite_score_title:'Score de Risque Composite',
+    risk_factors_title:'Facteurs de Risque',
+    main_concern_title:'Préoccupation Principale',
+    method_note_main:"FFMC, DMC et DC suivent l'humidité des combustibles à des profondeurs et des échelles de temps croissantes ; ISI et BUI décrivent le taux de propagation et la disponibilité des combustibles ; le FWI les combine en un potentiel global d'intensité d'incendie. Le score composite mélange ce signal de danger météo avec la proximité réelle de détection satellitaire, la tendance d'intensité et l'amplification éolienne en un nombre auditable de 0–100.",
+    cold_start_note:"Cette estimation utilise des valeurs de démarrage standard plutôt qu'un historique d'humidité accumulé sur plusieurs jours, de sorte que les effets de sécheresse profonde (DC) peuvent être sous-estimés.",
+    sat_eyebrow:'Dérivé de NASA FIRMS (MODIS/VIIRS)',
+    tip_before_0_title:'Créer un espace défendable.',
+    tip_before_0_body:'Dégagez les broussailles, feuilles et débris à au moins 9 m de votre maison. La zone 1 (0–9 m) doit être dégagée, propre et verte.',
+    tip_before_1_title:'Renforcer votre maison.',
+    tip_before_1_body:'Couvrez les aérations du toit avec une grille fine. Utilisez des matériaux incombustibles sur les terrasses et avant-toits — les braises y atterrissent en premier.',
+    tip_before_2_title:"Connaître votre zone d'évacuation.",
+    tip_before_2_body:'Consultez votre zone sur ready.gov ou le site OES de votre comté. Connaissez deux itinéraires de sortie — les routes se bloquent vite.',
+    tip_before_3_title:"Préparer un sac d'urgence.",
+    tip_before_3_body:"Provisions pour 3 jours : eau, médicaments, documents importants, espèces, chargeur, masques N95 et vêtements de rechange. Gardez-le près de la porte.",
+    tip_before_4_title:"S'inscrire aux alertes.",
+    tip_before_4_body:"Inscrivez-vous au système de notification d'urgence de votre région. Beaucoup d'évacuations ont lieu la nuit — il vous faut une alerte, pas un flash info.",
+    tip_before_5_title:'Sauvegarder les documents numériquement.',
+    tip_before_5_body:"Numérisez vos pièces d'identité, assurances et dossiers médicaux et stockez-les dans un espace cloud accessible depuis n'importe quel téléphone.",
+    tip_during_0_title:'Partez tôt — pas quand vous voyez les flammes.',
+    tip_during_0_body:'Les routes se bloquent en quelques minutes. La fumée peut rendre la conduite impossible en quelques heures. Partez sur ordre, pas sous le coup de la peur.',
+    tip_during_1_title:'Prenez le sac, laissez tout le reste.',
+    tip_during_1_body:"Une fois sorti, ne revenez pas. Les maisons peuvent être reconstruites. Ne risquez pas d'être piégé.",
+    tip_during_2_title:"Envoyez des SMS, n'appelez pas.",
+    tip_during_2_body:"Les SMS contournent les réseaux encombrés. Les appels saturent les lignes dont ont besoin les services d'urgence.",
+    tip_during_3_title:'Conduisez fenêtres fermées, phares allumés, climatisation en recirculation.',
+    tip_during_3_body:"Cela garde la fumée à l'extérieur et vous rend visible dans des conditions de faible visibilité.",
+    tip_during_4_title:'Si vous êtes piégé dans un bâtiment,',
+    tip_during_4_body:'fermez toutes les aérations et portes, colmatez les fissures avec des serviettes humides, éteignez la ventilation et signalez aux secours depuis une fenêtre ou le toit.',
+    tip_during_5_title:"Ne vous réfugiez jamais dans votre voiture à découvert.",
+    tip_during_5_body:"Si vous devez vous arrêter, restez bas sous le niveau des vitres et couvrez-vous d'une couverture en laine. Appelez le 112 et indiquez votre position.",
+    tip_after_0_title:"Attendez l'autorisation officielle.",
+    tip_after_0_body:"Les points chauds restent actifs pendant des jours. Le monoxyde de carbone, les structures instables et les lignes électriques tombées sont des dangers invisibles.",
+    tip_after_1_title:'Documentez tout avant de nettoyer.',
+    tip_after_1_body:"Photographiez tous les dommages minutieusement pour l'assurance avant de déplacer ou jeter quoi que ce soit.",
+    tip_after_2_title:'Portez un N95 pour nettoyer les cendres.',
+    tip_after_2_body:"Les cendres des maisons brûlées contiennent des métaux lourds, de l'amiante et des carcinogènes — pas seulement de la suie. Emballez les débris en double sac.",
+    tip_after_3_title:"Ne buvez pas l'eau du robinet sans vérification.",
+    tip_after_3_body:'La chaleur des incendies peut tordre les tuyaux en plastique et contaminer les canalisations à des kilomètres du sinistre. Attendez la confirmation officielle.',
+    tip_after_4_title:"Inspectez avant d'entrer.",
+    tip_after_4_body:"Cherchez des fissures dans les fondations, reniflez s'il y a du gaz, vérifiez l'intégrité du toit. Faites évaluer la solidité par un professionnel.",
+    tip_after_5_title:'Le traumatisme lié aux incendies est réel.',
+    tip_after_5_body:"Le PTSD, l'anxiété et le deuil sont courants après avoir perdu une maison ou une communauté. Les ressources locales de santé mentale et le SAMHSA (1-800-662-4357) peuvent aider.",
   },
   de:{
     risk_intelligence:'Risikoanalyse',satellite_title:'Satelliten-Feueranalyse',
@@ -2617,6 +2743,48 @@ const TRANSLATIONS = {
     tip_isi:'Erstausbreitungsindex — vorhergesagte Feuerausbreitungsrate, kombiniert FFMC und Wind.',
     tip_bui:'Aufbauindex — verfügbarer Gesamtbrennstoff, kombiniert DMC und DC.',
     tip_aqi:'Luftqualitätsindex (US-EPA-Skala) — 0–50 Gut, 51–100 Mäßig, 101–150 Ungesund (empfindliche Gruppen), 151–200 Ungesund, 201–300 Sehr ungesund, 301+ Gefährlich.',
+    composite_score_title:'Zusammengesetzter Risikowert',
+    risk_factors_title:'Risikofaktoren',
+    main_concern_title:'Hauptbedenken',
+    method_note_main:'FFMC, DMC und DC verfolgen die Brennstofffeuchte in zunehmenden Tiefen und Zeitskalen; ISI und BUI beschreiben die Ausbreitungsrate und die Brennstoffverfügbarkeit; der FWI kombiniert sie zu einem Gesamtbrandintensitätspotenzial. Der zusammengesetzte Score vermischt dieses Wettergefährdungssignal mit echter Satellitenfeuererkennungsnähe, Intensitätstrend und Windverstärkung in eine prüfbare Zahl von 0–100.',
+    cold_start_note:'Diese Schätzung verwendet Standard-Startwerte anstelle von mehrtagig weitergeführter Feuchtigkeitsgeschichte, sodass Tiefendürreeffekte (DC) möglicherweise unterschätzt werden.',
+    sat_eyebrow:'Abgeleitet von NASA FIRMS (MODIS/VIIRS)',
+    tip_before_0_title:'Schutzzone schaffen.',
+    tip_before_0_body:'Entfernen Sie trockenes Gestrüpp, Laub und Ablagerungen mindestens 9 m vom Haus. Zone 1 (0–9 m) sollte mager, sauber und grün sein.',
+    tip_before_1_title:'Haus widerstandsfähig machen.',
+    tip_before_1_body:'Decken Sie Dachlüftungen mit feinem Drahtgeflecht ab. Verwenden Sie nicht brennbare Materialien auf Terrassen und Dachvorsprüngen — dort landen Funken zuerst.',
+    tip_before_2_title:'Evakuierungszone kennen.',
+    tip_before_2_body:'Suchen Sie Ihre Zone auf ready.gov oder der OES-Website Ihres Landkreises. Kennen Sie zwei Fluchtwege — Straßen blockieren schnell.',
+    tip_before_3_title:'Notfalltasche packen.',
+    tip_before_3_body:'3-Tages-Vorrat: Wasser, Medikamente, wichtige Dokumente, Bargeld, Ladekabel, N95-Masken und Wechselkleidung. Halten Sie sie griffbereit.',
+    tip_before_4_title:'Für Warnungen registrieren.',
+    tip_before_4_body:'Melden Sie sich beim Notfallbenachrichtigungssystem Ihrer Gemeinde an. Viele Evakuierungen erfolgen nachts — Sie brauchen eine Warnung, keine Nachricht.',
+    tip_before_5_title:'Dokumente digital sichern.',
+    tip_before_5_body:'Scannen Sie Ausweise, Versicherungen und medizinische Unterlagen und speichern Sie sie in einem Cloud-Speicher, auf den Sie von jedem Telefon zugreifen können.',
+    tip_during_0_title:'Früh gehen — nicht wenn Sie Flammen sehen.',
+    tip_during_0_body:'Straßen verstopfen in Minuten. Rauch kann das Fahren innerhalb von Stunden unmöglich machen. Gehen Sie auf Anweisung, nicht aus Angst.',
+    tip_during_1_title:'Tasche nehmen, alles andere lassen.',
+    tip_during_1_body:'Wenn Sie draußen sind, kehren Sie nicht zurück. Häuser lassen sich wieder aufbauen. Riskieren Sie nicht, eingeschlossen zu werden.',
+    tip_during_2_title:'Nachrichten schicken, nicht anrufen.',
+    tip_during_2_body:'Nachrichten umgehen überlastete Netze. Anrufe blockieren Leitungen, die Rettungsdienste benötigen.',
+    tip_during_3_title:'Mit geschlossenen Fenstern, eingeschalteten Scheinwerfern und Klimaanlage auf Umluft fahren.',
+    tip_during_3_body:'Das hält Rauch fern und macht Sie bei schlechter Sicht erkennbar.',
+    tip_during_4_title:'Falls Sie in einem Gebäude gefangen sind,',
+    tip_during_4_body:'schließen Sie alle Lüftungsöffnungen und Türen, dichten Sie Ritzen mit nassen Handtüchern ab, schalten Sie die Klimaanlage aus und signalisieren Sie Rettern vom Fenster oder Dach.',
+    tip_during_5_title:'Schützen Sie sich niemals im Auto im Freien.',
+    tip_during_5_body:'Falls Sie anhalten müssen, bleiben Sie tief unter dem Fensterlevel und bedecken Sie sich mit einer Wolldecke. Rufen Sie 112 an und melden Sie Ihren Standort.',
+    tip_after_0_title:'Auf offizielle Freigabe warten.',
+    tip_after_0_body:'Brandherde bleiben tagelang aktiv. Kohlenmonoxid, instabile Strukturen und umgestürzte Stromleitungen sind unsichtbare Gefahren.',
+    tip_after_1_title:'Alles dokumentieren, bevor Sie reinigen.',
+    tip_after_1_body:'Fotografieren Sie alle Schäden gründlich für die Versicherung, bevor Sie etwas bewegen oder wegwerfen.',
+    tip_after_2_title:'N95 beim Reinigen von Asche tragen.',
+    tip_after_2_body:'Asche aus abgebrannten Häusern enthält Schwermetalle, Asbest und Karzinogene — nicht nur Ruß. Schutt doppelt einpacken.',
+    tip_after_3_title:'Leitungswasser ohne Überprüfung nicht trinken.',
+    tip_after_3_body:'Hitze kann Kunststoffrohre verformen und Wasserleitungen kilometerweit kontaminieren. Auf offizielle Bestätigung warten.',
+    tip_after_4_title:'Vor dem Betreten inspizieren.',
+    tip_after_4_body:'Prüfen Sie Risse im Fundament, riechen Sie nach Gas und kontrollieren Sie das Dach. Lassen Sie die Tragfähigkeit von einem Fachmann beurteilen.',
+    tip_after_5_title:'Brandtrauma ist real.',
+    tip_after_5_body:'PTBS, Angst und Trauer sind nach dem Verlust eines Hauses oder einer Gemeinschaft häufig. Lokale psychische Gesundheitsdienste und SAMHSA (1-800-662-4357) können helfen.',
   },
   zh:{
     risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
@@ -2827,6 +2995,48 @@ const TRANSLATIONS = {
     tip_isi:'初始蔓延指数（ISI）— 结合FFMC和风速预测火势蔓延速度。',
     tip_bui:'累积指数（BUI）— 结合DMC和DC估算可燃燃料总量。',
     tip_aqi:'空气质量指数（美国EPA标准）— 0–50优，51–100良，101–150对敏感人群不健康，151–200不健康，201–300非常不健康，301+危险。',
+    composite_score_title:'综合风险评分',
+    risk_factors_title:'风险因素',
+    main_concern_title:'主要关注点',
+    method_note_main:'FFMC、DMC和DC追踪不同深度和时间尺度上的燃料湿度；ISI和BUI描述蔓延速度和可用燃料；FWI将它们结合为整体火灾强度潜力。综合评分将这一气象危险信号与实时卫星火灾探测接近度、强度趋势和风力放大因素混合为一个可审核的0–100数字。',
+    cold_start_note:'该估算使用标准启动值，而非多日累积的水分历史，因此深层干旱效应（DC）可能被低估。',
+    sat_eyebrow:'来源：NASA FIRMS（MODIS/VIIRS）',
+    tip_before_0_title:'建立防火隔离带。',
+    tip_before_0_body:'清除距房屋至少9米范围内的干枯植被、落叶和杂物。第一区（0–9米）应保持稀疏、清洁、绿色。',
+    tip_before_1_title:'加固您的房屋。',
+    tip_before_1_body:'用细金属网覆盖屋顶通风口。在甲板和屋檐处使用防火材料——火星首先落在那里。',
+    tip_before_2_title:'了解您的疏散区域。',
+    tip_before_2_body:'在ready.gov或您所在县的OES网站上查询您的疏散区。了解两条撤离路线——道路会很快堵塞。',
+    tip_before_3_title:'准备应急包。',
+    tip_before_3_body:'3天的水、药品、重要文件、现金、充电器、N95口罩和换洗衣物。放在门边备用。',
+    tip_before_4_title:'注册紧急预警。',
+    tip_before_4_body:'注册您所在县的紧急通知系统。许多疏散发生在夜间——您需要的是警报，而不是新闻通知。',
+    tip_before_5_title:'数字备份重要文件。',
+    tip_before_5_body:'扫描身份证、保险和医疗记录，存储在可从任何手机访问的云端。',
+    tip_during_0_title:'尽早离开——不要等到看见火焰。',
+    tip_during_0_body:'道路可能在几分钟内拥堵。烟雾可能在数小时内使驾驶无法进行。接到命令就走，不要等到恐惧才行动。',
+    tip_during_1_title:'带上应急包，丢下其他一切。',
+    tip_during_1_body:'一旦离开，不要回头。房子可以重建，但不要冒被困的风险。',
+    tip_during_2_title:'发短信，不要打电话。',
+    tip_during_2_body:'短信可以绕过拥堵的网络。打电话会占用紧急服务所需的线路。',
+    tip_during_3_title:'关好车窗、开大灯、空调开内循环驾驶。',
+    tip_during_3_body:'这样可以阻隔烟雾，并在能见度低的情况下让您保持可见。',
+    tip_during_4_title:'如果您被困在建筑物内，',
+    tip_during_4_body:'关闭所有通风口和门，用湿毛巾封堵缝隙，关闭空调，并从窗户或屋顶向救援人员发出信号。',
+    tip_during_5_title:'切勿在开阔地带躲在车内避难。',
+    tip_during_5_body:'如果必须停车，保持低姿势低于车窗，用羊毛毯盖住自己。拨打911并报告您的位置。',
+    tip_after_0_title:'等待官方许可。',
+    tip_after_0_body:'热点区域可能数天内仍然活跃。一氧化碳、不稳定结构和断落的电线是看不见的危险。',
+    tip_after_1_title:'清理前先记录一切。',
+    tip_after_1_body:'在移动或丢弃任何物品之前，彻底拍摄所有损坏情况，用于保险理赔。',
+    tip_after_2_title:'清理灰烬时佩戴N95口罩。',
+    tip_after_2_body:'烧毁房屋的灰烬含有重金属、石棉和致癌物——不仅仅是烟灰。将废弃物装入双层袋中。',
+    tip_after_3_title:'未经检查不要饮用自来水。',
+    tip_after_3_body:'野火高温可能使塑料管道变形，并污染燃烧区外数公里的自来水管。等待官方确认。',
+    tip_after_4_title:'进入前先检查。',
+    tip_after_4_body:'检查地基是否有裂缝，闻一闻是否有煤气味，确认屋顶未受损。请专业人员评估结构完整性。',
+    tip_after_5_title:'野火创伤是真实存在的。',
+    tip_after_5_body:'失去家园或社区后，PTSD、焦虑和悲伤很常见。当地心理健康资源和SAMHSA（1-800-662-4357）可以提供帮助。',
   },
   pt:{
     risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
@@ -3037,6 +3247,48 @@ const TRANSLATIONS = {
     tip_isi:'Índice de Propagação Inicial — velocidade de propagação do fogo, combinando FFMC e vento.',
     tip_bui:'Índice de Acúmulo — combustível total disponível, combinando DMC e DC.',
     tip_aqi:'Índice de Qualidade do Ar (escala US EPA) — 0–50 Bom, 51–100 Moderado, 101–150 Prejudicial grupos sensíveis, 151–200 Prejudicial, 201–300 Muito Prejudicial, 301+ Perigoso.',
+    composite_score_title:'Pontuação de Risco Composta',
+    risk_factors_title:'Fatores de Risco',
+    main_concern_title:'Preocupação Principal',
+    method_note_main:'FFMC, DMC e DC rastreiam a umidade do combustível em profundidades e escalas de tempo crescentes; ISI e BUI descrevem a taxa de propagação e a disponibilidade de combustível; o FWI os combina em um potencial geral de intensidade de incêndio. A pontuação composta mescla esse sinal de perigo meteorológico com a proximidade real de detecção satelital, tendência de intensidade e amplificação pelo vento em um número auditável de 0–100.',
+    cold_start_note:'Esta estimativa usa valores de inicialização padrão em vez do histórico de umidade acumulado de vários dias, de modo que os efeitos de seca profunda (DC) podem estar subestimados.',
+    sat_eyebrow:'Derivado de NASA FIRMS (MODIS/VIIRS)',
+    tip_before_0_title:'Criar espaço defensável.',
+    tip_before_0_body:'Limpe arbustos, folhas e detritos secos a pelo menos 9 m da sua casa. A Zona 1 (0–9 m) deve ser rala, limpa e verde.',
+    tip_before_1_title:'Reforçar sua casa.',
+    tip_before_1_body:'Cubra as ventilações do telhado com tela fina. Use materiais não combustíveis em decks e beirais — as brasas pousam lá primeiro.',
+    tip_before_2_title:'Conhecer sua zona de evacuação.',
+    tip_before_2_body:'Consulte sua zona em ready.gov ou no site OES do seu condado. Conheça duas rotas de saída — as estradas bloqueiam rápido.',
+    tip_before_3_title:'Montar uma mochila de emergência.',
+    tip_before_3_body:'Suprimentos para 3 dias: água, medicamentos, documentos importantes, dinheiro, carregador, máscaras N95 e roupas. Mantenha-a perto da porta.',
+    tip_before_4_title:'Cadastrar-se em alertas.',
+    tip_before_4_body:'Inscreva-se no sistema de notificação de emergência do seu condado. Muitas evacuações ocorrem à noite — você precisa de um alerta, não de uma notícia.',
+    tip_before_5_title:'Fazer backup digital de documentos.',
+    tip_before_5_body:'Digitalize RGs, seguros e prontuários médicos e armazene-os em nuvem acessível de qualquer telefone.',
+    tip_during_0_title:'Saia cedo — não quando ver chamas.',
+    tip_during_0_body:'As estradas congestionam em minutos. A fumaça pode tornar a direção impossível em horas. Saia quando ordenado, não quando com medo.',
+    tip_during_1_title:'Leve a mochila, deixe tudo o mais.',
+    tip_during_1_body:'Quando sair, não volte. Casas podem ser reconstruídas. Não arrisque ficar preso.',
+    tip_during_2_title:'Mande mensagem, não ligue.',
+    tip_during_2_body:'Mensagens desviam de redes congestionadas. Ligar ocupa as linhas que os serviços de emergência precisam.',
+    tip_during_3_title:'Dirija com janelas fechadas, faróis acesos e ar-condicionado em recirculação.',
+    tip_during_3_body:'Isso mantém a fumaça fora e te deixa visível em condições de baixa visibilidade.',
+    tip_during_4_title:'Se estiver preso em um prédio,',
+    tip_during_4_body:'feche todos os dutos e portas, vede frestas com toalhas molhadas, desligue o HVAC e sinalize para os socorristas por uma janela ou telhado.',
+    tip_during_5_title:'Nunca se abrigue dentro do carro em espaço aberto.',
+    tip_during_5_body:'Se precisar parar, fique abaixo do nível das janelas e cubra-se com um cobertor de lã. Ligue para o 190 e informe sua localização.',
+    tip_after_0_title:'Aguarde liberação oficial.',
+    tip_after_0_body:'Pontos de calor permanecem ativos por dias. Monóxido de carbono, estruturas instáveis e fios caídos são perigos invisíveis.',
+    tip_after_1_title:'Documente tudo antes de limpar.',
+    tip_after_1_body:'Fotografe todos os danos minuciosamente para o seguro antes de mover ou descartar qualquer coisa.',
+    tip_after_2_title:'Use N95 ao limpar cinzas.',
+    tip_after_2_body:'As cinzas de casas queimadas contêm metais pesados, amianto e carcinógenos — não apenas fuligem. Embale entulho em sacos duplos.',
+    tip_after_3_title:'Não beba água da torneira sem verificar.',
+    tip_after_3_body:'O calor do incêndio pode deformar canos plásticos e contaminar encanamentos a quilômetros da área queimada. Aguarde confirmação oficial.',
+    tip_after_4_title:'Inspecione antes de entrar.',
+    tip_after_4_body:'Verifique rachaduras na fundação, cheire se há gás, confira se o telhado está íntegro. Peça a um profissional que avalie a integridade estrutural.',
+    tip_after_5_title:'O trauma por incêndio é real.',
+    tip_after_5_body:'PTSD, ansiedade e luto são comuns após perder uma casa ou comunidade. Recursos locais de saúde mental e o SAMHSA (1-800-662-4357) podem ajudar.',
   },
   ja:{
     risk_intelligence:'リスク情報',satellite_title:'衛星火災解析',
@@ -3247,6 +3499,48 @@ const TRANSLATIONS = {
     tip_isi:'ISI（初期延焼指数）— FFMCと風速を組み合わせた延焼速度の予測値。',
     tip_bui:'BUI（燃料蓄積指数）— DMCとDCを組み合わせた可燃燃料総量の推定値。',
     tip_aqi:'空気質指数（米国EPA基準）— 0〜50良好、51〜100普通、101〜150敏感グループに有害、151〜200有害、201〜300非常に有害、301+危険。',
+    composite_score_title:'複合リスクスコア',
+    risk_factors_title:'リスク要因',
+    main_concern_title:'主な懸念事項',
+    method_note_main:'FFMC、DMC、DCは深度と時間スケールが増すにつれて燃料水分を追跡し、ISIとBUIは延焼速度と燃料利用可能量を表します。FWIはそれらを組み合わせた全体的な火災強度ポテンシャルです。複合スコアは、この気象危険信号に実際の衛星火災検出近接度、強度トレンド、風の増幅を加味し、監査可能な0〜100の数値に統合します。',
+    cold_start_note:'この推定値は、複数日にわたる水分コードの繰り越し履歴ではなく、標準的な起動値を使用しているため、深層干ばつ効果（DC）が過小評価される場合があります。',
+    sat_eyebrow:'NASA FIRMS（MODIS/VIIRS）から導出',
+    tip_before_0_title:'防火ゾーンを確保する。',
+    tip_before_0_body:'家から少なくとも9m以内の乾燥した草木、落ち葉、ゴミを除去します。ゾーン1（0〜9m）は低く、清潔に、緑を保ちましょう。',
+    tip_before_1_title:'家を強化する。',
+    tip_before_1_body:'屋根の換気口を細かい金属メッシュで覆います。デッキや軒には不燃材料を使用してください——火の粉は最初にそこへ落ちます。',
+    tip_before_2_title:'避難ゾーンを把握する。',
+    tip_before_2_body:'ready.govや郡のOESサイトでゾーンを確認してください。2つの脱出ルートを把握しておきましょう——道路はすぐに混雑します。',
+    tip_before_3_title:'非常用バッグを用意する。',
+    tip_before_3_body:'3日分の水、薬、重要書類、現金、充電器、N95マスク、着替えを準備します。ドアのそばに置いておきましょう。',
+    tip_before_4_title:'緊急アラートに登録する。',
+    tip_before_4_body:'郡の緊急通知システムに登録してください。多くの避難は夜間に発生します——ニュース通知ではなく、起こしてくれる警報が必要です。',
+    tip_before_5_title:'書類をデジタルバックアップする。',
+    tip_before_5_body:'身分証、保険証、医療記録をスキャンして、どの電話からでもアクセスできるクラウドストレージに保存します。',
+    tip_during_0_title:'早めに避難する——炎が見えてからではなく。',
+    tip_during_0_body:'道路は数分で渋滞します。煙は数時間で運転を不可能にします。恐怖からではなく、指示に従って行動してください。',
+    tip_during_1_title:'バッグだけ持って、他はすべて置いていく。',
+    tip_during_1_body:'一度脱出したら戻らないでください。家は再建できます。閉じ込められるリスクを冒さないでください。',
+    tip_during_2_title:'電話でなくメッセージを送る。',
+    tip_during_2_body:'メッセージは混雑したネットワークを回避します。電話は緊急サービスが必要な回線を塞ぎます。',
+    tip_during_3_title:'窓を閉め、ヘッドライトを点灯し、エアコンを内気循環にして運転する。',
+    tip_during_3_body:'これにより煙を防ぎ、低視界状態でも視認性を確保できます。',
+    tip_during_4_title:'建物内に閉じ込められた場合は、',
+    tip_during_4_body:'すべての換気口とドアを閉め、隙間を濡れたタオルで塞ぎ、空調を切り、窓や屋根から救助者に合図してください。',
+    tip_during_5_title:'開けた場所で車内に避難しないこと。',
+    tip_during_5_body:'停車せざるを得ない場合は、窓の下に低い姿勢を保ち、ウールのブランケットで体を覆ってください。119番に電話して場所を報告してください。',
+    tip_after_0_title:'公式の許可を待つ。',
+    tip_after_0_body:'火の残り火は何日も活性状態のままです。一酸化炭素、不安定な構造物、倒れた電線は見えない危険です。',
+    tip_after_1_title:'清掃前にすべてを記録する。',
+    tip_after_1_body:'何かを動かしたり廃棄したりする前に、保険のためにすべての損傷を徹底的に写真に撮ってください。',
+    tip_after_2_title:'灰を清掃するときはN95を着用する。',
+    tip_after_2_body:'焼けた家の灰には重金属、石綿、発がん物質が含まれています——煤だけではありません。廃材は二重袋に入れてください。',
+    tip_after_3_title:'確認なしに水道水を飲まないこと。',
+    tip_after_3_body:'山火事の熱はプラスチック管を変形させ、延焼エリアから何キロも離れた水道管を汚染することがあります。公式確認を待ってください。',
+    tip_after_4_title:'入る前に点検する。',
+    tip_after_4_body:'基礎のひびを探し、ガス臭がないか確認し、屋根が損傷していないかチェックしてください。専門家に構造的な安全性を評価してもらいましょう。',
+    tip_after_5_title:'山火事のトラウマは本物です。',
+    tip_after_5_body:'家やコミュニティを失った後、PTSD、不安、悲嘆はよく見られます。地域のメンタルヘルスリソースとSAMHSA（1-800-662-4357）が助けになります。',
   },
   it:{
     risk_intelligence:'Intelligence del Rischio',satellite_title:'Analisi Satellitare Incendi',
@@ -3457,6 +3751,48 @@ const TRANSLATIONS = {
     tip_isi:'Indice di diffusione iniziale — velocità di propagazione del fuoco, combinando FFMC e vento.',
     tip_bui:'Indice di accumulo — combustibile totale disponibile, combinando DMC e DC.',
     tip_aqi:"Indice qualità dell'aria (scala US EPA) — 0–50 Buona, 51–100 Moderata, 101–150 Non salubre (sensibili), 151–200 Non salubre, 201–300 Molto non salubre, 301+ Pericolosa.",
+    composite_score_title:'Punteggio di Rischio Composito',
+    risk_factors_title:'Fattori di Rischio',
+    main_concern_title:'Preoccupazione Principale',
+    method_note_main:"FFMC, DMC e DC tracciano l'umidità del combustibile a profondità e scale temporali crescenti; ISI e BUI descrivono la velocità di propagazione e la disponibilità di combustibile; il FWI li combina in un potenziale complessivo di intensità dell'incendio. Il punteggio composito mescola questo segnale di pericolo meteorologico con la vicinanza reale al rilevamento satellitare, il trend di intensità e l'amplificazione del vento in un numero verificabile da 0–100.",
+    cold_start_note:"Questa stima utilizza valori di avvio standard anziché la cronologia dell'umidità accumulata su più giorni, quindi gli effetti di siccità profonda (DC) potrebbero essere sottostimati.",
+    sat_eyebrow:'Derivato da NASA FIRMS (MODIS/VIIRS)',
+    tip_before_0_title:'Creare uno spazio difendibile.',
+    tip_before_0_body:"Elimina sterpaglie, foglie e detriti secchi per almeno 9 m dalla tua casa. La Zona 1 (0–9 m) deve essere rada, pulita e verde.",
+    tip_before_1_title:'Rafforzare la casa.',
+    tip_before_1_body:"Copri le prese d'aria del tetto con una rete metallica fine. Usa materiali non combustibili su terrazze e gronde — le braci cadono lì per prime.",
+    tip_before_2_title:'Conoscere la propria zona di evacuazione.',
+    tip_before_2_body:"Cerca la tua zona su ready.gov o sul sito OES della tua contea. Conosci due vie d'uscita — le strade si bloccano velocemente.",
+    tip_before_3_title:'Preparare una borsa di emergenza.',
+    tip_before_3_body:"Rifornimenti per 3 giorni: acqua, farmaci, documenti importanti, contanti, caricabatterie, mascherine N95 e un cambio d'abiti. Tienila vicino alla porta.",
+    tip_before_4_title:'Registrarsi per le allerte.',
+    tip_before_4_body:"Iscriviti al sistema di notifiche d'emergenza della tua area. Molte evacuazioni avvengono di notte — ti serve un campanello d'allarme, non un aggiornamento di notizie.",
+    tip_before_5_title:'Fare il backup digitale dei documenti.',
+    tip_before_5_body:"Scansiona carte d'identità, assicurazioni e cartelle cliniche e salvale su un cloud accessibile da qualsiasi telefono.",
+    tip_during_0_title:'Parti presto — non quando vedi le fiamme.',
+    tip_during_0_body:'Le strade si bloccano in pochi minuti. Il fumo può rendere la guida impossibile in ore. Parti quando ti viene ordinato, non quando hai paura.',
+    tip_during_1_title:'Prendi la borsa, lascia tutto il resto.',
+    tip_during_1_body:'Una volta fuori, non tornare. Le case si possono ricostruire. Non rischiare di rimanere intrappolato.',
+    tip_during_2_title:'Manda messaggi, non chiamare.',
+    tip_during_2_body:'I messaggi aggirano le reti congestionate. Le chiamate intasano le linee di cui i servizi di emergenza hanno bisogno.',
+    tip_during_3_title:'Guida con finestrini chiusi, fari accesi e aria condizionata in ricircolo.',
+    tip_during_3_body:'Questo tiene fuori il fumo e ti rende visibile in condizioni di scarsa visibilità.',
+    tip_during_4_title:'Se sei intrappolato in un edificio,',
+    tip_during_4_body:"Chiudi tutte le prese d'aria e le porte, sigilla le fessure con asciugamani bagnati, spegni il sistema HVAC e segnalati ai soccorritori da una finestra o dal tetto.",
+    tip_during_5_title:'Non ripararti mai nella tua auto in campo aperto.',
+    tip_during_5_body:"Se devi fermarti, stai basso sotto il livello dei finestrini e copriti con una coperta di lana. Chiama il 112 e comunica la tua posizione.",
+    tip_after_0_title:'Aspetta il via libera ufficiale.',
+    tip_after_0_body:'I focolai rimangono attivi per giorni. Il monossido di carbonio, le strutture instabili e i cavi caduti sono pericoli invisibili.',
+    tip_after_1_title:'Documenta tutto prima di pulire.',
+    tip_after_1_body:"Fotografa accuratamente tutti i danni per l'assicurazione prima di spostare o gettare qualsiasi cosa.",
+    tip_after_2_title:'Indossa N95 quando pulisci le ceneri.',
+    tip_after_2_body:'Le ceneri delle case bruciate contengono metalli pesanti, amianto e cancerogeni — non solo fuliggine. Metti i detriti in doppio sacco.',
+    tip_after_3_title:"Non bere l'acqua del rubinetto senza controllo.",
+    tip_after_3_body:"Il calore dell'incendio può deformare le tubature in plastica e contaminare le condutture idriche a chilometri dall'area bruciata. Aspetta la conferma ufficiale.",
+    tip_after_4_title:'Ispeziona prima di entrare.',
+    tip_after_4_body:"Cerca crepe nelle fondamenta, annusa se c'è odore di gas, controlla che il tetto non sia compromesso. Fai valutare l'integrità strutturale da un professionista.",
+    tip_after_5_title:'Il trauma da incendio è reale.',
+    tip_after_5_body:'PTSD, ansia e dolore sono comuni dopo aver perso una casa o una comunità. Le risorse locali di salute mentale e SAMHSA (1-800-662-4357) possono aiutare.',
   },
   ko:{
     risk_intelligence:'위험 정보',satellite_title:'위성 화재 분석',
@@ -3667,6 +4003,48 @@ const TRANSLATIONS = {
     tip_isi:'ISI(초기확산지수) — FFMC와 풍속을 결합한 화재 확산 속도 예측.',
     tip_bui:'BUI(연료축적지수) — DMC와 DC를 결합한 가용 연료 총량 추정.',
     tip_aqi:'대기질지수(미국 EPA 기준) — 0–50 좋음, 51–100 보통, 101–150 민감군 나쁨, 151–200 나쁨, 201–300 매우 나쁨, 301+ 위험.',
+    composite_score_title:'복합 위험 점수',
+    risk_factors_title:'위험 요소',
+    main_concern_title:'주요 우려사항',
+    method_note_main:'FFMC, DMC, DC는 깊이와 시간 척도에 따라 연료 수분을 추적하고, ISI와 BUI는 확산 속도와 연료 가용성을 설명합니다. FWI는 이를 결합하여 전체적인 화재 강도 잠재력을 나타냅니다. 복합 점수는 이 기상 위험 신호에 실제 위성 화재 감지 근접성, 강도 추세, 바람 증폭을 결합하여 감사 가능한 0–100 숫자로 통합합니다.',
+    cold_start_note:'이 추정치는 다일간 누적 수분 이력이 아닌 표준 시작 값을 사용하므로 심층 가뭄 효과(DC)가 과소평가될 수 있습니다.',
+    sat_eyebrow:'NASA FIRMS (MODIS/VIIRS) 기반',
+    tip_before_0_title:'방화 공간 확보.',
+    tip_before_0_body:'집에서 최소 9m 이내의 마른 풀, 낙엽, 잔해를 제거하세요. 구역 1(0–9m)은 얕고, 깨끗하고, 녹색으로 유지해야 합니다.',
+    tip_before_1_title:'집 강화.',
+    tip_before_1_body:'지붕 환기구를 고운 철망으로 덮으세요. 데크와 처마에는 불연재를 사용하세요——불씨가 먼저 그곳에 떨어집니다.',
+    tip_before_2_title:'대피 구역 파악.',
+    tip_before_2_body:'ready.gov 또는 해당 지역 OES 사이트에서 구역을 확인하세요. 두 가지 대피 경로를 파악하세요——도로는 빠르게 막힙니다.',
+    tip_before_3_title:'비상 가방 준비.',
+    tip_before_3_body:'3일치 물, 약, 중요 서류, 현금, 충전기, N95 마스크, 여벌 옷. 문 옆에 두세요.',
+    tip_before_4_title:'긴급 알림 등록.',
+    tip_before_4_body:'해당 지역 긴급 알림 시스템에 등록하세요. 많은 대피가 밤에 발생합니다——뉴스 알림이 아닌 경보가 필요합니다.',
+    tip_before_5_title:'문서 디지털 백업.',
+    tip_before_5_body:'신분증, 보험, 의료 기록을 스캔하여 어떤 기기에서도 접근할 수 있는 클라우드 스토리지에 저장하세요.',
+    tip_during_0_title:'일찍 대피하세요 — 불꽃을 볼 때까지 기다리지 마세요.',
+    tip_during_0_body:'도로는 몇 분 안에 막힙니다. 연기로 인해 몇 시간 안에 운전이 불가능해질 수 있습니다. 두려울 때가 아니라 지시가 있을 때 대피하세요.',
+    tip_during_1_title:'가방만 챙기고 나머지는 두고 가세요.',
+    tip_during_1_body:'일단 나오면 돌아가지 마세요. 집은 재건할 수 있습니다. 갇힐 위험을 감수하지 마세요.',
+    tip_during_2_title:'전화하지 말고 문자를 보내세요.',
+    tip_during_2_body:'문자는 혼잡한 네트워크를 우회합니다. 전화는 응급 서비스에 필요한 회선을 차지합니다.',
+    tip_during_3_title:'창문을 닫고, 전조등을 켜고, 에어컨을 내부 순환으로 설정해 운전하세요.',
+    tip_during_3_body:'연기를 차단하고 시야가 좋지 않은 상황에서 가시성을 높입니다.',
+    tip_during_4_title:'건물 안에 갇혔다면,',
+    tip_during_4_body:'모든 환기구와 문을 닫고, 젖은 수건으로 틈새를 막고, 공조 시스템을 끄고, 창문이나 지붕에서 구조대에 신호를 보내세요.',
+    tip_during_5_title:'야외에서 차 안에 대피하지 마세요.',
+    tip_during_5_body:'정차해야 한다면 창문 아래로 낮게 엎드리고 양모 담요로 몸을 덮으세요. 112에 전화해 위치를 알리세요.',
+    tip_after_0_title:'공식 허가를 기다리세요.',
+    tip_after_0_body:'불씨는 며칠 동안 남아 있을 수 있습니다. 일산화탄소, 불안정한 구조물, 쓰러진 전선은 보이지 않는 위험입니다.',
+    tip_after_1_title:'청소 전에 모든 것을 기록하세요.',
+    tip_after_1_body:'아무것도 옮기거나 버리기 전에 보험을 위해 모든 피해를 철저히 사진으로 기록하세요.',
+    tip_after_2_title:'재를 청소할 때 N95를 착용하세요.',
+    tip_after_2_body:'소실된 집의 재에는 중금속, 석면, 발암물질이 포함되어 있습니다——그을음만이 아닙니다. 잔해는 이중 봉투에 넣으세요.',
+    tip_after_3_title:'확인 없이 수돗물을 마시지 마세요.',
+    tip_after_3_body:'산불 열기는 플라스틱 배관을 변형시키고 화재 지역에서 수 킬로미터 떨어진 상수도를 오염시킬 수 있습니다. 공식 확인을 기다리세요.',
+    tip_after_4_title:'진입 전 점검.',
+    tip_after_4_body:'기초에 균열이 있는지 확인하고, 가스 냄새를 맡고, 지붕이 손상되지 않았는지 확인하세요. 전문가에게 구조적 안전성 평가를 요청하세요.',
+    tip_after_5_title:'산불 트라우마는 실재합니다.',
+    tip_after_5_body:'집이나 공동체를 잃은 후 PTSD, 불안, 슬픔은 흔합니다. 지역 정신 건강 자원과 SAMHSA(1-800-662-4357)가 도움이 될 수 있습니다.',
   },
 };
 
@@ -3695,6 +4073,83 @@ function applyI18n(){
   document.documentElement.lang = currentLang;
   const d = document.getElementById('lang-current');
   if(d) d.textContent = currentLang.toUpperCase();
+  devCheckI18n();
+}
+
+/** Dev-mode only: scan all visible text nodes and warn about any that appear
+ * to be user-facing English strings not routed through t() or data-i18n.
+ * Runs only on localhost so it has zero production cost. */
+function devCheckI18n(){
+  if(!location.hostname.match(/^(localhost|127\.|0\.0\.0\.0)/)) return;
+
+  // Elements whose text is expected to be static (not translated) or dynamic (set by JS with known IDs)
+  const SKIP_TAGS = new Set(['SCRIPT','STYLE','NOSCRIPT','OPTION']);
+  const SKIP_IDS = new Set([
+    'tip','place-name','hero-badge','hero-headline','hero-sub','hero-place','hero-updated',
+    'heat-big','heat-desc','heat-foot','heat-level-word','heat-big-unit',
+    'aqi-num','aqi-desc','aqi-foot','air-level-word',
+    'fire-big','fire-desc','fire-foot','fire-level-word','fire-big-unit',
+    'fires-detail-list','factors-list','composite-breakdown','composite-score',
+    'w-temp','w-wind','w-humidity','w-rain','w-winddir','w-wind-lbl',
+    'score-num','cat-badge','updated-text',
+    'sat-verdict','sat-trend','sat-frp-total','sat-clusters','sat-growth','sat-confidence',
+    'sat-future-note',
+    'tips-phase-title','tips-phase-sub',
+    'tips-before','tips-during','tips-after',
+    'advice-list','fires-expand-btn',
+    'incidents-count-note','incidents-list','incidents-map-btn',
+    'forecast-row',
+    'scale-note','scale-pointer',
+    'report-output','report-output-text','report-history',
+    'lang-current','ready-progress',
+    'composite-score','composite-bar-fill',
+    'sort-dir-btn','fires-sort-bar',
+    'error-text',
+  ]);
+
+  const SKIP_CLASSES = new Set([
+    'quake-place','quake-time','quake-mag',
+    'report-history-item','report-history-time','report-history-loc',
+    'ready-contact-row',
+    'lang-menu', // Language options are intentionally in their own language
+  ]);
+
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const warnings = [];
+  let node;
+  while((node = walker.nextNode())){
+    const text = node.textContent.trim();
+    if(!text || text.length < 4) continue;
+    // Skip pure numbers, symbols, and punctuation-only strings
+    if(/^[\d\s.,!?:;%°\-–—\/\(\)\[\]#@+*]{1,}$/.test(text)) continue;
+    const el = node.parentElement;
+    if(!el) continue;
+    if(SKIP_TAGS.has(el.tagName)) continue;
+    // Skip if element or any ancestor has data-i18n or data-i18n-tip
+    if(el.closest('[data-i18n],[data-i18n-tip],[data-i18n-placeholder]')) continue;
+    // Skip if element has a known dynamic ID
+    let ancestor = el;
+    let skip = false;
+    while(ancestor && ancestor !== document.body){
+      if(ancestor.id && SKIP_IDS.has(ancestor.id)){ skip = true; break; }
+      if(ancestor.classList && [...ancestor.classList].some(c => SKIP_CLASSES.has(c))){ skip = true; break; }
+      ancestor = ancestor.parentElement;
+    }
+    if(skip) continue;
+    // Log actual warning
+    const tag = `<${el.tagName.toLowerCase()}${el.id ? ' id="'+el.id+'"' : ''}${el.className ? ' class="'+el.className+'"' : ''}>`;
+    warnings.push(`  "${text}" → ${tag}`);
+  }
+
+  if(warnings.length){
+    console.warn(
+      `[i18n] ${warnings.length} untranslated text node(s) detected. ` +
+      `Add data-i18n to the element or render via t()/tf() in JS:\n` +
+      warnings.join('\n')
+    );
+  } else {
+    console.info('[i18n] ✓ No untranslated static text detected.');
+  }
 }
 
 function initLang(){
@@ -3726,6 +4181,7 @@ function setLang(lang){
     const phase = ['before','during','after'][Array.from(document.querySelectorAll('.tips-tab')).indexOf(activeTab)];
     if(phase) setTipsPhase(phase);
   }
+  renderTipsCards();
   closeLangMenu();
 }
 
@@ -3761,6 +4217,17 @@ function setTipsPhase(phase){
   const subEl   = document.getElementById('tips-phase-sub');
   if(titleEl) titleEl.textContent = t(`tips_${phase}_title`);
   if(subEl)   subEl.textContent   = t(`tips_${phase}_sub`);
+  renderTipsCards();
+}
+
+function renderTipsCards(){
+  ['before','during','after'].forEach(phase => {
+    const ul = document.getElementById(`tips-${phase}`);
+    if(!ul) return;
+    ul.innerHTML = [0,1,2,3,4,5].map(i =>
+      `<li><strong>${t(`tip_${phase}_${i}_title`)}</strong> ${t(`tip_${phase}_${i}_body`)}</li>`
+    ).join('');
+  });
 }
 
 /* ================================================================
@@ -3897,6 +4364,7 @@ function renderReportHistory(){
 
   renderSavedPlaces();
   loadReadyChecklist();
+  renderTipsCards();
   const params = new URLSearchParams(window.location.search);
   const lat = parseFloat(params.get('lat'));
   const lon = parseFloat(params.get('lon'));

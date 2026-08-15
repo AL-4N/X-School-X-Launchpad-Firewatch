@@ -127,7 +127,7 @@
 
           <div class="composite-wrap">
             <div class="composite-head">
-              <h4>Composite Risk Score</h4>
+              <h4 data-i18n="composite_score_title">Composite Risk Score</h4>
               <span class="composite-score" id="composite-score">--<small>/100</small></span>
             </div>
             <div class="composite-bar"><div class="composite-bar-fill" id="composite-bar-fill"></div></div>
@@ -135,20 +135,16 @@
           </div>
 
           <div class="factors">
-            <h4>Risk Factors</h4>
+            <h4 data-i18n="risk_factors_title">Risk Factors</h4>
             <div id="factors-list"></div>
           </div>
           <div id="concern-box" class="concern hidden">
-            <b>Main Concern</b>
+            <b data-i18n="main_concern_title">Main Concern</b>
             <span id="concern-text"></span>
           </div>
           <div class="method-note">
-            FFMC, DMC and DC track fuel moisture at increasing depths and timescales; ISI and BUI describe
-            spread rate and fuel availability; FWI combines them into overall fire intensity potential. The
-            composite score above blends this weather-danger signal with real satellite fire-detection
-            proximity, intensity trend, and wind amplification into one auditable 0–100 number.
-            <span id="cold-start-note">This estimate uses standard start-up values rather than multi-day
-            carried-forward moisture history, so deep-drought effects (DC) may be understated.</span>
+            <span data-i18n="method_note_main">FFMC, DMC and DC track fuel moisture at increasing depths and timescales; ISI and BUI describe spread rate and fuel availability; FWI combines them into overall fire intensity potential. The composite score above blends this weather-danger signal with real satellite fire-detection proximity, intensity trend, and wind amplification into one auditable 0–100 number.</span>
+            <span id="cold-start-note" data-i18n="cold_start_note">This estimate uses standard start-up values rather than multi-day carried-forward moisture history, so deep-drought effects (DC) may be understated.</span>
           </div>
         </div>
       </div>
@@ -191,7 +187,7 @@
     <div class="sat-card" id="sat-card">
       <div class="sat-top">
         <div>
-          <div class="eyebrow">Derived from NASA FIRMS (MODIS/VIIRS)</div>
+          <div class="eyebrow" data-i18n="sat_eyebrow">Derived from NASA FIRMS (MODIS/VIIRS)</div>
           <div class="sat-verdict" id="sat-verdict">Gathering satellite passes…</div>
         </div>
         <div class="sat-trend" id="sat-trend">—</div>
@@ -333,32 +329,9 @@
         <button class="tips-tab" onclick="setTipsPhase('after')" data-i18n="tips_after_tab">After</button>
       </div>
 
-      <ul class="tips-grid" id="tips-before">
-        <li><strong>Create defensible space.</strong> Clear dry brush, leaves, and debris at least 30 ft (9 m) from your home. Zone 1 (0–30 ft) should be lean, clean, and green.</li>
-        <li><strong>Harden your home.</strong> Cover roof vents with fine wire mesh. Use non-combustible materials on decks and eaves — embers land there first.</li>
-        <li><strong>Know your evacuation zone.</strong> Look up your zone at ready.gov or your county's OES site. Know two routes out — roads block fast.</li>
-        <li><strong>Build a go-bag.</strong> 3-day supply of water, medications, important documents, cash, phone charger, N95 masks, and a change of clothes. Keep it by the door.</li>
-        <li><strong>Register for alerts.</strong> Sign up for your county's emergency notification system. Many evacuations happen overnight — you need a wake-up call, not a news alert.</li>
-        <li><strong>Back up documents digitally.</strong> Scan IDs, insurance, medical records, and store them in cloud storage you can access from any phone.</li>
-      </ul>
-
-      <ul class="tips-grid hidden" id="tips-during">
-        <li><strong>Leave early — not when you see flames.</strong> Roads clog in minutes. Smoke can make driving impossible within hours. Go when ordered, not when scared.</li>
-        <li><strong>Take the bag, leave everything else.</strong> Once you're out, don't go back. Houses can be rebuilt. Don't risk getting trapped.</li>
-        <li><strong>Text, don't call.</strong> Texts route around congested networks. Calling ties up lines emergency services need.</li>
-        <li><strong>Drive with windows up, headlights on, AC on recirculate.</strong> This keeps smoke out and makes you visible in low visibility conditions.</li>
-        <li><strong>If you're trapped in a building</strong>, close all vents and doors, seal gaps with wet towels, turn off HVAC, and signal rescuers from a window or roof.</li>
-        <li><strong>Never shelter in your car in the open.</strong> If you must pull over, stay low below window level and cover yourself with a wool blanket. Call 911 and report your location.</li>
-      </ul>
-
-      <ul class="tips-grid hidden" id="tips-after">
-        <li><strong>Wait for official clearance.</strong> Hot spots remain active for days. Carbon monoxide, unstable structures, and downed power lines are invisible killers.</li>
-        <li><strong>Document everything before cleaning.</strong> Photograph all damage thoroughly for insurance before moving or discarding anything.</li>
-        <li><strong>Wear N95 when cleaning ash.</strong> Ash from burned homes contains heavy metals, asbestos, and carcinogens — not just soot. Double-bag debris before disposal.</li>
-        <li><strong>Don't drink tap water without checking.</strong> Wildfire heat can warp plastic pipes and contaminate water mains miles from the burn area. Wait for official confirmation.</li>
-        <li><strong>Inspect before entering.</strong> Look for cracks in the foundation, smell for gas, check that the roof isn't compromised. Have a pro assess structural integrity first.</li>
-        <li><strong>Wildfire trauma is real.</strong> PTSD, anxiety, and grief are common after losing a home or community. Local mental health resources and SAMHSA (1-800-662-4357) can help.</li>
-      </ul>
+      <ul class="tips-grid" id="tips-before"></ul>
+      <ul class="tips-grid hidden" id="tips-during"></ul>
+      <ul class="tips-grid hidden" id="tips-after"></ul>
     </div>
 
     <!-- FIRE SIGHTING REPORT -->
