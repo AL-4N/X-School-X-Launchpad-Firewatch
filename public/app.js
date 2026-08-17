@@ -1689,7 +1689,7 @@ function renderForecast(days){
       <div class="forecast-day-name">${dayName}</div>
       <div class="forecast-day-icon">${owmIconEmoji(d.icon)}</div>
       <div class="forecast-fwi">${d.fwi}</div>
-      <div class="forecast-fwi-lbl">FWI</div>
+      <div class="forecast-fwi-lbl">${t('fwi_label')}</div>
       <div class="forecast-danger" style="background:${d.danger.hex}">${t(`fwi_danger_${d.danger.level}`)}</div>
       <div class="forecast-stats">
         <span>🌡 ${tempStr}</span>
@@ -2080,6 +2080,8 @@ const TRANSLATIONS = {
     // Wind unit abbreviations
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'AQI',
+    fwi_label:'FWI',
+    fwi_subtitle:'Fire Weather Index — Canadian FWI System',
   },
   es:{
     risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
@@ -2337,6 +2339,8 @@ const TRANSLATIONS = {
     dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'ICA',
+    fwi_label:'IIF',
+    fwi_subtitle:'Índice de Incendio Forestal — Sistema FWI Canadiense',
   },
   fr:{
     risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
@@ -2594,6 +2598,8 @@ const TRANSLATIONS = {
     dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'IQA',
+    fwi_label:'IFM',
+    fwi_subtitle:'Indice Forêt Météo — Système IFM Canadien',
   },
   de:{
     risk_intelligence:'Risikoanalyse',satellite_title:'Satelliten-Feueranalyse',
@@ -2851,6 +2857,8 @@ const TRANSLATIONS = {
     dir_n:'N',dir_ne:'NO',dir_e:'O',dir_se:'SO',dir_s:'S',dir_sw:'SW',dir_w:'W',dir_nw:'NW',
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'LQI',
+    fwi_label:'FWI',
+    fwi_subtitle:'Waldbrand-Wetterindex — Kanadisches FWI-System',
   },
   zh:{
     risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
@@ -3108,6 +3116,8 @@ const TRANSLATIONS = {
     dir_n:'北',dir_ne:'东北',dir_e:'东',dir_se:'东南',dir_s:'南',dir_sw:'西南',dir_w:'西',dir_nw:'西北',
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'空气质量指数',
+    fwi_label:'火险指数',
+    fwi_subtitle:'火灾天气指数 — 加拿大FWI系统',
   },
   pt:{
     risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
@@ -3365,6 +3375,8 @@ const TRANSLATIONS = {
     dir_n:'N',dir_ne:'NE',dir_e:'L',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'IQA',
+    fwi_label:'FWI',
+    fwi_subtitle:'Índice de Incêndio Florestal — Sistema FWI Canadense',
   },
   ja:{
     risk_intelligence:'リスク情報',satellite_title:'衛星火災解析',
@@ -3622,6 +3634,8 @@ const TRANSLATIONS = {
     dir_n:'北',dir_ne:'北東',dir_e:'東',dir_se:'南東',dir_s:'南',dir_sw:'南西',dir_w:'西',dir_nw:'北西',
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'AQI',
+    fwi_label:'FWI',
+    fwi_subtitle:'火災気象指数 — カナダFWIシステム',
   },
   it:{
     risk_intelligence:'Intelligence del Rischio',satellite_title:'Analisi Satellitare Incendi',
@@ -3879,6 +3893,8 @@ const TRANSLATIONS = {
     dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'IQA',
+    fwi_label:'FWI',
+    fwi_subtitle:'Indice Meteo Incendi — Sistema FWI Canadese',
   },
   ko:{
     risk_intelligence:'위험 정보',satellite_title:'위성 화재 분석',
@@ -4136,6 +4152,8 @@ const TRANSLATIONS = {
     dir_n:'북',dir_ne:'북동',dir_e:'동',dir_se:'남동',dir_s:'남',dir_sw:'남서',dir_w:'서',dir_nw:'북서',
     abbr_kmh:'km/h',abbr_mph:'mph',
     aqi_label:'AQI',
+    fwi_label:'FWI',
+    fwi_subtitle:'화재기상지수 — 캐나다 FWI 시스템',
   },
 };
 
