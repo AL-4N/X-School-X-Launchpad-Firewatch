@@ -2079,6 +2079,7 @@ const TRANSLATIONS = {
     dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SW',dir_w:'W',dir_nw:'NW',
     // Wind unit abbreviations
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'AQI',
   },
   es:{
     risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
@@ -2335,6 +2336,7 @@ const TRANSLATIONS = {
     fwi_danger_3:'ALTO',fwi_danger_4:'MUY ALTO',fwi_danger_5:'EXTREMO',
     dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'ICA',
   },
   fr:{
     risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
@@ -2591,6 +2593,7 @@ const TRANSLATIONS = {
     fwi_danger_3:'ÉLEVÉ',fwi_danger_4:'TRÈS ÉLEVÉ',fwi_danger_5:'EXTRÊME',
     dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'IQA',
   },
   de:{
     risk_intelligence:'Risikoanalyse',satellite_title:'Satelliten-Feueranalyse',
@@ -2847,6 +2850,7 @@ const TRANSLATIONS = {
     fwi_danger_3:'HOCH',fwi_danger_4:'SEHR HOCH',fwi_danger_5:'EXTREM',
     dir_n:'N',dir_ne:'NO',dir_e:'O',dir_se:'SO',dir_s:'S',dir_sw:'SW',dir_w:'W',dir_nw:'NW',
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'LQI',
   },
   zh:{
     risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
@@ -3103,6 +3107,7 @@ const TRANSLATIONS = {
     fwi_danger_3:'高',fwi_danger_4:'很高',fwi_danger_5:'极高',
     dir_n:'北',dir_ne:'东北',dir_e:'东',dir_se:'东南',dir_s:'南',dir_sw:'西南',dir_w:'西',dir_nw:'西北',
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'空气质量指数',
   },
   pt:{
     risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
@@ -3359,6 +3364,7 @@ const TRANSLATIONS = {
     fwi_danger_3:'ALTO',fwi_danger_4:'MUITO ALTO',fwi_danger_5:'EXTREMO',
     dir_n:'N',dir_ne:'NE',dir_e:'L',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'IQA',
   },
   ja:{
     risk_intelligence:'リスク情報',satellite_title:'衛星火災解析',
@@ -3615,6 +3621,7 @@ const TRANSLATIONS = {
     fwi_danger_3:'高い',fwi_danger_4:'非常に高い',fwi_danger_5:'極端',
     dir_n:'北',dir_ne:'北東',dir_e:'東',dir_se:'南東',dir_s:'南',dir_sw:'南西',dir_w:'西',dir_nw:'北西',
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'AQI',
   },
   it:{
     risk_intelligence:'Intelligence del Rischio',satellite_title:'Analisi Satellitare Incendi',
@@ -3871,6 +3878,7 @@ const TRANSLATIONS = {
     fwi_danger_3:'ALTO',fwi_danger_4:'MOLTO ALTO',fwi_danger_5:'ESTREMO',
     dir_n:'N',dir_ne:'NE',dir_e:'E',dir_se:'SE',dir_s:'S',dir_sw:'SO',dir_w:'O',dir_nw:'NO',
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'IQA',
   },
   ko:{
     risk_intelligence:'위험 정보',satellite_title:'위성 화재 분석',
@@ -4127,6 +4135,7 @@ const TRANSLATIONS = {
     fwi_danger_3:'높음',fwi_danger_4:'매우 높음',fwi_danger_5:'극단',
     dir_n:'북',dir_ne:'북동',dir_e:'동',dir_se:'남동',dir_s:'남',dir_sw:'남서',dir_w:'서',dir_nw:'북서',
     abbr_kmh:'km/h',abbr_mph:'mph',
+    aqi_label:'AQI',
   },
 };
 
