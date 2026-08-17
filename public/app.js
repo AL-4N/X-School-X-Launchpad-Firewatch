@@ -1573,11 +1573,30 @@ async function loadGlobalIncidents(){
       ? tf('incidents_count', {n, s: n>1?'s':''})
       : t('incidents_none');
     renderIncidentsList();
+    // Reverse-geocode the visible incidents so non-English speakers
+    // get a translated place name alongside the NASA event title.
+    geocodeIncidentPlaces();
   }catch(e){
     console.error('Global incidents load failed', e);
     note.textContent = t('incidents_unavailable');
     list.innerHTML = `<div class="empty-note">${t('incidents_error')}</div>`;
   }
+}
+
+/** Reverse-geocode the first 12 incidents to get localized place names.
+ * Results are stored on each incident as `localPlace` and the list is
+ * re-rendered once all requests settle. */
+async function geocodeIncidentPlaces(){
+  const visible = globalIncidents.slice(0, 12);
+  if(!visible.length) return;
+  const results = await Promise.allSettled(
+    visible.map(inc =>
+      api(`/api/geocode?lat=${inc.lat}&lon=${inc.lon}&lang=${currentLang}`)
+        .then(data => { inc.localPlace = data.displayName; })
+        .catch(() => {})
+    )
+  );
+  renderIncidentsList();
 }
 
 function renderIncidentsList(){
@@ -1590,13 +1609,17 @@ function renderIncidentsList(){
   globalIncidents.slice(0, 12).forEach(inc => {
     const d = new Date(inc.date);
     const dateStr = d.toLocaleDateString(uiLang(), {month:'short', day:'numeric'});
+    const placeHtml = inc.localPlace
+      ? `<div class="quake-place">${inc.localPlace}<span class="incident-badge ${inc.isClosed ? 'closed' : 'open'}">${inc.isClosed ? t('incidents_past') : t('incidents_active')}</span></div>
+         <div class="quake-time">${inc.title} · ${dateStr}</div>`
+      : `<div class="quake-place">${inc.title}<span class="incident-badge ${inc.isClosed ? 'closed' : 'open'}">${inc.isClosed ? t('incidents_past') : t('incidents_active')}</span></div>
+         <div class="quake-time">${dateStr}</div>`;
     const row = document.createElement('div');
     row.className = 'quake-row incident-row';
     row.innerHTML = `
       <div class="quake-mag" style="background:${inc.isClosed ? '#a4948a' : '#ff5e2a'}">🔥</div>
       <div class="quake-info">
-        <div class="quake-place">${inc.title}<span class="incident-badge ${inc.isClosed ? 'closed' : 'open'}">${inc.isClosed ? t('incidents_past') : t('incidents_active')}</span></div>
-        <div class="quake-time">${dateStr}</div>
+        ${placeHtml}
       </div>`;
     row.onclick = () => {
       if(!map) return;
@@ -1624,7 +1647,7 @@ function toggleGlobalIncidentsOnMap(){
       L.circleMarker([inc.lat, inc.lon], {
         radius: 5, color: inc.isClosed ? '#a4948a' : '#ff5e2a',
         fillColor: inc.isClosed ? '#a4948a' : '#ff5e2a', fillOpacity:0.75, weight:1
-      }).bindPopup(`<b>${inc.title}</b><br>${new Date(inc.date).toLocaleDateString(uiLang())}${inc.isClosed ? ` ${t('incident_past')}` : ` ${t('incident_active')}`}`)
+      }).bindPopup(`<b>${inc.localPlace || inc.title}</b>${inc.localPlace ? `<br><small>${inc.title}</small>` : ''}<br>${new Date(inc.date).toLocaleDateString(uiLang())}${inc.isClosed ? ` ${t('incident_past')}` : ` ${t('incident_active')}`}`)
         .addTo(incidentLayer);
     });
     if(globalIncidents.length){
@@ -4240,6 +4263,11 @@ function setLang(lang){
   renderFiresCard();
   if(lastForecastDays) renderForecast(lastForecastDays);
   renderIncidentsList();
+  // Re-geocode incident places in the new language.
+  if(globalIncidents.length){
+    globalIncidents.forEach(inc => { inc.localPlace = null; });
+    geocodeIncidentPlaces();
+  }
   updateSaveBtn();
   // Re-geocode place name in the new language.
   if(userLat != null) loadPlaceName();
