@@ -19,6 +19,7 @@ import { getPrevCodes, saveCodes } from './fwiCache.js';
 import { fetchFireForecast } from './forecast.js';
 import { fetchWeatherAlerts } from './alerts.js';
 import { fetchFireTile } from './tiles.js';
+import { basemapProvider, fetchBasemapTile } from './basemap.js';
 
 const JSON_HEADERS = { 'content-type': 'application/json;charset=UTF-8' };
 
@@ -134,12 +135,18 @@ const routes = {
   },
 
   '/api/health': async () => json({ status: 'ok' }),
+
+  // Lets the frontend pick its basemap without ever seeing the key.
+  // Deliberately not edge-cached: a stale value here would strand the map
+  // on the fallback provider for the cache lifetime after a key is set.
+  '/api/config': async (_url, env) => json({ basemap: basemapProvider(env) }),
 };
 
 // Prefix-matched routes — for paths whose tail is a variable path segment
 // (tile coordinates) rather than a fixed endpoint name.
 const prefixRoutes = [
   { prefix: '/api/fires/tiles/', handler: fetchFireTile, ttl: 300 },
+  { prefix: '/api/basemap/', handler: fetchBasemapTile, ttl: 2592000 }, // 30d — basemaps are static
 ];
 
 function matchPrefixRoute(pathname){

@@ -314,6 +314,7 @@ async function loadLocation(lat, lon, knownDisplayName){
 
   if(map){ map.remove(); map = null; }
   globalFireLayer = null;
+  firmsTileLayer = null;
   incidentLayer = null;
   incidentsShownOnMap = false;
   pickMarker = null;
@@ -335,6 +336,9 @@ async function loadLocation(lat, lon, knownDisplayName){
   lastForecastDays = null;
   updateHero();
 
+  // Resolve the basemap provider before the map is built so the first
+  // tiles requested are already the right ones.
+  await ensureConfig();
   initMap();
   if(knownDisplayName){
     document.getElementById('place-name').textContent = knownDisplayName;
@@ -426,19 +430,42 @@ function setProfile(p){
 
 /** Builds the themed basemap.
  *
- * CARTO's public basemaps.cartocdn.com tiles now render an "API KEY
- * REQUIRED" watermark, so this uses Esri's keyless ArcGIS Canvas tiles
- * instead. Esri splits the map into a base layer (land, roads) and a
- * transparent reference layer (place labels), so each theme is a pair
- * of tile layers stacked in a group.
+ * CARTO's raster tiles now watermark unauthenticated requests, so the
+ * provider depends on whether the Worker has a CARTO_API_KEY:
  *
- * Canvas tiles stop at z16 and serve a "Map data not yet available"
- * placeholder above that, so maxNativeZoom pins requests at 16 and lets
- * Leaflet upscale for the map's z17-18 range.
+ *  - 'carto' — tiles proxied through the Worker (key stays server-side),
+ *    labels baked in, full z18 coverage. Identical to the original look.
+ *  - 'esri'  — keyless ArcGIS Canvas, requested direct. Splits base and
+ *    labels into two services, and stops at z16 (it serves a "Map data
+ *    not yet available" placeholder above that), so maxNativeZoom pins
+ *    requests at 16 and lets Leaflet upscale for the map's z17-18 range.
  */
 const ESRI_CANVAS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas';
 
+let basemapProvider = 'esri';
+let configPromise = null;
+
+/** Resolves which basemap to use, once per page load. Falls back to Esri
+ * if the config call fails — a keyless map beats no map. */
+function ensureConfig(){
+  if(!configPromise){
+    configPromise = api('/api/config')
+      .then(cfg => { basemapProvider = cfg.basemap || 'esri'; })
+      .catch(() => { basemapProvider = 'esri'; });
+  }
+  return configPromise;
+}
+
 function createBasemap(light){
+  const theme = light ? 'light' : 'dark';
+  if(basemapProvider === 'carto'){
+    return L.layerGroup([
+      L.tileLayer(`/api/basemap/${theme}/{z}/{x}/{y}`, {
+        maxZoom: 18, noWrap: true, pane: 'basemap',
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+      }),
+    ]);
+  }
   const variant = light ? 'Light' : 'Dark';
   const opts = { maxZoom: 18, maxNativeZoom: 16, noWrap: true, pane: 'basemap' };
   return L.layerGroup([
