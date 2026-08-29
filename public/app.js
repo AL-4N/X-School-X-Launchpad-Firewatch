@@ -454,18 +454,18 @@ const OPENFREEMAP_STYLE = {
 // darker so the coastline reads clearly behind the fire overlays.
 const WATER_COLOR = { light: 'rgb(168,176,180)', dark: '#000000' };
 
-// Country outlines, by layer id — the two styles name them differently.
-// State/province boundaries are deliberately left alone so only national
-// borders are picked out.
-const COUNTRY_BOUNDARY_LAYERS = [
-  'boundary_country_z0-4', 'boundary_country_z5-', // dark
-  'boundary_2', 'boundary_disputed',               // positron
-];
+// The dark style draws every boundary at ~22% lightness, which all but
+// disappears against the land. Lift them to a lighter grey so borders
+// read without competing with the fire overlays.
+const BOUNDARY_COLOR = 'hsl(0,0%,45%)';
 
 /** Applies our overrides to a style once it has loaded: darker water, and
- * white country outlines. Only the dark style gets white borders — on the
- * light style's near-white land they would be invisible, so it keeps its
- * designed grey. */
+ * lighter boundary lines. Boundary layers are matched by their source
+ * layer rather than by id, since the two styles name them differently and
+ * each splits them across several layers (country, state, disputed).
+ *
+ * Only the dark style is adjusted — on the light style's near-white land,
+ * lightening the borders further would erase them. */
 function withStyleOverrides(glLayer, light){
   const water = WATER_COLOR[light ? 'light' : 'dark'];
   glLayer.on('add', () => {
@@ -476,13 +476,12 @@ function withStyleOverrides(glLayer, light){
         if(m.getLayer('water')) m.setPaintProperty('water', 'fill-color', water);
         if(m.getLayer('waterway')) m.setPaintProperty('waterway', 'line-color', water);
         if(light) return;
-        COUNTRY_BOUNDARY_LAYERS.forEach(id => {
-          if(!m.getLayer(id)) return;
-          m.setPaintProperty(id, 'line-color', '#ffffff');
-          // the stock dark style blurs borders into the land; a white line
-          // needs to be crisp and fully opaque to read as an outline
-          m.setPaintProperty(id, 'line-blur', 0);
-          m.setPaintProperty(id, 'line-opacity', 1);
+        (m.getStyle().layers || []).forEach(layer => {
+          if(layer.type !== 'line' || layer['source-layer'] !== 'boundary') return;
+          m.setPaintProperty(layer.id, 'line-color', BOUNDARY_COLOR);
+          // the stock dark style blurs borders into the land, which reads
+          // as a smudge once the line is lightened
+          m.setPaintProperty(layer.id, 'line-blur', 0);
         });
       }catch(e){ /* style variant without these layers — leave it alone */ }
     };
