@@ -454,16 +454,36 @@ const OPENFREEMAP_STYLE = {
 // darker so the coastline reads clearly behind the fire overlays.
 const WATER_COLOR = { light: 'rgb(168,176,180)', dark: '#000000' };
 
-/** Recolours the style's water layers once the style has loaded. */
-function withDarkerWater(glLayer, light){
-  const color = WATER_COLOR[light ? 'light' : 'dark'];
+// Country outlines, by layer id — the two styles name them differently.
+// State/province boundaries are deliberately left alone so only national
+// borders are picked out.
+const COUNTRY_BOUNDARY_LAYERS = [
+  'boundary_country_z0-4', 'boundary_country_z5-', // dark
+  'boundary_2', 'boundary_disputed',               // positron
+];
+
+/** Applies our overrides to a style once it has loaded: darker water, and
+ * white country outlines. Only the dark style gets white borders — on the
+ * light style's near-white land they would be invisible, so it keeps its
+ * designed grey. */
+function withStyleOverrides(glLayer, light){
+  const water = WATER_COLOR[light ? 'light' : 'dark'];
   glLayer.on('add', () => {
     const m = glLayer.getMaplibreMap();
     if(!m) return;
     const apply = () => {
       try{
-        if(m.getLayer('water')) m.setPaintProperty('water', 'fill-color', color);
-        if(m.getLayer('waterway')) m.setPaintProperty('waterway', 'line-color', color);
+        if(m.getLayer('water')) m.setPaintProperty('water', 'fill-color', water);
+        if(m.getLayer('waterway')) m.setPaintProperty('waterway', 'line-color', water);
+        if(light) return;
+        COUNTRY_BOUNDARY_LAYERS.forEach(id => {
+          if(!m.getLayer(id)) return;
+          m.setPaintProperty(id, 'line-color', '#ffffff');
+          // the stock dark style blurs borders into the land; a white line
+          // needs to be crisp and fully opaque to read as an outline
+          m.setPaintProperty(id, 'line-blur', 0);
+          m.setPaintProperty(id, 'line-opacity', 1);
+        });
       }catch(e){ /* style variant without these layers — leave it alone */ }
     };
     if(m.isStyleLoaded()) apply(); else m.on('load', apply);
@@ -513,7 +533,7 @@ function createBasemap(light){
   if(basemapProvider === 'openfreemap' && canRenderVector()){
     // Attribution is read off the style's sources by the plugin.
     return L.layerGroup([
-      withDarkerWater(L.maplibreGL({
+      withStyleOverrides(L.maplibreGL({
         style: OPENFREEMAP_STYLE[theme],
         pane: 'basemap',
         renderWorldCopies: false, // match the raster layers' noWrap
