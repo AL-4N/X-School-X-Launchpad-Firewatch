@@ -15,28 +15,30 @@
 <body id="app-shell" class="theme-dark">
 
 <header>
-  <div class="brand"><span class="fire">Fire</span><span class="watch">Watch</span></div>
-  <div class="header-right">
-    <div class="unit-toggle" id="unit-toggle" role="group" aria-label="Temperature unit">
-      <button id="unit-c" class="active" onclick="setUnit('C')">°C</button>
-      <button id="unit-f" onclick="setUnit('F')">°F</button>
-    </div>
-    <button id="theme-toggle-btn" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
-    <div class="lang-picker" id="lang-picker">
-      <button class="lang-toggle-btn" id="lang-toggle-btn" onclick="toggleLangMenu()" aria-expanded="false">🌐 <span id="lang-current">EN</span></button>
-      <div class="lang-menu hidden" id="lang-menu">
-        <button onclick="setLang('en')">🇺🇸 English</button>
-        <button onclick="setLang('es')">🇪🇸 Español</button>
-        <button onclick="setLang('fr')">🇫🇷 Français</button>
-        <button onclick="setLang('de')">🇩🇪 Deutsch</button>
-        <button onclick="setLang('zh')">🇨🇳 中文</button>
-        <button onclick="setLang('pt')">🇧🇷 Português</button>
-        <button onclick="setLang('ja')">🇯🇵 日本語</button>
-        <button onclick="setLang('it')">🇮🇹 Italiano</button>
-        <button onclick="setLang('ko')">🇰🇷 한국어</button>
+  <div class="header-inner">
+    <div class="brand"><span class="fire">Fire</span><span class="watch">Watch</span></div>
+    <div class="header-right">
+      <div class="unit-toggle" id="unit-toggle" role="group" aria-label="Temperature unit">
+        <button id="unit-c" class="active" onclick="setUnit('C')">°C</button>
+        <button id="unit-f" onclick="setUnit('F')">°F</button>
       </div>
+      <button id="theme-toggle-btn" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+      <div class="lang-picker" id="lang-picker">
+        <button class="lang-toggle-btn" id="lang-toggle-btn" onclick="toggleLangMenu()" aria-expanded="false">🌐 <span id="lang-current">EN</span></button>
+        <div class="lang-menu hidden" id="lang-menu">
+          <button onclick="setLang('en')">🇺🇸 English</button>
+          <button onclick="setLang('es')">🇪🇸 Español</button>
+          <button onclick="setLang('fr')">🇫🇷 Français</button>
+          <button onclick="setLang('de')">🇩🇪 Deutsch</button>
+          <button onclick="setLang('zh')">🇨🇳 中文</button>
+          <button onclick="setLang('pt')">🇧🇷 Português</button>
+          <button onclick="setLang('ja')">🇯🇵 日本語</button>
+          <button onclick="setLang('it')">🇮🇹 Italiano</button>
+          <button onclick="setLang('ko')">🇰🇷 한국어</button>
+        </div>
+      </div>
+      <div class="tag" data-i18n="risk_intelligence">Risk Intelligence</div>
     </div>
-    <div class="tag" data-i18n="risk_intelligence">Risk Intelligence</div>
   </div>
 </header>
 
