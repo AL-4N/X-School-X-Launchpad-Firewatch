@@ -11,7 +11,7 @@
 // CORS involved.
 const WORKER_BASE_URL = '';
 
-let map, userMarker, fireLayer, globalFireLayer, incidentLayer, tileLayer;
+let map, userMarker, fireLayer, globalFireLayer, incidentLayer, tileLayer, firmsTileLayer;
 let userLat, userLon;
 let fireSort = 'distance'; // 'distance' | 'size'
 let fireSortAsc = true;    // true = closest/smallest first
@@ -424,18 +424,42 @@ function setProfile(p){
 
 /* ---------------- Map ---------------- */
 
+/** Builds the themed basemap.
+ *
+ * CARTO's public basemaps.cartocdn.com tiles now render an "API KEY
+ * REQUIRED" watermark, so this uses Esri's keyless ArcGIS Canvas tiles
+ * instead. Esri splits the map into a base layer (land, roads) and a
+ * transparent reference layer (place labels), so each theme is a pair
+ * of tile layers stacked in a group.
+ *
+ * Canvas tiles stop at z16 and serve a "Map data not yet available"
+ * placeholder above that, so maxNativeZoom pins requests at 16 and lets
+ * Leaflet upscale for the map's z17-18 range.
+ */
+const ESRI_CANVAS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas';
+
+function createBasemap(light){
+  const variant = light ? 'Light' : 'Dark';
+  const opts = { maxZoom: 18, maxNativeZoom: 16, noWrap: true, pane: 'basemap' };
+  return L.layerGroup([
+    L.tileLayer(`${ESRI_CANVAS}/World_${variant}_Gray_Base/MapServer/tile/{z}/{y}/{x}`,
+      { ...opts, attribution: 'Tiles &copy; Esri &mdash; &copy; OpenStreetMap contributors' }),
+    L.tileLayer(`${ESRI_CANVAS}/World_${variant}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, opts),
+  ]);
+}
+
 function initMap(){
   map = L.map('map', {
     zoomControl:true, attributionControl:true,
     minZoom:1, maxBoundsViscosity:1.0,
   }).setView([userLat, userLon], 10);
   map.setMaxBounds([[-90,-180],[90,180]]);
-  tileLayer = L.tileLayer(
-    document.body.classList.contains('theme-light')
-      ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18, noWrap: true }
-  ).addTo(map);
+  // Basemap sits in its own pane below the default tilePane, so the FIRMS
+  // heat overlay always draws on top of it — including after a theme swap
+  // re-adds the basemap later in DOM order.
+  map.createPane('basemap');
+  map.getPane('basemap').style.zIndex = 190;
+  tileLayer = createBasemap(document.body.classList.contains('theme-light')).addTo(map);
 
   const userIcon = L.divIcon({
     className:'',
@@ -447,6 +471,7 @@ function initMap(){
 
   map.on('click', onMapClick);
   document.getElementById('firms-tile-toggle-wrap').classList.remove('hidden');
+  addFirmsTileLayer();
   loadGlobalFireDots();
 
   // Escape key collapses expanded map
@@ -544,6 +569,29 @@ async function onMapClick(e){
 function selectPickedLocation(){
   if(pickedLat == null || pickedLon == null) return;
   loadLocation(pickedLat, pickedLon, pickedName || undefined);
+}
+
+/** NASA FIRMS thermal tile overlay, proxied through the Worker so the
+ * FIRMS key never appears in a tile URL the browser requests directly.
+ * noWrap matches the basemap so tiles don't repeat past the date line. */
+function addFirmsTileLayer(){
+  if(!map || firmsTileLayer) return;
+  firmsTileLayer = L.tileLayer('/api/fires/tiles/{z}/{x}/{y}', {
+    opacity: 0.85,
+    attribution: 'NASA FIRMS',
+    maxZoom: 18,
+    noWrap: true,
+  });
+  if(firmsHeatOn) firmsTileLayer.addTo(map);
+}
+
+let firmsHeatOn = true;
+function toggleFirmsHeat(){
+  firmsHeatOn = !firmsHeatOn;
+  const btn = document.getElementById('firms-heat-btn');
+  btn.classList.toggle('active', firmsHeatOn);
+  if(!firmsTileLayer) return;
+  if(firmsHeatOn){ firmsTileLayer.addTo(map); } else { map.removeLayer(firmsTileLayer); }
 }
 
 let globalFiresOn = true;
@@ -1766,12 +1814,7 @@ function applyTheme(theme){
   // Swap map tiles to match theme
   if(map && tileLayer){
     map.removeLayer(tileLayer);
-    tileLayer = L.tileLayer(
-      theme === 'light'
-        ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      { attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:18, noWrap:true }
-    ).addTo(map);
+    tileLayer = createBasemap(theme === 'light').addTo(map);
   }
 }
 
@@ -1885,7 +1928,7 @@ const TRANSLATIONS = {
     // Map
     map_expand:'⤢ Expand',map_your_location:'Your location',
     map_fire_low:'Fire (low)',map_fire_med:'Fire (med)',map_fire_intense:'Fire (intense)',
-    map_click_spot:'Click map to check a spot',global_fires_btn:'🔥 Global fires',
+    map_click_spot:'Click map to check a spot',global_fires_btn:'🔥 Global fires',firms_heat_btn:'🛰️ Satellite heat',
     // Weather labels
     w_temp:'Temp',w_wind:'Wind',w_humidity:'Humidity',w_rain:'7-day rain',
     // Be Ready
@@ -2166,7 +2209,7 @@ const TRANSLATIONS = {
     incidents_active:'Activo',incidents_past:'Pasado',incidents_show_map:'🌍 Ver en mapa',
     map_expand:'⤢ Ampliar',map_your_location:'Tu ubicación',
     map_fire_low:'Fuego (bajo)',map_fire_med:'Fuego (medio)',map_fire_intense:'Fuego (intenso)',
-    map_click_spot:'Toca el mapa para verificar un punto',global_fires_btn:'🔥 Incendios globales',
+    map_click_spot:'Toca el mapa para verificar un punto',global_fires_btn:'🔥 Incendios globales',firms_heat_btn:'🛰️ Calor satelital',
     w_temp:'Temp',w_wind:'Viento',w_humidity:'Humedad',w_rain:'Lluvia 7 días',
     ready_sub:'Lista de verificación de preparación para emergencias',
     ready_gobag:'Mochila preparada con suministros para 3 días',
@@ -2425,7 +2468,7 @@ const TRANSLATIONS = {
     incidents_active:'Actif',incidents_past:'Passé',incidents_show_map:'🌍 Afficher sur la carte',
     map_expand:'⤢ Agrandir',map_your_location:'Votre position',
     map_fire_low:'Feu (faible)',map_fire_med:'Feu (moyen)',map_fire_intense:'Feu (intense)',
-    map_click_spot:'Cliquez sur la carte pour analyser un point',global_fires_btn:'🔥 Feux mondiaux',
+    map_click_spot:'Cliquez sur la carte pour analyser un point',global_fires_btn:'🔥 Feux mondiaux',firms_heat_btn:'🛰️ Chaleur satellite',
     w_temp:'Temp',w_wind:'Vent',w_humidity:'Humidité',w_rain:'Pluie 7 j',
     ready_sub:"Liste de préparation aux urgences",
     ready_gobag:"Sac d'urgence avec fournitures pour 3 jours",
@@ -2684,7 +2727,7 @@ const TRANSLATIONS = {
     incidents_active:'Aktiv',incidents_past:'Vergangen',incidents_show_map:'🌍 Auf Karte anzeigen',
     map_expand:'⤢ Vergrößern',map_your_location:'Ihr Standort',
     map_fire_low:'Feuer (gering)',map_fire_med:'Feuer (mittel)',map_fire_intense:'Feuer (intensiv)',
-    map_click_spot:'Klicken Sie auf die Karte, um einen Punkt zu prüfen',global_fires_btn:'🔥 Globale Brände',
+    map_click_spot:'Klicken Sie auf die Karte, um einen Punkt zu prüfen',global_fires_btn:'🔥 Globale Brände',firms_heat_btn:'🛰️ Satellitenwärme',
     w_temp:'Temp',w_wind:'Wind',w_humidity:'Luftfeuchte',w_rain:'Regen 7 Tage',
     ready_sub:'Notfallvorsorge-Checkliste',
     ready_gobag:'Notfallrucksack mit 3-Tage-Bedarf gepackt',
@@ -2943,7 +2986,7 @@ const TRANSLATIONS = {
     incidents_active:'活跃',incidents_past:'历史',incidents_show_map:'🌍 在地图上显示',
     map_expand:'⤢ 展开',map_your_location:'您的位置',
     map_fire_low:'火灾（低）',map_fire_med:'火灾（中）',map_fire_intense:'火灾（强）',
-    map_click_spot:'点击地图检查某点',global_fires_btn:'🔥 全球火灾',
+    map_click_spot:'点击地图检查某点',global_fires_btn:'🔥 全球火灾',firms_heat_btn:'🛰️ 卫星热成像',
     w_temp:'温度',w_wind:'风速',w_humidity:'湿度',w_rain:'7日降水',
     ready_sub:'应急准备清单',
     ready_gobag:'备好3天物资的应急包',
@@ -3202,7 +3245,7 @@ const TRANSLATIONS = {
     incidents_active:'Ativo',incidents_past:'Passado',incidents_show_map:'🌍 Mostrar no mapa',
     map_expand:'⤢ Expandir',map_your_location:'Sua localização',
     map_fire_low:'Fogo (baixo)',map_fire_med:'Fogo (médio)',map_fire_intense:'Fogo (intenso)',
-    map_click_spot:'Clique no mapa para verificar um ponto',global_fires_btn:'🔥 Incêndios globais',
+    map_click_spot:'Clique no mapa para verificar um ponto',global_fires_btn:'🔥 Incêndios globais',firms_heat_btn:'🛰️ Calor por satélite',
     w_temp:'Temp',w_wind:'Vento',w_humidity:'Umidade',w_rain:'Chuva 7 dias',
     ready_sub:'Lista de verificação de preparação para emergências',
     ready_gobag:'Mochila com suprimentos para 3 dias preparada',
@@ -3461,7 +3504,7 @@ const TRANSLATIONS = {
     incidents_active:'活動中',incidents_past:'過去',incidents_show_map:'🌍 地図で表示',
     map_expand:'⤢ 拡大',map_your_location:'現在地',
     map_fire_low:'火災（低）',map_fire_med:'火災（中）',map_fire_intense:'火災（強）',
-    map_click_spot:'地図をクリックして地点を確認',global_fires_btn:'🔥 世界の火災',
+    map_click_spot:'地図をクリックして地点を確認',global_fires_btn:'🔥 世界の火災',firms_heat_btn:'🛰️ 衛星熱源',
     w_temp:'気温',w_wind:'風速',w_humidity:'湿度',w_rain:'7日間降水量',
     ready_sub:'緊急事態への備えチェックリスト',
     ready_gobag:'3日分の物資が入った避難袋の準備',
@@ -3720,7 +3763,7 @@ const TRANSLATIONS = {
     incidents_active:'Attivo',incidents_past:'Passato',incidents_show_map:'🌍 Mostra sulla mappa',
     map_expand:'⤢ Espandi',map_your_location:'La tua posizione',
     map_fire_low:'Fuoco (basso)',map_fire_med:'Fuoco (medio)',map_fire_intense:'Fuoco (intenso)',
-    map_click_spot:'Clicca sulla mappa per analizzare un punto',global_fires_btn:'🔥 Incendi globali',
+    map_click_spot:'Clicca sulla mappa per analizzare un punto',global_fires_btn:'🔥 Incendi globali',firms_heat_btn:'🛰️ Calore satellitare',
     w_temp:'Temp',w_wind:'Vento',w_humidity:'Umidità',w_rain:'Pioggia 7 giorni',
     ready_sub:"Lista di controllo per la preparazione all'emergenza",
     ready_gobag:'Borsa di emergenza con forniture per 3 giorni',
@@ -3979,7 +4022,7 @@ const TRANSLATIONS = {
     incidents_active:'활성',incidents_past:'과거',incidents_show_map:'🌍 지도에 표시',
     map_expand:'⤢ 확대',map_your_location:'내 위치',
     map_fire_low:'화재 (낮음)',map_fire_med:'화재 (중간)',map_fire_intense:'화재 (강함)',
-    map_click_spot:'지도를 클릭하여 지점 확인',global_fires_btn:'🔥 전 세계 화재',
+    map_click_spot:'지도를 클릭하여 지점 확인',global_fires_btn:'🔥 전 세계 화재',firms_heat_btn:'🛰️ 위성 열 감지',
     w_temp:'기온',w_wind:'바람',w_humidity:'습도',w_rain:'7일 강수량',
     ready_sub:'비상 대비 체크리스트',
     ready_gobag:'3일분 물품이 담긴 대피 가방 준비',

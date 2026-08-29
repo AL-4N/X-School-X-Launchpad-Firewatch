@@ -18,6 +18,7 @@ import { forwardGeocode, reverseGeocode } from './geocode.js';
 import { getPrevCodes, saveCodes } from './fwiCache.js';
 import { fetchFireForecast } from './forecast.js';
 import { fetchWeatherAlerts } from './alerts.js';
+import { fetchFireTile } from './tiles.js';
 
 const JSON_HEADERS = { 'content-type': 'application/json;charset=UTF-8' };
 
@@ -131,7 +132,19 @@ const routes = {
     const data = await fetchWeatherAlerts(lat, lon, env);
     return json(data);
   },
+
+  '/api/health': async () => json({ status: 'ok' }),
 };
+
+// Prefix-matched routes — for paths whose tail is a variable path segment
+// (tile coordinates) rather than a fixed endpoint name.
+const prefixRoutes = [
+  { prefix: '/api/fires/tiles/', handler: fetchFireTile, ttl: 300 },
+];
+
+function matchPrefixRoute(pathname){
+  return prefixRoutes.find(r => pathname.startsWith(r.prefix));
+}
 
 // Per-route edge-cache TTLs (seconds). Fires and weather change fastest;
 // geocoding and global incident lists are stable for longer.
@@ -152,7 +165,8 @@ export default {
     const url = new URL(request.url);
 
     if(url.pathname.startsWith('/api/')){
-      const handler = routes[url.pathname];
+      const prefixRoute = matchPrefixRoute(url.pathname);
+      const handler = routes[url.pathname] || prefixRoute?.handler;
       if(!handler){
         return json({ error: 'Not found' }, { status: 404 });
       }
@@ -160,7 +174,7 @@ export default {
         return json({ error: 'Method not allowed' }, { status: 405 });
       }
 
-      const ttl = CACHE_TTL[url.pathname];
+      const ttl = CACHE_TTL[url.pathname] ?? prefixRoute?.ttl;
 
       try{
         if(ttl){
