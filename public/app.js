@@ -430,34 +430,56 @@ function setProfile(p){
 
 /** Builds the themed basemap.
  *
- * CARTO's raster tiles now watermark unauthenticated requests, so the
- * provider depends on whether the Worker has a CARTO_API_KEY:
+ * The original look was CARTO's Positron (light) and Dark Matter (dark).
+ * CARTO now requires an API key for their raster tiles and watermarks
+ * unauthenticated requests, so by default we render those same styles as
+ * vector tiles from OpenFreeMap, which needs no key and imposes no request
+ * limits. Three providers, in order of preference:
  *
- *  - 'carto' — tiles proxied through the Worker (key stays server-side),
- *    labels baked in, full z18 coverage. Identical to the original look.
- *  - 'esri'  — keyless ArcGIS Canvas, requested direct. Splits base and
- *    labels into two services, and stops at z16 (it serves a "Map data
- *    not yet available" placeholder above that), so maxNativeZoom pins
- *    requests at 16 and lets Leaflet upscale for the map's z17-18 range.
+ *  - 'openfreemap' (default) — the original Positron/Dark Matter design,
+ *    keyless, via MapLibre GL. Requires WebGL.
+ *  - 'carto'  — used when the Worker has a CARTO_API_KEY; tiles are
+ *    proxied so the key stays server-side.
+ *  - 'esri'   — last-resort raster fallback when WebGL or the MapLibre
+ *    CDN is unavailable. Splits base and labels into two services and
+ *    stops at z16, so maxNativeZoom upscales for the map's z17-18 range.
  */
 const ESRI_CANVAS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas';
+const OPENFREEMAP_STYLE = {
+  light: 'https://tiles.openfreemap.org/styles/positron',
+  dark:  'https://tiles.openfreemap.org/styles/dark',
+};
 
-let basemapProvider = 'esri';
+let basemapProvider = 'openfreemap';
 let configPromise = null;
 
-/** Resolves which basemap to use, once per page load. Falls back to Esri
- * if the config call fails — a keyless map beats no map. */
+/** Vector basemaps need WebGL and both MapLibre scripts. If either is
+ * missing we fall back to raster rather than rendering nothing. */
+function canRenderVector(){
+  if(typeof maplibregl === 'undefined' || typeof L.maplibreGL !== 'function') return false;
+  try{
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext &&
+      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  }catch(e){
+    return false;
+  }
+}
+
+/** Resolves which basemap to use, once per page load. Falls back to the
+ * keyless default if the config call fails — a map beats no map. */
 function ensureConfig(){
   if(!configPromise){
     configPromise = api('/api/config')
-      .then(cfg => { basemapProvider = cfg.basemap || 'esri'; })
-      .catch(() => { basemapProvider = 'esri'; });
+      .then(cfg => { basemapProvider = cfg.basemap || 'openfreemap'; })
+      .catch(() => { basemapProvider = 'openfreemap'; });
   }
   return configPromise;
 }
 
 function createBasemap(light){
   const theme = light ? 'light' : 'dark';
+
   if(basemapProvider === 'carto'){
     return L.layerGroup([
       L.tileLayer(`/api/basemap/${theme}/{z}/{x}/{y}`, {
@@ -466,6 +488,27 @@ function createBasemap(light){
       }),
     ]);
   }
+
+  if(basemapProvider === 'openfreemap' && canRenderVector()){
+    // Attribution is read off the style's sources by the plugin.
+    return L.layerGroup([
+      L.maplibreGL({
+        style: OPENFREEMAP_STYLE[theme],
+        pane: 'basemap',
+        renderWorldCopies: false, // match the raster layers' noWrap
+        // Attribution is mandatory for OpenFreeMap. The plugin can read it
+        // off the style's resolved sources, but state it explicitly so it
+        // can't silently go missing if that lookup fails.
+        attributionControl: {
+          customAttribution:
+            '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> ' +
+            '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">&copy; OpenMapTiles</a> ' +
+            'Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+        },
+      }),
+    ]);
+  }
+
   const variant = light ? 'Light' : 'Dark';
   const opts = { maxZoom: 18, maxNativeZoom: 16, noWrap: true, pane: 'basemap' };
   return L.layerGroup([

@@ -4,19 +4,21 @@
  * CARTO's raster basemaps now require an API key and watermark
  * unauthenticated requests, so when CARTO_API_KEY is configured we proxy
  * their tiles with the key attached server-side (the key never reaches
- * the browser). Without a key we fall back to Esri's keyless ArcGIS
- * Canvas tiles, which need no proxy and are requested directly by the
- * frontend — so this handler only ever serves the CARTO path.
+ * the browser).
+ *
+ * Without a key the frontend renders the same Positron/Dark Matter
+ * designs as keyless vector tiles from OpenFreeMap, requested directly —
+ * so this handler only ever serves the CARTO path.
  *
  * Note: CARTO is retiring raster (PNG) basemaps in favour of vector
- * tiles, so this path has a shelf life; the Esri fallback is what keeps
- * the map working if it goes away.
+ * tiles, so the proxied path has a shelf life; the keyless default is
+ * what keeps the map working if it goes away.
  */
 
 const CARTO_STYLE = { light: 'light_all', dark: 'dark_all' };
 
 export function basemapProvider(env){
-  return env.CARTO_API_KEY ? 'carto' : 'esri';
+  return env.CARTO_API_KEY ? 'carto' : 'openfreemap';
 }
 
 export async function fetchBasemapTile(url, env){

@@ -10,12 +10,12 @@ describe('basemapProvider', () => {
     expect(basemapProvider({ CARTO_API_KEY: 'abc123' })).toBe('carto');
   });
 
-  it('falls back to esri with no key', () => {
-    expect(basemapProvider({})).toBe('esri');
+  it('falls back to the keyless provider with no key', () => {
+    expect(basemapProvider({})).toBe('openfreemap');
   });
 
-  it('falls back to esri when the key is empty', () => {
-    expect(basemapProvider({ CARTO_API_KEY: '' })).toBe('esri');
+  it('falls back to the keyless provider when the key is empty', () => {
+    expect(basemapProvider({ CARTO_API_KEY: '' })).toBe('openfreemap');
   });
 });
 
