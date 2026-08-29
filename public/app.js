@@ -450,6 +450,27 @@ const OPENFREEMAP_STYLE = {
   dark:  'https://tiles.openfreemap.org/styles/dark',
 };
 
+// Oceans in the stock styles sit close to the land colour. Push them
+// darker so the coastline reads clearly behind the fire overlays.
+const WATER_COLOR = { light: 'rgb(168,176,180)', dark: '#000000' };
+
+/** Recolours the style's water layers once the style has loaded. */
+function withDarkerWater(glLayer, light){
+  const color = WATER_COLOR[light ? 'light' : 'dark'];
+  glLayer.on('add', () => {
+    const m = glLayer.getMaplibreMap();
+    if(!m) return;
+    const apply = () => {
+      try{
+        if(m.getLayer('water')) m.setPaintProperty('water', 'fill-color', color);
+        if(m.getLayer('waterway')) m.setPaintProperty('waterway', 'line-color', color);
+      }catch(e){ /* style variant without these layers — leave it alone */ }
+    };
+    if(m.isStyleLoaded()) apply(); else m.on('load', apply);
+  });
+  return glLayer;
+}
+
 let basemapProvider = 'openfreemap';
 let configPromise = null;
 
@@ -492,7 +513,7 @@ function createBasemap(light){
   if(basemapProvider === 'openfreemap' && canRenderVector()){
     // Attribution is read off the style's sources by the plugin.
     return L.layerGroup([
-      L.maplibreGL({
+      withDarkerWater(L.maplibreGL({
         style: OPENFREEMAP_STYLE[theme],
         pane: 'basemap',
         renderWorldCopies: false, // match the raster layers' noWrap
@@ -505,7 +526,7 @@ function createBasemap(light){
             '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">&copy; OpenMapTiles</a> ' +
             'Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
         },
-      }),
+      }), light),
     ]);
   }
 
@@ -518,10 +539,30 @@ function createBasemap(light){
   ]);
 }
 
+/** Raises the zoom-out floor so the world is never narrower than the map
+ * container. Below that point Leaflet leaves empty gutters either side of
+ * the world (which fill with repeated copies or out-of-range placeholder
+ * tiles), instead of the map filling its panel. World width at zoom z is
+ * 256 * 2^z px, so the floor is the z where that exactly equals the
+ * container width — fractional, so the whole earth still fits edge to edge
+ * rather than overshooting to the next whole zoom level.
+ */
+function fitMinZoom(){
+  if(!map) return;
+  const width = map.getSize().x;
+  if(!width) return;
+  const minZoom = Math.max(0, Math.log2(width / 256));
+  map.setMinZoom(minZoom);
+  if(map.getZoom() < minZoom) map.setZoom(minZoom);
+}
+
 function initMap(){
   map = L.map('map', {
     zoomControl:true, attributionControl:true,
     minZoom:1, maxBoundsViscosity:1.0,
+    // fitMinZoom() computes a fractional floor; without this Leaflet
+    // would snap back up to a whole level and re-open the side gutters.
+    zoomSnap:0, zoomDelta:1,
   }).setView([userLat, userLon], 10);
   map.setMaxBounds([[-90,-180],[90,180]]);
   // Basemap sits in its own pane below the default tilePane, so the FIRMS
@@ -539,6 +580,9 @@ function initMap(){
   userMarker = L.marker([userLat, userLon], {icon:userIcon}).addTo(map);
   fireLayer = L.layerGroup().addTo(map);
 
+  fitMinZoom();
+  map.on('resize', fitMinZoom);
+
   map.on('click', onMapClick);
   document.getElementById('firms-tile-toggle-wrap').classList.remove('hidden');
   addFirmsTileLayer();
@@ -555,7 +599,7 @@ function toggleMapExpand(){
   const btn = document.getElementById('map-expand-btn');
   const expanded = panel.classList.toggle('expanded');
   btn.textContent = expanded ? t('map_close') : t('map_expand');
-  if(map) setTimeout(() => { map.invalidateSize(); map.setMinZoom(1); }, 50);
+  if(map) setTimeout(() => { map.invalidateSize(); fitMinZoom(); }, 50);
 }
 
 function collapseMap(){
@@ -564,7 +608,7 @@ function collapseMap(){
   panel.classList.remove('expanded');
   const btn = document.getElementById('map-expand-btn');
   if(btn) btn.textContent = t('map_expand');
-  if(map) setTimeout(() => { map.invalidateSize(); map.setMinZoom(1); }, 50);
+  if(map) setTimeout(() => { map.invalidateSize(); fitMinZoom(); }, 50);
 }
 
 /** Ambient worldwide fire activity — raw FIRMS detections at actual
