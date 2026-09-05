@@ -401,31 +401,6 @@
 </main>
 
 <div id="tip" class="tip" role="tooltip"></div>
-<!-- CHAT WIDGET -->
-<div id="chat-teaser" class="chat-teaser hidden" role="status" aria-live="polite">
-  <button class="chat-teaser-close" onclick="dismissChatTeaser(event)" data-i18n-aria="chat_dismiss">✕</button>
-  <div class="chat-teaser-head">
-    <span class="chat-teaser-avatar" aria-hidden="true">🔥</span>
-    <span data-i18n="chat_title">Firewatch Assistant</span>
-  </div>
-  <p class="chat-teaser-text" id="chat-teaser-text"></p>
-</div>
-<button id="chat-fab" class="chat-fab" onclick="toggleChat()" title="Ask Firewatch Assistant" data-i18n-aria="chat_open">
-  <span class="chat-fab-icon" aria-hidden="true">💬</span>
-  <span id="chat-fab-badge" class="chat-fab-badge hidden" aria-hidden="true">1</span>
-</button>
-<div id="chat-panel" class="chat-panel hidden">
-  <div class="chat-panel-head">
-    <span><span aria-hidden="true">🔥</span> <span data-i18n="chat_title">Firewatch Assistant</span></span>
-    <button class="chat-close-btn" onclick="toggleChat()" aria-label="Close chat">✕</button>
-  </div>
-  <div class="chat-messages" id="chat-messages"></div>
-  <form class="chat-input-row" id="chat-form" onsubmit="onChatSubmit(event)">
-    <input id="chat-input" type="text" placeholder="Ask a question…" autocomplete="off" maxlength="2000" />
-    <button type="submit" id="chat-send-btn">Send</button>
-  </form>
-</div>
-
 <script src="app.js"></script>
 </body>
 </html>

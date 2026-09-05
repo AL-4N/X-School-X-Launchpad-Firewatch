@@ -1982,11 +1982,6 @@ const TRANSLATIONS = {
     // Header / sections
     risk_intelligence:'Risk Intelligence',satellite_title:'Satellite Fire Analytics',
     nav_overview:'Overview',nav_alerts:'Alerts',nav_fires:'Fires',nav_map:'Map',nav_incidents:'Incidents',nav_forecast:'Forecast',nav_weather:'Weather',nav_guide:'Guide',nav_report:'Report',
-    chat_open:'Open Firewatch Assistant',chat_dismiss:'Dismiss',
-    chat_title:'Firewatch Assistant',
-    chat_greet_generic:'Hi! Ask me about the current wildfire risk, air quality, heat, or general fire safety.',
-    chat_greet_lead:'Hi! Here’s {place} right now — status: {status}.',chat_greet_aqi:'AQI {v}.',chat_greet_weather:'Weather {t}.',
-    chat_greet_tail:'Ask me anything about wildfire risk, air quality, heat, or fire safety.',
     nearby_title:'Nearby Fires',map_title:'Map',advice_title:'What should I do?',
     air_scale_title:'Air Quality Scale',incidents_title:'Global Wildfire Incidents',
     forecast_title:'5-Day Fire Weather Outlook',weather_title:'Weather',be_ready_title:'Be Ready',
@@ -2278,11 +2273,6 @@ const TRANSLATIONS = {
   es:{
     risk_intelligence:'Inteligencia de Riesgo',satellite_title:'Análisis Satelital de Incendios',
     nav_overview:'Resumen',nav_alerts:'Alertas',nav_fires:'Incendios',nav_map:'Mapa',nav_incidents:'Incidentes',nav_forecast:'Pronóstico',nav_weather:'Clima',nav_guide:'Guía',nav_report:'Reportar',
-    chat_open:'Abrir el Asistente Firewatch',chat_dismiss:'Descartar',
-    chat_title:'Asistente Firewatch',
-    chat_greet_generic:'¡Hola! Pregúntame sobre el riesgo de incendio, la calidad del aire, el calor o la seguridad contra incendios.',
-    chat_greet_lead:'¡Hola! Así está {place} ahora mismo — estado: {status}.',chat_greet_aqi:'ICA {v}.',chat_greet_weather:'Clima {t}.',
-    chat_greet_tail:'Pregúntame lo que quieras sobre riesgo de incendio, calidad del aire, calor o seguridad.',
     nearby_title:'Incendios Cercanos',map_title:'Mapa',advice_title:'¿Qué debo hacer?',
     air_scale_title:'Escala de Calidad del Aire',incidents_title:'Incendios Forestales Globales',
     forecast_title:'Pronóstico de Incendio (5 días)',weather_title:'Clima',be_ready_title:'Prepárate',
@@ -2543,11 +2533,6 @@ const TRANSLATIONS = {
   fr:{
     risk_intelligence:'Intelligence des Risques',satellite_title:'Analyse Satellite des Incendies',
     nav_overview:'Aperçu',nav_alerts:'Alertes',nav_fires:'Incendies',nav_map:'Carte',nav_incidents:'Incidents',nav_forecast:'Prévisions',nav_weather:'Météo',nav_guide:'Guide',nav_report:'Signaler',
-    chat_open:"Ouvrir l'assistant Firewatch",chat_dismiss:'Fermer',
-    chat_title:'Assistant Firewatch',
-    chat_greet_generic:'Bonjour ! Posez-moi vos questions sur le risque d’incendie, la qualité de l’air, la chaleur ou la sécurité incendie.',
-    chat_greet_lead:'Bonjour ! Voici {place} en ce moment — statut : {status}.',chat_greet_aqi:'IQA {v}.',chat_greet_weather:'Météo {t}.',
-    chat_greet_tail:'Demandez-moi ce que vous voulez sur le risque d’incendie, la qualité de l’air, la chaleur ou la sécurité.',
     nearby_title:'Incendies à Proximité',map_title:'Carte',advice_title:'Que dois-je faire ?',
     air_scale_title:"Échelle de Qualité de l'Air",incidents_title:'Incendies Mondiaux',
     forecast_title:'Prévisions Météo-Feux 5 Jours',weather_title:'Météo',be_ready_title:'Soyez Prêt',
@@ -2808,11 +2793,6 @@ const TRANSLATIONS = {
   de:{
     risk_intelligence:'Risikoanalyse',satellite_title:'Satelliten-Feueranalyse',
     nav_overview:'Übersicht',nav_alerts:'Warnungen',nav_fires:'Brände',nav_map:'Karte',nav_incidents:'Vorfälle',nav_forecast:'Vorhersage',nav_weather:'Wetter',nav_guide:'Leitfaden',nav_report:'Melden',
-    chat_open:'Firewatch-Assistent öffnen',chat_dismiss:'Schließen',
-    chat_title:'Firewatch-Assistent',
-    chat_greet_generic:'Hallo! Fragen Sie mich zu Brandrisiko, Luftqualität, Hitze oder allgemeiner Brandsicherheit.',
-    chat_greet_lead:'Hallo! So sieht es gerade in {place} aus — Status: {status}.',chat_greet_aqi:'AQI {v}.',chat_greet_weather:'Wetter {t}.',
-    chat_greet_tail:'Fragen Sie mich alles zu Brandrisiko, Luftqualität, Hitze oder Sicherheit.',
     nearby_title:'Nahegelegene Feuer',map_title:'Karte',advice_title:'Was soll ich tun?',
     air_scale_title:'Luftqualitätsskala',incidents_title:'Globale Waldbrandereignisse',
     forecast_title:'5-Tage-Feuerwettervorhersage',weather_title:'Wetter',be_ready_title:'Vorbereitet sein',
@@ -3073,11 +3053,6 @@ const TRANSLATIONS = {
   zh:{
     risk_intelligence:'风险情报',satellite_title:'卫星火灾分析',
     nav_overview:'概览',nav_alerts:'警报',nav_fires:'火情',nav_map:'地图',nav_incidents:'事件',nav_forecast:'预报',nav_weather:'天气',nav_guide:'指南',nav_report:'举报',
-    chat_open:'打开 Firewatch 助手',chat_dismiss:'关闭',
-    chat_title:'Firewatch 助手',
-    chat_greet_generic:'你好！可以问我当前的火灾风险、空气质量、高温或防火安全问题。',
-    chat_greet_lead:'你好！{place} 当前状况 — 状态：{status}。',chat_greet_aqi:'空气质量指数 {v}。',chat_greet_weather:'天气 {t}。',
-    chat_greet_tail:'火灾风险、空气质量、高温或安全问题都可以问我。',
     nearby_title:'附近火灾',map_title:'地图',advice_title:'我该怎么做？',
     air_scale_title:'空气质量指数',incidents_title:'全球野火事件',
     forecast_title:'5日火险天气预报',weather_title:'天气',be_ready_title:'做好准备',
@@ -3338,11 +3313,6 @@ const TRANSLATIONS = {
   pt:{
     risk_intelligence:'Inteligência de Risco',satellite_title:'Análise Satelital de Incêndios',
     nav_overview:'Resumo',nav_alerts:'Alertas',nav_fires:'Incêndios',nav_map:'Mapa',nav_incidents:'Incidentes',nav_forecast:'Previsão',nav_weather:'Clima',nav_guide:'Guia',nav_report:'Reportar',
-    chat_open:'Abrir o Assistente Firewatch',chat_dismiss:'Dispensar',
-    chat_title:'Assistente Firewatch',
-    chat_greet_generic:'Olá! Pergunte-me sobre o risco de incêndio, a qualidade do ar, o calor ou a segurança contra incêndios.',
-    chat_greet_lead:'Olá! Veja {place} agora — estado: {status}.',chat_greet_aqi:'IQA {v}.',chat_greet_weather:'Clima {t}.',
-    chat_greet_tail:'Pergunte-me o que quiser sobre risco de incêndio, qualidade do ar, calor ou segurança.',
     nearby_title:'Incêndios Próximos',map_title:'Mapa',advice_title:'O que devo fazer?',
     air_scale_title:'Escala de Qualidade do Ar',incidents_title:'Incêndios Florestais Globais',
     forecast_title:'Previsão de Risco de Incêndio (5 dias)',weather_title:'Clima',be_ready_title:'Esteja Pronto',
@@ -3603,11 +3573,6 @@ const TRANSLATIONS = {
   ja:{
     risk_intelligence:'リスク情報',satellite_title:'衛星火災解析',
     nav_overview:'概要',nav_alerts:'警報',nav_fires:'火災',nav_map:'地図',nav_incidents:'インシデント',nav_forecast:'予報',nav_weather:'天気',nav_guide:'ガイド',nav_report:'報告',
-    chat_open:'Firewatch アシスタントを開く',chat_dismiss:'閉じる',
-    chat_title:'Firewatch アシスタント',
-    chat_greet_generic:'こんにちは！山火事リスク、大気質、暑さ、防火の安全についてお尋ねください。',
-    chat_greet_lead:'こんにちは！現在の{place}の状況 — ステータス：{status}。',chat_greet_aqi:'AQI {v}。',chat_greet_weather:'天気 {t}。',
-    chat_greet_tail:'山火事リスク、大気質、暑さ、安全について何でもお尋ねください。',
     nearby_title:'近隣の火災',map_title:'地図',advice_title:'どうすべきか？',
     air_scale_title:'大気質スケール',incidents_title:'世界の山火事情報',
     forecast_title:'5日間の火災気象予報',weather_title:'天気',be_ready_title:'備える',
@@ -3868,11 +3833,6 @@ const TRANSLATIONS = {
   it:{
     risk_intelligence:'Intelligence del Rischio',satellite_title:'Analisi Satellitare Incendi',
     nav_overview:'Panoramica',nav_alerts:'Avvisi',nav_fires:'Incendi',nav_map:'Mappa',nav_incidents:'Incidenti',nav_forecast:'Previsioni',nav_weather:'Meteo',nav_guide:'Guida',nav_report:'Segnala',
-    chat_open:'Apri l’assistente Firewatch',chat_dismiss:'Chiudi',
-    chat_title:'Assistente Firewatch',
-    chat_greet_generic:'Ciao! Chiedimi del rischio incendi, della qualità dell’aria, del caldo o della sicurezza antincendio.',
-    chat_greet_lead:'Ciao! Ecco {place} in questo momento — stato: {status}.',chat_greet_aqi:'IQA {v}.',chat_greet_weather:'Meteo {t}.',
-    chat_greet_tail:'Chiedimi qualsiasi cosa su rischio incendi, qualità dell’aria, caldo o sicurezza.',
     nearby_title:'Incendi nelle Vicinanze',map_title:'Mappa',advice_title:'Cosa devo fare?',
     air_scale_title:"Scala della Qualità dell'Aria",incidents_title:'Incendi Boschivi Globali',
     forecast_title:'Previsione Meteo-Incendi 5 Giorni',weather_title:'Meteo',be_ready_title:'Sii Pronto',
@@ -4133,11 +4093,6 @@ const TRANSLATIONS = {
   ko:{
     risk_intelligence:'위험 정보',satellite_title:'위성 화재 분석',
     nav_overview:'개요',nav_alerts:'경보',nav_fires:'산불',nav_map:'지도',nav_incidents:'사건',nav_forecast:'예보',nav_weather:'날씨',nav_guide:'가이드',nav_report:'신고',
-    chat_open:'Firewatch 어시스턴트 열기',chat_dismiss:'닫기',
-    chat_title:'Firewatch 어시스턴트',
-    chat_greet_generic:'안녕하세요! 산불 위험, 대기질, 폭염, 화재 안전에 대해 물어보세요.',
-    chat_greet_lead:'안녕하세요! 현재 {place} 상황 — 상태: {status}.',chat_greet_aqi:'AQI {v}.',chat_greet_weather:'날씨 {t}.',
-    chat_greet_tail:'산불 위험, 대기질, 폭염, 안전에 대해 무엇이든 물어보세요.',
     nearby_title:'인근 화재',map_title:'지도',advice_title:'무엇을 해야 하나요?',
     air_scale_title:'대기질 척도',incidents_title:'전 세계 산불 사건',
     forecast_title:'5일 화재 날씨 예보',weather_title:'날씨',be_ready_title:'대비하기',
@@ -4423,14 +4378,6 @@ function applyI18n(){
     const v = t(el.dataset.i18nTip);
     if(v) el.dataset.tip = v;
   });
-  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
-    const v = t(el.dataset.i18nAria);
-    if(!v) return;
-    el.setAttribute('aria-label', v);
-    if(el.hasAttribute('title')) el.title = v;
-  });
-  const teaser = document.getElementById('chat-teaser');
-  if(teaser && !teaser.classList.contains('hidden')) renderChatTeaserText();
   document.documentElement.lang = currentLang;
   const d = document.getElementById('lang-current');
   if(d) d.textContent = currentLang.toUpperCase();
@@ -4749,191 +4696,3 @@ function renderReportHistory(){
 
 // Report history rendered after DOM is ready
 renderReportHistory();
-
-/* ---------------- Chat widget ---------------- */
-let chatHistory = []; // [{ role: 'user'|'model', text }] — in-memory only, resets on reload
-let chatSending = false;
-let chatGreeted = false;
-
-// Worst of the three hazard levels, named with the same status_* words
-// the cards use, so the greeting agrees with the rest of the page.
-const OVERALL_STATUS_KEYS = ['status_good', 'status_moderate', 'status_unhealthy', 'status_severe'];
-
-function overallStatusWord(){
-  const levels = [current.fireLevel, current.aqiLevel, current.heatLevel].filter((l) => l != null);
-  if(!levels.length) return null;
-  return t(OVERALL_STATUS_KEYS[Math.max(...levels)]);
-}
-
-function buildChatGreeting(){
-  const place = document.getElementById('place-name')?.textContent;
-  const status = overallStatusWord();
-  if(!place || place === t('locating') || place === 'Locating…' || status == null){
-    return t('chat_greet_generic');
-  }
-  const bits = [tf('chat_greet_lead', { place, status })];
-  if(current.aqiValue != null) bits.push(tf('chat_greet_aqi', { v: current.aqiValue }));
-  if(current.actualTempC != null) bits.push(tf('chat_greet_weather', { t: fmtTemp(current.actualTempC) }));
-  bits.push(t('chat_greet_tail'));
-  // CJK sentences already end in a full-width stop, which supplies its
-  // own trailing space — joining with one again reads as a gap.
-  return bits.join(['zh', 'ja'].includes(currentLang) ? '' : ' ');
-}
-
-/* The assistant is a small button in a busy page corner and is easy to
- * miss entirely, so on a first visit it advertises itself: an unread
- * badge for the greeting that is genuinely waiting, a pulse ring, and a
- * teaser bubble. All three retire permanently once the user opens the
- * chat or dismisses the bubble. */
-const CHAT_SEEN_KEY = 'fw_chat_seen';
-const CHAT_TEASER_DELAY = 3500;   // let the page settle before nudging
-const CHAT_TEASER_LINGER = 14000; // bubble retreats; badge stays put
-
-function chatSeen(){
-  try{ return localStorage.getItem(CHAT_SEEN_KEY) === '1'; }
-  catch{ return false; } // private mode — nudge, just don't remember
-}
-
-function markChatSeen(){
-  try{ localStorage.setItem(CHAT_SEEN_KEY, '1'); }catch{}
-}
-
-/** The preview shows the same greeting the panel will open with, so the
- * notification is not advertising a message that differs from the one
- * actually waiting. Built on demand — by the time it renders, more of
- * the location data has usually landed. */
-function renderChatTeaserText(){
-  const el = document.getElementById('chat-teaser-text');
-  if(el) el.textContent = buildChatGreeting();
-}
-
-function hideChatTeaser(){
-  document.getElementById('chat-teaser')?.classList.add('hidden');
-}
-
-/** Bubble dismissed on its own — the badge stays, so the assistant is
- * still discoverable, just no longer interrupting. */
-function dismissChatTeaser(event){
-  event?.stopPropagation();
-  hideChatTeaser();
-  markChatSeen();
-  document.getElementById('chat-fab')?.classList.remove('chat-unseen');
-}
-
-function clearChatNotification(){
-  hideChatTeaser();
-  markChatSeen();
-  document.getElementById('chat-fab')?.classList.remove('chat-unseen');
-  document.getElementById('chat-fab-badge')?.classList.add('hidden');
-}
-
-function initChatNotification(){
-  if(chatSeen()) return;
-  const fab = document.getElementById('chat-fab');
-  const badge = document.getElementById('chat-fab-badge');
-  const teaser = document.getElementById('chat-teaser');
-  if(!fab || !badge || !teaser) return;
-
-  fab.classList.add('chat-unseen');
-  badge.classList.remove('hidden');
-
-  teaser.addEventListener('click', () => {
-    if(document.getElementById('chat-panel').classList.contains('hidden')) toggleChat();
-  });
-
-  setTimeout(() => {
-    if(chatSeen()) return; // opened during the delay
-    renderChatTeaserText();
-    teaser.classList.remove('hidden');
-    setTimeout(hideChatTeaser, CHAT_TEASER_LINGER);
-  }, CHAT_TEASER_DELAY);
-}
-
-function toggleChat(){
-  const panel = document.getElementById('chat-panel');
-  const wasHidden = panel.classList.contains('hidden');
-  panel.classList.toggle('hidden');
-  if(wasHidden){
-    clearChatNotification();
-    document.getElementById('chat-input').focus();
-    if(!chatGreeted){
-      appendChatMessage('model', buildChatGreeting());
-      chatGreeted = true;
-    }
-  }
-}
-
-function appendChatMessage(role, text){
-  const list = document.getElementById('chat-messages');
-  const div = document.createElement('div');
-  div.className = `chat-msg chat-msg-${role}`;
-  div.textContent = text;
-  list.appendChild(div);
-  list.scrollTop = list.scrollHeight;
-}
-
-function showChatTyping(show){
-  const list = document.getElementById('chat-messages');
-  let el = document.getElementById('chat-typing-indicator');
-  if(show){
-    if(el) return;
-    el = document.createElement('div');
-    el.id = 'chat-typing-indicator';
-    el.className = 'chat-msg chat-msg-model chat-typing';
-    el.innerHTML = '<span></span><span></span><span></span>';
-    list.appendChild(el);
-    list.scrollTop = list.scrollHeight;
-  } else if(el){
-    el.remove();
-  }
-}
-
-function currentChatContext(){
-  return {
-    place: document.getElementById('place-name')?.textContent || null,
-    fireLevel: current.fireLevel,
-    compositeScore: current.compositeScore,
-    aqiLevel: current.aqiLevel,
-    aqiValue: current.aqiValue,
-    heatLevel: current.heatLevel,
-    heatFeelsC: current.heatFeelsC,
-    nearestFireMiles: current.nearestFireMiles,
-    nearestFireDir: current.nearestFireDir,
-  };
-}
-
-async function onChatSubmit(event){
-  event.preventDefault();
-  if(chatSending) return;
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if(!text) return;
-
-  appendChatMessage('user', text);
-  chatHistory.push({ role: 'user', text });
-  input.value = '';
-  chatSending = true;
-  document.getElementById('chat-send-btn').disabled = true;
-  showChatTyping(true);
-
-  try{
-    const res = await fetch(`${WORKER_BASE_URL}/api/chat`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, context: currentChatContext() }),
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Chat request failed');
-    showChatTyping(false);
-    appendChatMessage('model', data.reply);
-    chatHistory.push({ role: 'model', text: data.reply });
-  }catch(err){
-    showChatTyping(false);
-    appendChatMessage('error', `Sorry, something went wrong: ${err.message}`);
-  }finally{
-    chatSending = false;
-    document.getElementById('chat-send-btn').disabled = false;
-  }
-}
-
-initChatNotification();
