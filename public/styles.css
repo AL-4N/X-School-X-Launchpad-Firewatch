@@ -878,29 +878,52 @@ body.theme-light .hazard-chip{ border:1px solid var(--border); }
   100%{ transform:scale(1.9);opacity:0; }
 }
 
-/* Teaser bubble that surfaces the assistant without blocking the page. */
+/* Message preview above the button — reads like an incoming chat
+ * notification, showing the greeting that is actually waiting. */
 .chat-teaser{
-  position:fixed;right:88px;bottom:26px;z-index:1100;
-  max-width:min(260px, calc(100vw - 120px));
-  display:flex;align-items:flex-start;gap:8px;
+  position:fixed;right:20px;bottom:90px;z-index:1100;
+  width:300px;max-width:calc(100vw - 40px);
   background:var(--card);color:var(--text);
-  border:1px solid var(--border);border-left:3px solid var(--ember);
-  border-radius:12px;padding:11px 13px;
-  font-size:13.5px;line-height:1.45;
-  box-shadow:0 6px 24px rgba(0,0,0,0.4);
+  border:1px solid var(--border);border-radius:14px;
+  padding:11px 13px 12px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.45);
   cursor:pointer;
-  animation:chat-teaser-in 0.35s ease-out;
+  animation:chat-teaser-in 0.32s cubic-bezier(0.2,0.8,0.3,1);
 }
 .chat-teaser.hidden{ display:none; }
-.chat-teaser-text{ flex:1; }
+.chat-teaser:hover{ border-color:var(--ember); }
+
+/* Tail pointing down at the button. Two stacked triangles fake a
+ * 1px border, since a bare triangle cannot carry one. */
+.chat-teaser::after,
+.chat-teaser::before{
+  content:'';position:absolute;right:22px;
+  border:8px solid transparent;border-bottom:0;
+}
+.chat-teaser::before{ bottom:-8px;border-top-color:var(--border); }
+.chat-teaser::after{ bottom:-7px;border-top-color:var(--card); }
+
+.chat-teaser-head{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:700;color:var(--ember);
+  text-transform:uppercase;letter-spacing:0.04em;
+  margin-bottom:5px;padding-right:16px;
+}
+.chat-teaser-avatar{ font-size:13px; }
+.chat-teaser-text{
+  margin:0;font-size:13.5px;line-height:1.5;color:var(--text);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  overflow:hidden;
+}
 .chat-teaser-close{
+  position:absolute;top:8px;right:9px;
   background:none;border:none;color:var(--muted);
-  font-size:12px;line-height:1;cursor:pointer;padding:2px;order:2;
+  font-size:12px;line-height:1;cursor:pointer;padding:2px;
 }
 .chat-teaser-close:hover{ color:var(--text); }
 @keyframes chat-teaser-in{
-  from{ opacity:0;transform:translateX(8px); }
-  to{ opacity:1;transform:translateX(0); }
+  from{ opacity:0;transform:translateY(10px) scale(0.97); }
+  to{ opacity:1;transform:translateY(0) scale(1); }
 }
 
 /* Respect users who ask for less motion: keep the badge, drop the movement. */
@@ -912,5 +935,6 @@ body.theme-light .hazard-chip{ border:1px solid var(--border); }
 
 /* Narrow screens: let the bubble sit above the button instead of beside it. */
 @media (max-width:520px){
-  .chat-teaser{ right:20px;bottom:88px;max-width:calc(100vw - 40px); }
+  .chat-teaser{ width:auto;left:20px;right:20px; }
+  .chat-teaser::before,.chat-teaser::after{ right:24px; }
 }

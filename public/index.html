@@ -404,7 +404,11 @@
 <!-- CHAT WIDGET -->
 <div id="chat-teaser" class="chat-teaser hidden" role="status" aria-live="polite">
   <button class="chat-teaser-close" onclick="dismissChatTeaser(event)" data-i18n-aria="chat_dismiss">✕</button>
-  <span class="chat-teaser-text" data-i18n="chat_teaser">Questions about the risk here? Ask me.</span>
+  <div class="chat-teaser-head">
+    <span class="chat-teaser-avatar" aria-hidden="true">🔥</span>
+    <span data-i18n="chat_title">Firewatch Assistant</span>
+  </div>
+  <p class="chat-teaser-text" id="chat-teaser-text"></p>
 </div>
 <button id="chat-fab" class="chat-fab" onclick="toggleChat()" title="Ask Firewatch Assistant" data-i18n-aria="chat_open">
   <span class="chat-fab-icon" aria-hidden="true">💬</span>
@@ -412,7 +416,7 @@
 </button>
 <div id="chat-panel" class="chat-panel hidden">
   <div class="chat-panel-head">
-    <span>🔥 Firewatch Assistant</span>
+    <span><span aria-hidden="true">🔥</span> <span data-i18n="chat_title">Firewatch Assistant</span></span>
     <button class="chat-close-btn" onclick="toggleChat()" aria-label="Close chat">✕</button>
   </div>
   <div class="chat-messages" id="chat-messages"></div>
