@@ -13,3 +13,8 @@ OWM_API_KEY=
 # Optional — half-width in degrees of the FIRMS fire-detection search box.
 # Defaults to 0.6 (~65km) if unset.
 FIRMS_RADIUS_DEG=0.6
+
+# Optional — enables the /api/chat assistant widget. Without it the
+# chat endpoint returns 503 and the rest of the app works normally.
+# Get one at https://aistudio.google.com/apikey
+GEMINI_API_KEY=

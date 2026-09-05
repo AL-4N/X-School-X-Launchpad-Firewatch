@@ -45,6 +45,18 @@
   </div>
 </header>
 
+<nav id="category-nav" class="category-nav hidden" aria-label="Sections">
+  <a class="cat-btn active" href="#hero" data-i18n="nav_overview">Overview</a>
+  <a class="cat-btn" href="#hazard-alerts" data-i18n="nav_alerts">Alerts</a>
+  <a class="cat-btn" href="#fires-panel" data-i18n="nav_fires">Fires</a>
+  <a class="cat-btn" href="#map-panel" data-i18n="nav_map">Map</a>
+  <a class="cat-btn" href="#sect-incidents" data-i18n="nav_incidents">Incidents</a>
+  <a class="cat-btn" href="#sect-forecast" data-i18n="nav_forecast">Forecast</a>
+  <a class="cat-btn" href="#sect-weather" data-i18n="nav_weather">Weather</a>
+  <a class="cat-btn" href="#sect-guide" data-i18n="nav_guide">Guide</a>
+  <a class="cat-btn" href="#report-panel" data-i18n="nav_report">Report</a>
+</nav>
+
 <main>
 
   <!-- LOADING STATE -->
@@ -298,7 +310,7 @@
     </div>
 
     <!-- GLOBAL INCIDENTS -->
-    <div class="sect-head"><h3 class="hz-incidents" data-i18n="incidents_title">Global Wildfire Incidents</h3><div class="rule"></div></div>
+    <div class="sect-head" id="sect-incidents"><h3 class="hz-incidents" data-i18n="incidents_title">Global Wildfire Incidents</h3><div class="rule"></div></div>
     <div class="incidents-toolbar">
       <div id="incidents-count-note" class="empty-note">Loading global incident data…</div>
       <button id="incidents-map-btn" onclick="toggleGlobalIncidentsOnMap()" data-i18n="incidents_show_map">🌍 Show on map</button>
@@ -308,13 +320,13 @@
     </div>
 
     <!-- 5-DAY FIRE WEATHER OUTLOOK -->
-    <div class="sect-head"><h3 class="hz-fire" data-i18n="forecast_title">5-Day Fire Weather Outlook</h3><div class="rule"></div></div>
+    <div class="sect-head" id="sect-forecast"><h3 class="hz-fire" data-i18n="forecast_title">5-Day Fire Weather Outlook</h3><div class="rule"></div></div>
     <div class="forecast-row" id="forecast-row">
       <div class="empty-note">Loading fire weather outlook…</div>
     </div>
 
     <!-- WEATHER -->
-    <div class="sect-head"><h3 class="hz-weather" data-i18n="weather_title">Weather</h3><div class="rule"></div></div>
+    <div class="sect-head" id="sect-weather"><h3 class="hz-weather" data-i18n="weather_title">Weather</h3><div class="rule"></div></div>
     <div class="weather-grid">
       <div class="wcell"><div class="wicn">🌡</div><div class="wval" id="w-temp">--°</div><div class="wlabel" data-i18n="w_temp">Temp</div></div>
       <div class="wcell"><div class="wicn">💨</div><div class="wval" id="w-wind">--</div><div class="wlabel" id="w-wind-lbl"><span data-i18n="w_wind">Wind</span> km/h · <span id="w-winddir">—</span></div></div>
@@ -323,7 +335,7 @@
     </div>
 
     <!-- SAFETY GUIDE: Before / During / After -->
-    <div class="sect-head"><h3 class="hz-fire" data-i18n="survival_title">WILDFIRE SURVIVAL GUIDE</h3><div class="rule"></div></div>
+    <div class="sect-head" id="sect-guide"><h3 class="hz-fire" data-i18n="survival_title">WILDFIRE SURVIVAL GUIDE</h3><div class="rule"></div></div>
     <div class="tips-panel">
       <div class="tips-panel-intro">
         <h3 id="tips-phase-title">Before a Fire</h3>
@@ -389,6 +401,20 @@
 </main>
 
 <div id="tip" class="tip" role="tooltip"></div>
+<!-- CHAT WIDGET -->
+<button id="chat-fab" class="chat-fab" onclick="toggleChat()" title="Ask Firewatch Assistant">💬</button>
+<div id="chat-panel" class="chat-panel hidden">
+  <div class="chat-panel-head">
+    <span>🔥 Firewatch Assistant</span>
+    <button class="chat-close-btn" onclick="toggleChat()" aria-label="Close chat">✕</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <form class="chat-input-row" id="chat-form" onsubmit="onChatSubmit(event)">
+    <input id="chat-input" type="text" placeholder="Ask a question…" autocomplete="off" maxlength="2000" />
+    <button type="submit" id="chat-send-btn">Send</button>
+  </form>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

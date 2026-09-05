@@ -5,8 +5,8 @@
  * Cloudflare's static assets binding) AND the /api/* backend on the same
  * origin, so the frontend's same-origin fetches need no CORS handling.
  *
- * All third-party API keys (FIRMS_MAP_KEY, OWM_API_KEY) live as Worker
- * secrets and are never sent to the browser.
+ * All third-party API keys (FIRMS_MAP_KEY, OWM_API_KEY, GEMINI_API_KEY)
+ * live as Worker secrets and are never sent to the browser.
  */
 
 import { computeFwiSystem } from './fwi.js';
@@ -20,6 +20,7 @@ import { fetchFireForecast } from './forecast.js';
 import { fetchWeatherAlerts } from './alerts.js';
 import { fetchFireTile } from './tiles.js';
 import { basemapProvider, fetchBasemapTile } from './basemap.js';
+import { fetchChatReply } from './chat.js';
 
 const JSON_HEADERS = { 'content-type': 'application/json;charset=UTF-8' };
 
@@ -170,6 +171,21 @@ const CACHE_TTL = {
 export default {
   async fetch(request, env, ctx){
     const url = new URL(request.url);
+
+    // Handled ahead of the table-driven routes below: chat is the one
+    // POST endpoint, and its body must not be edge-cached.
+    if(url.pathname === '/api/chat'){
+      if(request.method !== 'POST'){
+        return json({ error: 'Method not allowed' }, { status: 405 });
+      }
+      try{
+        const body = await request.json();
+        const reply = await fetchChatReply(body, env);
+        return json({ reply });
+      }catch(err){
+        return errorResponse(err, err.status || 502);
+      }
+    }
 
     if(url.pathname.startsWith('/api/')){
       const prefixRoute = matchPrefixRoute(url.pathname);
